@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-import { Cursor } from "@/components/cursor";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -46,7 +45,6 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col font-sans">
         <div className="grain" aria-hidden />
-        <Cursor />
         <Nav />
         <main className="flex-1 pt-24 sm:pt-28">{children}</main>
         <Footer />
