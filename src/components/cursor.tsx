@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { motion, useMotionValue, useSpring } from "motion/react";
 
 export function Cursor() {
-  const [enabled, setEnabled] = useState(false);
+  const [enabled, setEnabled] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(pointer: fine)").matches
+  );
   const [hovering, setHovering] = useState(false);
   const x = useMotionValue(-100);
   const y = useMotionValue(-100);
@@ -12,9 +14,9 @@ export function Cursor() {
   const springY = useSpring(y, { damping: 30, stiffness: 400, mass: 0.4 });
 
   useEffect(() => {
-    const fine = window.matchMedia("(pointer: fine)").matches;
-    setEnabled(fine);
-    if (!fine) return;
+    const query = window.matchMedia("(pointer: fine)");
+    const sync = () => setEnabled(query.matches);
+    query.addEventListener("change", sync);
 
     const move = (e: MouseEvent) => {
       x.set(e.clientX);
@@ -31,6 +33,7 @@ export function Cursor() {
     window.addEventListener("mousemove", move);
     window.addEventListener("mouseover", over);
     return () => {
+      query.removeEventListener("change", sync);
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseover", over);
     };
