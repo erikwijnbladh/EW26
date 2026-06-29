@@ -60,7 +60,6 @@ export default function Home() {
           {work.map((item) => (
             <RevealItem key={item.org}>
               <div
-                data-cursor
                 className="group flex flex-col gap-1 border-t border-line py-5 transition-colors sm:flex-row sm:items-baseline sm:gap-6"
               >
                 <span className="font-mono text-xs text-muted sm:w-28 sm:shrink-0">
