@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
 import Link from "next/link";
 import { DitherDot } from "@/components/dither-dot";
 import { useIndicator } from "@/components/indicator-context";
@@ -13,79 +12,24 @@ const SWOOP_MS = 220; // swoop duration (kept in sync with the transition below)
 // lines the bullet up with the first line of the title.
 const TITLE_OFFSET = 18;
 
-// Document-relative top of an element (immune to iOS overscroll, unlike
-// getBoundingClientRect which moves while the page rubber-bands).
-function docTop(el: HTMLElement) {
-  return el.getBoundingClientRect().top + window.scrollY;
-}
-
-// Current scroll position clamped to the real scrollable range, so iOS
-// overscroll (scrollY < 0 or past the bottom) is ignored.
-function clampedScrollY() {
-  const max = document.documentElement.scrollHeight - window.innerHeight;
-  return Math.min(Math.max(window.scrollY, 0), Math.max(max, 0));
-}
-
 export function HomeList({ items }: { items: HomeListItem[] }) {
   const { traveling, setTraveling } = useIndicator();
   const [hovered, setHovered] = useState<string | null>(null);
-  const [center, setCenter] = useState(0); // preview panel (page-relative)
-  const [left, setLeft] = useState(0); // indicator x (viewport)
-  const [top, setTop] = useState(0); // indicator y (viewport)
-  const [ready, setReady] = useState(false);
+  const [center, setCenter] = useState(0); // preview panel (container-relative)
+  const [top, setTop] = useState(TITLE_OFFSET); // indicator y (container-relative)
   const [armed, setArmed] = useState(false);
-  const [tracking, setTracking] = useState(false); // disable top-anim while glued to a scrolling row
 
-  const listRef = useRef<HTMLUListElement>(null);
-  const originRef = useRef(0);
-  const activeElRef = useRef<HTMLElement | null>(null); // hovered row, for scroll tracking
   const returnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const active = hovered ? items.find((item) => item.id === hovered) : null;
 
-  // Keep the indicator glued to its target through scroll/resize. Positions
-  // are derived from document-relative offsets minus a *clamped* scroll, so
-  // the bullet stays level with the title and never drifts during iOS
-  // rubber-band overscroll. When nothing is hovered it parks at the nav dot.
+  // Arm the swoop transition after the first paint so the bullet doesn't
+  // animate in from 0 on mount.
   useEffect(() => {
-    function measure() {
-      const anchor = document.getElementById("nav-indicator");
-      const list = listRef.current;
-      const scroll = clampedScrollY();
-      if (anchor) {
-        const r = anchor.getBoundingClientRect();
-        // Nav is fixed, so its viewport top is constant; keep it as-is.
-        originRef.current = r.top + r.height / 2 - 6;
-      }
-      if (list) setLeft(list.getBoundingClientRect().left);
-      const el = activeElRef.current;
-      if (hovered && el) {
-        setTop(docTop(el) + TITLE_OFFSET - scroll); // level with the title line
-      } else {
-        setTop(originRef.current);
-      }
-      setReady(true);
-    }
-    function onScroll() {
-      setTracking(true); // jump (no anim) so the bullet stays glued to the row
-      measure();
-    }
-    measure();
-    window.addEventListener("resize", measure);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => {
-      window.removeEventListener("resize", measure);
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [hovered]);
-
-  // Arm the swoop transition after the first positioned frame.
-  useEffect(() => {
-    if (!ready) return;
     const id = requestAnimationFrame(() => setArmed(true));
     return () => cancelAnimationFrame(id);
-  }, [ready]);
+  }, []);
 
   useEffect(
     () => () => {
@@ -98,32 +42,30 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
   function hover(el: HTMLElement, id: string) {
     if (returnTimer.current) clearTimeout(returnTimer.current);
     if (settleTimer.current) clearTimeout(settleTimer.current);
-    activeElRef.current = el;
-    setTracking(false); // animate the swoop into the row
     setTraveling(true);
     setHovered(id);
-    // Preview panel centers on the title line, matching the bullet.
+    // offsetTop is relative to the (positioned) list container, so it lives in
+    // the same scroll space as the rows — it never shifts during scroll or
+    // iOS rubber-band overscroll.
     setCenter(el.offsetTop + TITLE_OFFSET);
-    setTop(docTop(el) + TITLE_OFFSET - clampedScrollY()); // level with the title line
+    setTop(el.offsetTop + TITLE_OFFSET);
   }
 
-  // Swoop straight back to the name origin, no delay (used when the cursor
-  // lands on the nav name).
+  // Swoop straight back to the resting position, no delay (used when the
+  // cursor lands on the nav name).
   function returnToOrigin() {
     if (returnTimer.current) clearTimeout(returnTimer.current);
     if (settleTimer.current) clearTimeout(settleTimer.current);
-    activeElRef.current = null;
-    setTracking(false); // animate the swoop home
     setHovered(null);
+    setTop(TITLE_OFFSET);
     settleTimer.current = setTimeout(() => setTraveling(false), SWOOP_MS);
   }
 
   function release() {
     if (returnTimer.current) clearTimeout(returnTimer.current);
     returnTimer.current = setTimeout(() => {
-      activeElRef.current = null;
-      setTracking(false); // animate the swoop home
-      setHovered(null); // measure effect swoops it back to the origin
+      setHovered(null);
+      setTop(TITLE_OFFSET); // swoop back to the top of the list
       settleTimer.current = setTimeout(() => setTraveling(false), SWOOP_MS);
     }, RETURN_DELAY);
   }
@@ -147,8 +89,25 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
 
   return (
     <div className="relative">
+      {/* Floating indicator that swoops to the active row and back. It lives
+          inside this (positioned) container, so it scrolls in lockstep with
+          the rows and stays glued during iOS rubber-band overscroll. It
+          crossfades with the resting indicator in the nav. */}
+      <div
+        aria-hidden
+        className={`pointer-events-none absolute left-0 z-10 h-3 w-3 ${
+          traveling ? "opacity-100" : "opacity-0"
+        } ${
+          armed
+            ? "[transition:top_220ms_ease-out,opacity_200ms]"
+            : "[transition:opacity_200ms]"
+        }`}
+        style={{ top }}
+      >
+        <DitherDot />
+      </div>
+
       <ul
-        ref={listRef}
         className="flex flex-col sm:w-1/2"
         onPointerLeave={(e) => {
           if (e.pointerType === "mouse") release();
@@ -208,27 +167,6 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
           );
         })}
       </ul>
-
-      {/* Floating indicator that travels from the name to the active row and
-          back. Portaled to <body> so `fixed` resolves against the viewport,
-          not the transformed page-transition wrapper. It crossfades with the
-          resting indicator in the nav, which handles the parked state. */}
-      {ready &&
-        createPortal(
-          <div
-            className={`pointer-events-none fixed z-50 h-3 w-3 transition-opacity duration-200 ${
-              traveling ? "opacity-100" : "opacity-0"
-            } ${
-              armed && !tracking
-                ? "[transition:top_220ms_ease-out,opacity_200ms]"
-                : "[transition:opacity_200ms]"
-            }`}
-            style={{ top, left }}
-          >
-            <DitherDot />
-          </div>,
-          document.body,
-        )}
 
       <div
         className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out sm:block ${
