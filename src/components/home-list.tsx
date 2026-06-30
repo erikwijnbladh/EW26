@@ -16,19 +16,35 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
   const { traveling, setTraveling } = useIndicator();
   const [hovered, setHovered] = useState<string | null>(null);
   const [center, setCenter] = useState(0); // preview panel (container-relative)
-  const [top, setTop] = useState(TITLE_OFFSET); // indicator y (container-relative)
+  const [top, setTop] = useState(0); // indicator y (container-relative)
   const [armed, setArmed] = useState(false);
 
+  const containerRef = useRef<HTMLDivElement>(null);
   const returnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const active = hovered ? items.find((item) => item.id === hovered) : null;
 
-  // Arm the swoop transition after the first paint so the bullet doesn't
-  // animate in from 0 on mount.
+  // The nav "home" dot, in this container's coordinate space. The nav is fixed
+  // so its viewport position is constant; subtracting the container's current
+  // viewport top gives the swoop origin. Read fresh each swoop so it's correct
+  // at any scroll offset.
+  function originTop() {
+    const navDot = document.getElementById("nav-indicator");
+    const container = containerRef.current;
+    if (!navDot || !container) return TITLE_OFFSET;
+    const n = navDot.getBoundingClientRect();
+    const c = container.getBoundingClientRect();
+    return n.top + n.height / 2 - c.top - 6; // 6 = half the 12px bullet
+  }
+
+  // Park the bullet at the nav origin before the first paint so the opening
+  // swoop starts from the name, not from the top of the list.
   useEffect(() => {
+    setTop(originTop());
     const id = requestAnimationFrame(() => setArmed(true));
     return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(
@@ -57,7 +73,7 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
     if (returnTimer.current) clearTimeout(returnTimer.current);
     if (settleTimer.current) clearTimeout(settleTimer.current);
     setHovered(null);
-    setTop(TITLE_OFFSET);
+    setTop(originTop()); // swoop back up to the name
     settleTimer.current = setTimeout(() => setTraveling(false), SWOOP_MS);
   }
 
@@ -65,7 +81,7 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
     if (returnTimer.current) clearTimeout(returnTimer.current);
     returnTimer.current = setTimeout(() => {
       setHovered(null);
-      setTop(TITLE_OFFSET); // swoop back to the top of the list
+      setTop(originTop()); // swoop back up to the name
       settleTimer.current = setTimeout(() => setTraveling(false), SWOOP_MS);
     }, RETURN_DELAY);
   }
@@ -88,7 +104,7 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
   }, []);
 
   return (
-    <div className="relative">
+    <div ref={containerRef} className="relative">
       {/* Floating indicator that swoops to the active row and back. It lives
           inside this (positioned) container, so it scrolls in lockstep with
           the rows and stays glued during iOS rubber-band overscroll. It
