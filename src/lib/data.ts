@@ -60,9 +60,9 @@ export type Experience = { year: string; org: string; role: string };
 
 /** Curated experience for the About page — start year, company, role. */
 export const experience: Experience[] = [
-  { year: "2020", org: "selfcheck", role: "frontend" },
-  { year: "2022", org: "brightbid", role: "frontend" },
   { year: "2026", org: "compileit", role: "fullstack" },
+  { year: "2022", org: "brightbid", role: "frontend" },
+  { year: "2020", org: "selfcheck", role: "frontend" },
 ];
 
 /** An entry in the home page list. `href` absent = not clickable (e.g. work). */
