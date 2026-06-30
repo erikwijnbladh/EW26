@@ -34,11 +34,11 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full shadow-ring sm:h-14 sm:w-14">
               <Image
-                src="/images/pfp.webp"
+                src="/images/pfp.png"
                 alt={profile.name}
                 fill
                 sizes="56px"
-                className="object-cover object-top"
+                className="object-cover object-top grayscale"
                 priority
               />
             </div>

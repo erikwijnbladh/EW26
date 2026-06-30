@@ -14,7 +14,7 @@ export default function About() {
     <div className="mx-auto w-full max-w-3xl px-5 pb-24 sm:px-8 sm:pb-32">
       <section className="flex flex-col items-start gap-8 pb-16 pt-4 sm:flex-row sm:items-center sm:gap-10 sm:pb-24">
         <Reveal>
-          <TiltPhoto src="/images/pfp.webp" alt={profile.name} />
+          <TiltPhoto src="/images/pfp.png" alt={profile.name} />
         </Reveal>
         <Reveal delay={0.05} className="flex-1">
           <h1 className="text-3xl lowercase tracking-tight sm:text-4xl">

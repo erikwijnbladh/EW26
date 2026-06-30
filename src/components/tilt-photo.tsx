@@ -40,7 +40,7 @@ export function TiltPhoto({ src, alt }: { src: string; alt: string }) {
           fill
           sizes="288px"
           quality={90}
-          className="object-cover"
+          className="object-cover object-top grayscale"
           priority
         />
       </div>
