@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { ScrollReset } from "@/components/scroll-reset";
+import { IndicatorProvider } from "@/components/indicator-context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -47,8 +48,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         <ScrollReset />
         <div className="grain" aria-hidden />
-        <Nav />
-        <main className="flex-1 pt-24 sm:pt-28">{children}</main>
+        <IndicatorProvider>
+          <Nav />
+          <main className="flex-1 pt-24 sm:pt-28">{children}</main>
+        </IndicatorProvider>
         <Footer />
       </body>
     </html>

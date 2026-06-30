@@ -3,12 +3,15 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { Dithering } from "@paper-design/shaders-react";
+import { DitherDot } from "@/components/dither-dot";
+import { useIndicator } from "@/components/indicator-context";
 import type { HomeListItem } from "@/lib/data";
 
-const RETURN_DELAY = 3000;
+const RETURN_DELAY = 3000; // wait after release before swooping back up
+const SWOOP_MS = 700; // matches the transition duration below
 
 export function HomeList({ items }: { items: HomeListItem[] }) {
+  const { traveling, setTraveling } = useIndicator();
   const [hovered, setHovered] = useState<string | null>(null);
   const [center, setCenter] = useState(0); // preview panel (page-relative)
   const [left, setLeft] = useState(0); // indicator x (viewport)
@@ -18,20 +21,17 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
 
   const listRef = useRef<HTMLUListElement>(null);
   const originRef = useRef(0);
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const returnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const active = hovered ? items.find((item) => item.id === hovered) : null;
 
-  // Measure the origin (nav name) and left edge. When idle, park the
-  // indicator at the origin so it appears to live beside the name.
+  // Measure the origin (the resting nav indicator) and the left edge.
   useEffect(() => {
     function measure() {
-      const name = document.getElementById("nav-name");
+      const anchor = document.getElementById("nav-indicator");
       const list = listRef.current;
-      if (name) {
-        const r = name.getBoundingClientRect();
-        originRef.current = r.top + r.height / 2 - 6;
-      }
+      if (anchor) originRef.current = anchor.getBoundingClientRect().top;
       if (list) setLeft(list.getBoundingClientRect().left);
       if (!hovered) setTop(originRef.current);
       setReady(true);
@@ -41,8 +41,7 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
     return () => window.removeEventListener("resize", measure);
   }, [hovered]);
 
-  // Enable the swoop transition only after the first positioned frame, so
-  // the indicator appears at the origin instantly instead of animating in.
+  // Arm the swoop transition after the first positioned frame.
   useEffect(() => {
     if (!ready) return;
     const id = requestAnimationFrame(() => setArmed(true));
@@ -51,26 +50,28 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
 
   useEffect(
     () => () => {
-      if (timer.current) clearTimeout(timer.current);
+      if (returnTimer.current) clearTimeout(returnTimer.current);
+      if (settleTimer.current) clearTimeout(settleTimer.current);
     },
     [],
   );
 
   function hover(el: HTMLElement, id: string) {
-    if (timer.current) {
-      clearTimeout(timer.current);
-      timer.current = null;
-    }
+    if (returnTimer.current) clearTimeout(returnTimer.current);
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    setTraveling(true);
     setHovered(id);
     setCenter(el.offsetTop + el.offsetHeight / 2);
     // Bullet sits at the row top + py-3 (12px) + mt-1.5 (6px).
     setTop(el.getBoundingClientRect().top + 18);
   }
 
-  // After leaving, wait before letting the indicator swoop back up.
   function release() {
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => setHovered(null), RETURN_DELAY);
+    if (returnTimer.current) clearTimeout(returnTimer.current);
+    returnTimer.current = setTimeout(() => {
+      setHovered(null); // measure effect swoops it back to the origin
+      settleTimer.current = setTimeout(() => setTraveling(false), SWOOP_MS);
+    }, RETURN_DELAY);
   }
 
   return (
@@ -132,27 +133,19 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
         })}
       </ul>
 
-      {/* Single shader indicator that travels from the name down to the
-          active row and back. Portaled to <body> so `fixed` resolves
-          against the viewport, not the transformed page-transition wrapper. */}
+      {/* Floating indicator that travels from the name to the active row and
+          back. Portaled to <body> so `fixed` resolves against the viewport,
+          not the transformed page-transition wrapper. It crossfades with the
+          resting indicator in the nav, which handles the parked state. */}
       {ready &&
         createPortal(
           <div
-            className={`pointer-events-none fixed z-50 h-3 w-3 ${
-              armed ? "transition-[top] duration-700 ease-in-out" : ""
-            }`}
+            className={`pointer-events-none fixed z-50 h-3 w-3 transition-opacity duration-200 ${
+              traveling ? "opacity-100" : "opacity-0"
+            } ${armed ? "[transition:top_700ms_ease-in-out,opacity_200ms]" : ""}`}
             style={{ top, left }}
           >
-            <Dithering
-              speed={2}
-              shape="sphere"
-              type="4x4"
-              size={0.1}
-              scale={1}
-              colorBack="#00000000"
-              colorFront="#15140f"
-              className="h-full w-full rounded-full"
-            />
+            <DitherDot />
           </div>,
           document.body,
         )}
