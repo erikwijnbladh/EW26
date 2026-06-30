@@ -8,11 +8,14 @@ import type { HomeListItem } from "@/lib/data";
 export function HomeList({ items }: { items: HomeListItem[] }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const [center, setCenter] = useState(0);
+  const [bulletTop, setBulletTop] = useState(0);
   const active = hovered ? items.find((item) => item.id === hovered) : null;
 
   function track(el: HTMLElement, id: string) {
     setHovered(id);
     setCenter(el.offsetTop + el.offsetHeight / 2);
+    // Bullet sits at row top + py-3 (12px) + mt-1.5 (6px).
+    setBulletTop(el.offsetTop + 18);
   }
 
   return (
@@ -24,25 +27,8 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
         {items.map((item) => {
           const inner = (
             <>
-              <span className="mt-1.5 h-3 w-3 shrink-0">
-                {hovered === item.id && (
-                  <GrainGradient
-                    speed={2}
-                    scale={2}
-                    rotation={0}
-                    offsetX={0}
-                    offsetY={0}
-                    softness={0}
-                    intensity={0.15}
-                    noise={0}
-                    shape="blob"
-                    frame={11386}
-                    colors={["#3E6172", "#A49B74", "#568C50"]}
-                    colorBack="#00000000"
-                    className="h-full w-full rounded-full"
-                  />
-                )}
-              </span>
+              {/* Spacer reserving room for the floating shader bullet. */}
+              <span className="mt-1.5 h-2.5 w-2.5 shrink-0" />
               <span>
                 <span className="block text-base text-foreground">
                   {item.title}
@@ -83,6 +69,31 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
           );
         })}
       </ul>
+
+      {/* One persistent shader that slides to the active row so it never
+          restarts when moving between items. */}
+      <div
+        className={`pointer-events-none absolute left-0 h-2.5 w-2.5 transition-[top,opacity] duration-300 ease-out ${
+          active ? "opacity-100" : "opacity-0"
+        }`}
+        style={{ top: bulletTop }}
+      >
+        <GrainGradient
+          speed={2}
+          scale={2}
+          rotation={0}
+          offsetX={0}
+          offsetY={0}
+          softness={0}
+          intensity={0.15}
+          noise={0}
+          shape="blob"
+          frame={11386}
+          colors={["#15140f", "#4a4943", "#847f6e"]}
+          colorBack="#00000000"
+          className="h-full w-full rounded-full"
+        />
+      </div>
 
       <div
         className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out sm:block ${
