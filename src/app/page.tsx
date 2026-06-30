@@ -14,7 +14,19 @@ export default function Home() {
     external: Boolean(post.link),
   }));
 
-  const homeItems: HomeListItem[] = [currentRoleItem, ...postItems];
+  const aboutItem: HomeListItem = {
+    id: "about",
+    title: "about",
+    subtitle: "experience, background & contact",
+    preview: "linear-gradient(160deg, #2b2a27 0%, #6b6a64 55%, #d8d6d1 100%)",
+    href: "/about",
+  };
+
+  const homeItems: HomeListItem[] = [
+    currentRoleItem,
+    ...postItems,
+    aboutItem,
+  ];
 
   return (
     <div className="mx-auto w-full max-w-3xl px-5 sm:px-8">

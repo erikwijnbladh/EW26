@@ -1,28 +1,76 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { Dithering } from "@paper-design/shaders-react";
 import type { HomeListItem } from "@/lib/data";
 
+const RETURN_DELAY = 3000;
+
 export function HomeList({ items }: { items: HomeListItem[] }) {
   const [hovered, setHovered] = useState<string | null>(null);
-  const [center, setCenter] = useState(0);
-  const [bulletTop, setBulletTop] = useState(0);
+  const [center, setCenter] = useState(0); // preview panel (page-relative)
+  const [left, setLeft] = useState(0); // indicator x (viewport)
+  const [top, setTop] = useState(0); // indicator y (viewport)
+  const [ready, setReady] = useState(false);
+
+  const listRef = useRef<HTMLUListElement>(null);
+  const originRef = useRef(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const active = hovered ? items.find((item) => item.id === hovered) : null;
 
-  function track(el: HTMLElement, id: string) {
+  // Measure the origin (nav name) and left edge. When idle, park the
+  // indicator at the origin so it appears to live beside the name.
+  useEffect(() => {
+    function measure() {
+      const name = document.getElementById("nav-name");
+      const list = listRef.current;
+      if (name) {
+        const r = name.getBoundingClientRect();
+        originRef.current = r.top + r.height / 2 - 6;
+      }
+      if (list) setLeft(list.getBoundingClientRect().left);
+      if (!hovered) setTop(originRef.current);
+      setReady(true);
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [hovered]);
+
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+
+  function hover(el: HTMLElement, id: string) {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
     setHovered(id);
     setCenter(el.offsetTop + el.offsetHeight / 2);
-    // Bullet sits at row top + py-3 (12px) + mt-1.5 (6px).
-    setBulletTop(el.offsetTop + 18);
+    // Bullet sits at the row top + py-3 (12px) + mt-1.5 (6px).
+    setTop(el.getBoundingClientRect().top + 18);
+  }
+
+  // After leaving, wait before letting the indicator swoop back up.
+  function release() {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => setHovered(null), RETURN_DELAY);
   }
 
   return (
     <div className="relative">
       <ul
+        ref={listRef}
         className="flex flex-col sm:w-1/2"
-        onMouseLeave={() => setHovered(null)}
+        onPointerLeave={(e) => {
+          if (e.pointerType === "mouse") release();
+        }}
       >
         {items.map((item) => {
           const inner = (
@@ -51,10 +99,10 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
                     ? { target: "_blank", rel: "noreferrer" }
                     : {})}
                   onPointerEnter={(e) => {
-                    if (e.pointerType === "mouse") track(e.currentTarget, item.id);
+                    if (e.pointerType === "mouse") hover(e.currentTarget, item.id);
                   }}
-                  onFocus={(e) => track(e.currentTarget, item.id)}
-                  onBlur={() => setHovered(null)}
+                  onFocus={(e) => hover(e.currentTarget, item.id)}
+                  onBlur={release}
                   className={cls}
                 >
                   {inner}
@@ -62,7 +110,7 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
               ) : (
                 <div
                   onPointerEnter={(e) => {
-                    if (e.pointerType === "mouse") track(e.currentTarget, item.id);
+                    if (e.pointerType === "mouse") hover(e.currentTarget, item.id);
                   }}
                   className={cls}
                 >
@@ -74,25 +122,25 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
         })}
       </ul>
 
-      {/* One persistent shader that slides to the active row so it never
-          restarts when moving between items. */}
-      <div
-        className={`pointer-events-none absolute left-0 h-3 w-3 transition-[top,opacity] duration-300 ease-out ${
-          active ? "opacity-100" : "opacity-0"
-        }`}
-        style={{ top: bulletTop }}
-      >
-        <Dithering
-          speed={2}
-          shape="sphere"
-          type="4x4"
-          size={0.1}
-          scale={1}
-          colorBack="#00000000"
-          colorFront="#15140f"
-          className="h-full w-full rounded-full"
-        />
-      </div>
+      {/* Single shader indicator that travels from the name down to the
+          active row and back. */}
+      {ready && (
+        <div
+          className="pointer-events-none fixed z-50 h-3 w-3 transition-[top] duration-700 ease-in-out"
+          style={{ top, left }}
+        >
+          <Dithering
+            speed={2}
+            shape="sphere"
+            type="4x4"
+            size={0.1}
+            scale={1}
+            colorBack="#00000000"
+            colorFront="#15140f"
+            className="h-full w-full rounded-full"
+          />
+        </div>
+      )}
 
       <div
         className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out sm:block ${
