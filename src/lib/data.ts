@@ -38,19 +38,19 @@ export const experience: Experience[] = [
     year: "2026",
     org: "compileit",
     role: "fullstack engineer",
-    href: "https://compileit.io",
+    href: "https://compileit.com/",
   },
   {
     year: "2022",
     org: "brightbid",
     role: "frontend engineer",
-    href: "https://brightbid.com",
+    href: "https://brightbid.com/",
   },
   {
     year: "2020",
     org: "selfcheck",
     role: "frontend engineer",
-    href: "https://selfcheck.io",
+    href: "https://selfcheck.se/",
   },
 ];
 
@@ -69,7 +69,7 @@ export const education: Education[] = [
     org: "uppsala university",
     degree: "msc human-computer interaction",
     note: "highest grade",
-    href: "https://www.uu.se",
+    href: "https://www.uu.se/en/study/programme/masters-programme-human-computer-interaction",
   },
 ];
 
