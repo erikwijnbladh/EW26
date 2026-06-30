@@ -25,7 +25,7 @@ export default function About() {
         </Reveal>
       </section>
 
-      <section className="flex flex-col gap-5 border-t border-line pt-10">
+      <section className="flex flex-col gap-5 pt-10">
         {profile.bio.map((paragraph, i) => (
           <Reveal key={i} delay={i * 0.05}>
             <p className="max-w-xl text-base leading-relaxed text-muted">
@@ -35,7 +35,7 @@ export default function About() {
         ))}
       </section>
 
-      <section className="mt-12 border-t border-line pt-10">
+      <section className="mt-12 pt-10">
         <RevealGroup className="flex flex-col gap-2">
           {contacts.map((item) => (
             <RevealItem key={item.href}>
