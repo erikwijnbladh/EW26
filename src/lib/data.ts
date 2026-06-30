@@ -1,17 +1,16 @@
 export const profile = {
   name: "Erik Wijnbladh",
-  role: "Software Engineer",
+  role: "Frontend Engineer & Interaction Designer",
   location: "Stockholm, Sweden",
   email: "wijnbladherik@gmail.com",
-  tagline: "I build clean, considered software — interfaces first, systems underneath.",
+  tagline: "I build interfaces and the systems behind them — design and frontend, treated as one craft.",
   bio: [
-    "I'm a software engineer who cares more about how things feel than how they're built — though I obsess over both. Most of my work lives at the intersection of product, design, and infrastructure.",
-    "Outside of client work I build small tools, write about the craft of software, and try to keep things simple in a field that rewards complexity.",
+    "I'm a frontend engineer with a design eye, currently doing a master's in Human-Computer Interaction at Uppsala University. My work sits between interaction design, prototyping, and shipped product — most recently four years owning frontend delivery for an AI-driven SaaS platform at BrightBid.",
+    "I care about the same problem from both sides: what a product should feel like, and what it actually takes to build that. Outside of client work I build small tools and prototypes that explore that overlap, from AI-assisted interfaces to component-level dev tooling.",
   ],
   social: [
-    { label: "GitHub", href: "https://github.com" },
-    { label: "X", href: "https://x.com" },
-    { label: "LinkedIn", href: "https://linkedin.com" },
+    { label: "GitHub", href: "https://github.com/erikwijnbladh" },
+    { label: "LinkedIn", href: "https://linkedin.com/in/erikwijnbladh" },
   ],
 };
 
@@ -24,28 +23,34 @@ export type WorkItem = {
 
 export const work: WorkItem[] = [
   {
-    period: "2024 — Now",
-    role: "Senior Software Engineer",
-    org: "Independent",
-    description: "Designing and building product for early-stage teams — full stack, from systems design to the last pixel.",
+    period: "Sep 2025 — Now",
+    role: "MSc Human-Computer Interaction",
+    org: "Uppsala University",
+    description: "Studying interaction design, service design, ethics in IT and AI, and user-centered design. Design projects with Biotopia and Uppsala Kvinnojour.",
   },
   {
-    period: "2022 — 2024",
-    role: "Software Engineer",
-    org: "Northwind Labs",
-    description: "Owned the core web platform end to end. Shipped the design system still in use across the product today.",
+    period: "Jan 2025 — May 2025",
+    role: "Product Owner",
+    org: "Edblad & Co",
+    description: "Coordinated website development priorities between internal stakeholders and an external web agency, and handled QA and incident reporting for the platform.",
   },
   {
-    period: "2020 — 2022",
-    role: "Frontend Engineer",
-    org: "Studio Halvfjords",
-    description: "Built marketing and product surfaces for clients across fintech and media. First hire on the engineering team.",
+    period: "Feb 2022 — Jan 2025",
+    role: "Frontend Developer",
+    org: "BrightBid (formerly Speqta)",
+    description: "Owned frontend delivery for an AI-driven SaaS platform — UI architecture, design collaboration, and daily releases in Vue, Tailwind, and Node.js. Led the frontend build of BrightBid Audit and mentored the team as it grew to three engineers.",
   },
   {
-    period: "2019 — 2020",
-    role: "Junior Developer",
-    org: "Kiosk AB",
-    description: "Started out building internal tools and learned to ship fast without breaking things.",
+    period: "Jul 2021 — Feb 2022",
+    role: "Frontend Developer & Project Manager",
+    org: "Selfcheck",
+    description: "Built a mobile-first, QR-code-based interface for industrial safety workflows in Vue and Tailwind, and led customer workshops to shape onboarding and deployment.",
+  },
+  {
+    period: "Jul 2020 — Jul 2021",
+    role: "KTP Project Lead — Frontend",
+    org: "Högskolan Dalarna / Selfcheck",
+    description: "Joined through a structured academia-industry programme to build a customer-facing dashboard and onboarding process for enterprise deployments, ahead of the product's market launch.",
   },
 ];
 
@@ -60,36 +65,20 @@ export type Project = {
 
 export const projects: Project[] = [
   {
-    slug: "monolith",
-    title: "Monolith",
-    year: "2025",
-    tags: ["Next.js", "Postgres"],
-    description: "A writing tool for people who think better in outlines than in pages.",
-    href: "https://github.com",
+    slug: "pane",
+    title: "Pane",
+    year: "2026",
+    tags: ["React", "Vite", "CodeMirror"],
+    description: "An infinite canvas for developing React components visually, while keeping each component a real .tsx file — spatial organization, live previews, and local-first editing.",
+    href: "https://github.com/erikwijnbladh",
   },
   {
-    slug: "fieldnotes",
-    title: "Fieldnotes",
-    year: "2024",
-    tags: ["React Native", "SQLite"],
-    description: "Offline-first journaling app built for long stretches without signal.",
-    href: "https://github.com",
-  },
-  {
-    slug: "lowtide",
-    title: "Lowtide",
-    year: "2024",
-    tags: ["TypeScript", "WebGL"],
-    description: "A small rendering experiment turned into a generative art toy.",
-    href: "https://github.com",
-  },
-  {
-    slug: "atlas",
-    title: "Atlas",
-    year: "2023",
-    tags: ["Go", "Redis"],
-    description: "Internal tool for tracking infrastructure costs across a growing fleet of services.",
-    href: "https://github.com",
+    slug: "dnd-campaign-generator",
+    title: "D&D Campaign Generator",
+    year: "2026",
+    tags: ["React", "TypeScript", "Multi-agent AI"],
+    description: "A multi-agent workflow for generating complete tabletop campaigns from a single prompt, with an interface for directing, reviewing, and controlling generated content.",
+    href: "https://github.com/erikwijnbladh",
   },
 ];
 
