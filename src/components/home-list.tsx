@@ -106,7 +106,7 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
           return (
             <li
               key={item.id}
-              className={item.separated ? "mt-8 border-t border-line pt-2" : ""}
+              className={item.separated ? "mt-10" : ""}
             >
               {item.href ? (
                 <Link
