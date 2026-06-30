@@ -4,7 +4,15 @@ import Image from "next/image";
 import { useRef } from "react";
 import { motion, useMotionValue, useSpring, useTransform } from "motion/react";
 
-export function TiltPhoto({ src, alt }: { src: string; alt: string }) {
+export function TiltPhoto({
+  src,
+  alt,
+  className = "w-52 sm:w-72",
+}: {
+  src: string;
+  alt: string;
+  className?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const x = useMotionValue(0.5);
   const y = useMotionValue(0.5);
@@ -31,14 +39,14 @@ export function TiltPhoto({ src, alt }: { src: string; alt: string }) {
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
       style={{ rotateX, rotateY }}
-      className="relative aspect-[7/6] w-52 shrink-0 [perspective:600px] sm:w-72"
+      className={`relative aspect-[7/6] shrink-0 [perspective:600px] ${className}`}
     >
       <div className="relative h-full w-full overflow-hidden rounded-2xl shadow-ring">
         <Image
           src={src}
           alt={alt}
           fill
-          sizes="288px"
+          sizes="(max-width: 640px) 90vw, 576px"
           quality={90}
           className="object-cover object-top grayscale"
           priority

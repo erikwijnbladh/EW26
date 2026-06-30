@@ -12,21 +12,17 @@ export const metadata: Metadata = {
 export default function About() {
   return (
     <div className="mx-auto w-full max-w-3xl px-5 pb-24 sm:px-8 sm:pb-32">
-      <section className="flex flex-col items-start gap-8 pb-16 pt-4 sm:flex-row sm:items-center sm:gap-10 sm:pb-24">
+      <section className="pb-12 pt-4 pl-5">
         <Reveal>
-          <TiltPhoto src="/images/pfp.png" alt={profile.name} />
-        </Reveal>
-        <Reveal delay={0.05} className="flex-1">
-          <h1 className="text-3xl lowercase tracking-tight sm:text-4xl">
-            {profile.name}
-          </h1>
-          <p className="mt-2 font-serif text-xl italic lowercase text-muted">
-            {profile.role}, {profile.location}
-          </p>
+          <TiltPhoto
+            src="/images/pfp.png"
+            alt={profile.name}
+            className="w-full max-w-xl"
+          />
         </Reveal>
       </section>
 
-      <section className="flex flex-col gap-5 pt-10 pl-5">
+      <section className="flex flex-col gap-5 pl-5">
         {profile.bio.map((paragraph, i) => (
           <Reveal key={i} delay={i * 0.05}>
             <p className="max-w-xl text-base leading-relaxed text-muted">

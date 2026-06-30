@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import { useSwoop, DotSpacer } from "@/components/use-swoop";
 import type { HomeListItem } from "@/lib/data";
@@ -7,10 +8,15 @@ import type { HomeListItem } from "@/lib/data";
 export function HomeList({ items }: { items: HomeListItem[] }) {
   const { containerRef, dot, rowProps, release, hovered, top } = useSwoop();
 
-  // The dot's `top` already tracks the hovered row (offsetTop + title offset),
-  // so the preview panel can reuse it for vertical alignment.
   const active = hovered ? items.find((item) => item.id === hovered) : null;
-  const center = top;
+
+  // The preview panel parks at the last hovered row and only fades out — it
+  // must NOT follow the blob back up to its origin (which would make the
+  // fading rectangle swoop away with the dot). So we freeze its position
+  // whenever nothing is hovered.
+  const panelTop = useRef(0);
+  if (active) panelTop.current = top;
+  const center = panelTop.current;
 
   return (
     <div ref={containerRef} className="relative">

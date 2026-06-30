@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { profile, currentRoleItem, type HomeListItem } from "@/lib/data";
 import { getAllPosts } from "@/lib/content";
 import { Reveal } from "@/components/reveal";
@@ -29,23 +28,11 @@ export default function Home() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-5 sm:px-8">
-      <section className="flex flex-col gap-6 pb-16 pt-4 sm:pb-24">
+      <section className="flex flex-col gap-6 pb-16 pt-4 pl-5 sm:pb-24">
         <Reveal>
-          <div className="flex items-center gap-4">
-            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full shadow-ring sm:h-14 sm:w-14">
-              <Image
-                src="/images/pfp.png"
-                alt={profile.name}
-                fill
-                sizes="56px"
-                className="object-cover object-top grayscale"
-                priority
-              />
-            </div>
-            <p className="text-sm lowercase text-muted">
-              {profile.role} · {profile.location}
-            </p>
-          </div>
+          <p className="text-sm lowercase text-muted">
+            {profile.role} · {profile.location}
+          </p>
         </Reveal>
         <Reveal delay={0.05}>
           <h1 className="max-w-xl text-3xl leading-[1.15] tracking-tight sm:text-4xl">
