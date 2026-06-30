@@ -52,13 +52,13 @@ export default async function Post({
     <article className="mx-auto w-full max-w-3xl px-5 pb-24 sm:px-8 sm:pb-32">
       <Reveal>
         <Link
-          href="/writing"
+          href="/"
           className="group inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-foreground"
         >
           <span className="transition-transform duration-300 group-hover:-translate-x-1">
             ←
           </span>
-          Writing
+          Back
         </Link>
       </Reveal>
 
@@ -85,7 +85,7 @@ export default async function Post({
       {next && next.slug !== slug && (
         <Reveal delay={0.1}>
           <Link
-            href={`/writing/${next.slug}`}
+            href={`/${next.slug}`}
             className="group mt-16 flex items-center justify-between border-t border-line pt-6"
           >
             <div>

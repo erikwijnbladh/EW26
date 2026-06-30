@@ -10,7 +10,7 @@ export default function Home() {
     title: post.title.toLowerCase(),
     subtitle: post.subtitle.toLowerCase(),
     preview: post.preview,
-    href: post.link ?? `/writing/${post.slug}`,
+    href: post.link ?? `/${post.slug}`,
     external: Boolean(post.link),
   }));
 
