@@ -1,9 +1,21 @@
 import Image from "next/image";
-import { profile, homeItems } from "@/lib/data";
+import { profile, currentRoleItem, type HomeListItem } from "@/lib/data";
+import { getAllPosts } from "@/lib/content";
 import { Reveal } from "@/components/reveal";
 import { HomeList } from "@/components/home-list";
 
 export default function Home() {
+  const postItems: HomeListItem[] = getAllPosts().map((post) => ({
+    id: post.slug,
+    title: post.title.toLowerCase(),
+    subtitle: post.subtitle.toLowerCase(),
+    preview: post.preview,
+    href: post.link ?? `/writing/${post.slug}`,
+    external: Boolean(post.link),
+  }));
+
+  const homeItems: HomeListItem[] = [currentRoleItem, ...postItems];
+
   return (
     <div className="mx-auto w-full max-w-3xl px-5 sm:px-8">
       <section className="flex flex-col gap-6 pb-16 pt-4 sm:pb-24">

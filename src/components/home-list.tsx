@@ -21,32 +21,49 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
         onMouseLeave={() => setHovered(null)}
       >
         {items.map((item) => {
-          const linkProps = item.external
-            ? { href: item.href, target: "_blank", rel: "noreferrer" }
-            : { href: item.href };
+          const inner = (
+            <>
+              <span
+                className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
+                  hovered === item.id ? "bg-blue-500" : "bg-transparent"
+                }`}
+              />
+              <span>
+                <span className="block text-base text-foreground">
+                  {item.title}
+                </span>
+                <span className="block text-sm text-muted">
+                  {item.subtitle}
+                </span>
+              </span>
+            </>
+          );
+
+          const cls = "flex items-start gap-2 py-3";
+
           return (
             <li key={item.id}>
-              <Link
-                {...linkProps}
-                onMouseEnter={(e) => track(e.currentTarget, item.id)}
-                onFocus={(e) => track(e.currentTarget, item.id)}
-                onBlur={() => setHovered(null)}
-                className="flex items-start gap-2 py-3"
-              >
-                <span
-                  className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
-                    hovered === item.id ? "bg-blue-500" : "bg-transparent"
-                  }`}
-                />
-                <span>
-                  <span className="block text-base text-foreground">
-                    {item.title}
-                  </span>
-                  <span className="block text-sm text-muted">
-                    {item.subtitle}
-                  </span>
-                </span>
-              </Link>
+              {item.href ? (
+                <Link
+                  href={item.href}
+                  {...(item.external
+                    ? { target: "_blank", rel: "noreferrer" }
+                    : {})}
+                  onMouseEnter={(e) => track(e.currentTarget, item.id)}
+                  onFocus={(e) => track(e.currentTarget, item.id)}
+                  onBlur={() => setHovered(null)}
+                  className={cls}
+                >
+                  {inner}
+                </Link>
+              ) : (
+                <div
+                  onMouseEnter={(e) => track(e.currentTarget, item.id)}
+                  className={cls}
+                >
+                  {inner}
+                </div>
+              )}
             </li>
           );
         })}

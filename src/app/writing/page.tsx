@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { posts } from "@/lib/data";
+import { getPagePosts } from "@/lib/content";
 import { Reveal, RevealGroup, RevealItem } from "@/components/reveal";
 
 export const metadata: Metadata = {
@@ -17,6 +17,7 @@ function formatDate(date: string) {
 }
 
 export default function Writing() {
+  const posts = getPagePosts();
   return (
     <div className="mx-auto w-full max-w-3xl px-5 pb-24 sm:px-8 sm:pb-32">
       <Reveal>
@@ -35,13 +36,13 @@ export default function Writing() {
             >
               <span
                 className="h-16 w-24 shrink-0 rounded-md grayscale transition-transform duration-300 group-hover:scale-105"
-                style={{ backgroundImage: post.shade }}
+                style={{ backgroundImage: post.preview }}
               />
               <div className="flex-1">
                 <p className="text-lg tracking-tight transition-colors group-hover:text-foreground">
                   {post.title}
                 </p>
-                <p className="mt-1 text-sm text-muted">{post.excerpt}</p>
+                <p className="mt-1 text-sm text-muted">{post.subtitle}</p>
               </div>
               <span className="hidden font-mono text-xs text-muted sm:block">
                 {formatDate(post.date)}
