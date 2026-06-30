@@ -47,9 +47,6 @@ export default function About() {
                 className="text-base text-foreground transition-colors hover:text-muted"
               >
                 {item.label}
-                {item.handle && (
-                  <span className="text-muted"> ({item.handle})</span>
-                )}
               </a>
             </RevealItem>
           ))}

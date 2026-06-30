@@ -19,13 +19,11 @@ export const contacts = [
   { label: "hello@erikwijnbladh.com", href: "mailto:hello@erikwijnbladh.com" },
   {
     label: "linkedin",
-    handle: "in/erik-wijnbladh",
-    href: "https://linkedin.com/in/erik-wijnbladh",
+    href: "https://www.linkedin.com/in/erik-wijnbladh",
     external: true,
   },
   {
     label: "github",
-    handle: "erikwijnbladh",
     href: "https://github.com/erikwijnbladh",
     external: true,
   },
