@@ -80,6 +80,23 @@ export const experience: Experience[] = [
   { year: "2020", org: "selfcheck", role: "frontend engineer" },
 ];
 
+export type Education = {
+  year: string;
+  org: string;
+  degree: string;
+  note?: string;
+};
+
+/** Education for the About page. */
+export const education: Education[] = [
+  {
+    year: "2025",
+    org: "uppsala university",
+    degree: "msc human-computer interaction",
+    note: "highest grade",
+  },
+];
+
 /** An entry in the home page list. `href` absent = not clickable (e.g. work). */
 export type HomeListItem = {
   id: string;
