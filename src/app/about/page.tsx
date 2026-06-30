@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { profile, work } from "@/lib/data";
+import { profile, experience } from "@/lib/data";
 import { Reveal, RevealGroup, RevealItem } from "@/components/reveal";
 import { TiltPhoto } from "@/components/tilt-photo";
 
@@ -66,23 +66,26 @@ export default function About() {
         </Reveal>
       </section>
 
-      <section className="mt-16 border-t border-line pt-10">
-        <Reveal>
-          <h2 className="font-serif text-2xl italic text-muted">
-            Experience
-          </h2>
-        </Reveal>
-        <RevealGroup className="mt-6 flex flex-col">
-          {work.map((item) => (
+      <section className="mt-24 sm:mt-32">
+        <RevealGroup className="mx-auto flex max-w-xs flex-col gap-12">
+          <RevealItem>
+            <div className="grid grid-cols-[3rem_1fr] gap-8">
+              <span />
+              <span className="text-base text-foreground">experience</span>
+            </div>
+          </RevealItem>
+          {experience.map((item) => (
             <RevealItem key={item.org}>
-              <div className="flex flex-col gap-1 border-t border-line py-4 sm:flex-row sm:items-baseline sm:gap-6">
-                <span className="font-mono text-xs text-muted sm:w-32 sm:shrink-0">
-                  {item.period}
+              <div className="grid grid-cols-[3rem_1fr] gap-8">
+                <span className="text-base text-muted">{item.year}</span>
+                <span>
+                  <span className="block text-base text-muted">
+                    {item.org}
+                  </span>
+                  <span className="block text-base text-foreground">
+                    {item.role}
+                  </span>
                 </span>
-                <p className="text-base">
-                  <span className="text-muted">{item.org}</span>{" "}
-                  <span className="font-medium">{item.role}</span>
-                </p>
               </div>
             </RevealItem>
           ))}
