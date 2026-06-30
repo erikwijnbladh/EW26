@@ -14,8 +14,8 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
   function track(el: HTMLElement, id: string) {
     setHovered(id);
     setCenter(el.offsetTop + el.offsetHeight / 2);
-    // Bullet sits at row top + py-3 (12px) + mt-1 (4px).
-    setBulletTop(el.offsetTop + 16);
+    // Bullet sits at row top + py-3 (12px) + mt-1.5 (6px).
+    setBulletTop(el.offsetTop + 18);
   }
 
   return (
@@ -28,7 +28,7 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
           const inner = (
             <>
               {/* Spacer reserving room for the floating shader bullet. */}
-              <span className="mt-1 h-4 w-4 shrink-0" />
+              <span className="mt-1.5 h-3 w-3 shrink-0" />
               <span>
                 <span className="block text-base text-foreground">
                   {item.title}
@@ -73,7 +73,7 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
       {/* One persistent shader that slides to the active row so it never
           restarts when moving between items. */}
       <div
-        className={`pointer-events-none absolute left-0 h-4 w-4 transition-[top,opacity] duration-300 ease-out ${
+        className={`pointer-events-none absolute left-0 h-3 w-3 transition-[top,opacity] duration-300 ease-out ${
           active ? "opacity-100" : "opacity-0"
         }`}
         style={{ top: bulletTop }}
