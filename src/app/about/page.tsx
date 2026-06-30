@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { profile, experience, education, contacts } from "@/lib/data";
-import { Reveal, RevealGroup, RevealItem } from "@/components/reveal";
+import { profile } from "@/lib/data";
+import { Reveal } from "@/components/reveal";
 import { TiltPhoto } from "@/components/tilt-photo";
+import { AboutLists } from "@/components/about-lists";
 
 export const metadata: Metadata = {
   title: "About — Erik Wijnbladh",
@@ -35,80 +36,7 @@ export default function About() {
         ))}
       </section>
 
-      <section className="mt-12 pt-10">
-        <RevealGroup className="flex flex-col gap-2">
-          {contacts.map((item) => (
-            <RevealItem key={item.href}>
-              <a
-                href={item.href}
-                {...(item.external
-                  ? { target: "_blank", rel: "noreferrer" }
-                  : {})}
-                className="text-base text-foreground transition-colors hover:text-muted"
-              >
-                {item.label}
-              </a>
-            </RevealItem>
-          ))}
-        </RevealGroup>
-      </section>
-
-      <section className="mt-24 sm:mt-32">
-        <RevealGroup className="mx-auto flex max-w-xs flex-col gap-12">
-          <RevealItem>
-            <div className="grid grid-cols-[3rem_1fr] gap-8">
-              <span />
-              <span className="text-base text-foreground">experience</span>
-            </div>
-          </RevealItem>
-          {experience.map((item) => (
-            <RevealItem key={item.org}>
-              <div className="grid grid-cols-[3rem_1fr] gap-8">
-                <span className="text-base text-muted">{item.year}</span>
-                <span>
-                  <span className="block text-base text-muted">
-                    {item.org}
-                  </span>
-                  <span className="block text-base text-foreground">
-                    {item.role}
-                  </span>
-                </span>
-              </div>
-            </RevealItem>
-          ))}
-        </RevealGroup>
-      </section>
-
-      <section className="mt-16 sm:mt-20">
-        <RevealGroup className="mx-auto flex max-w-xs flex-col gap-12">
-          <RevealItem>
-            <div className="grid grid-cols-[3rem_1fr] gap-8">
-              <span />
-              <span className="text-base text-foreground">education</span>
-            </div>
-          </RevealItem>
-          {education.map((item) => (
-            <RevealItem key={item.org}>
-              <div className="grid grid-cols-[3rem_1fr] gap-8">
-                <span className="text-base text-muted">{item.year}</span>
-                <span>
-                  <span className="block text-base text-muted">
-                    {item.org}
-                  </span>
-                  <span className="block text-base text-foreground">
-                    {item.degree}
-                  </span>
-                  {item.note && (
-                    <span className="mt-1 block text-sm text-muted">
-                      {item.note}
-                    </span>
-                  )}
-                </span>
-              </div>
-            </RevealItem>
-          ))}
-        </RevealGroup>
-      </section>
+      <AboutLists />
     </div>
   );
 }
