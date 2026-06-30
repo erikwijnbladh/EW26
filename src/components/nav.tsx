@@ -1,54 +1,36 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
-
-const links = [
-  { href: "/", label: "Work" },
-  { href: "/about", label: "About" },
-];
+import { DitherDot } from "@/components/dither-dot";
+import { useIndicator } from "@/components/indicator-context";
 
 export function Nav() {
-  const pathname = usePathname();
+  const { traveling } = useIndicator();
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 px-5 pt-5 sm:px-8 sm:pt-6">
-      <nav className="mx-auto flex max-w-3xl items-center justify-between rounded-full shadow-ring bg-background/80 px-4 py-2.5 backdrop-blur-md">
-        <Link
-          href="/"
-          className="text-sm font-medium tracking-tight text-foreground"
-        >
-          Erik Wijnbladh
-        </Link>
-        <ul className="flex items-center gap-1">
-          {links.map((link) => {
-            const active =
-              link.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(link.href);
-            return (
-              <li key={link.href} className="relative">
-                <Link
-                  href={link.href}
-                  className="relative block px-3 py-1.5 text-sm text-muted transition-colors duration-300 hover:text-foreground"
-                >
-                  {active && (
-                    <motion.span
-                      layoutId="nav-pill"
-                      className="absolute inset-0 rounded-full bg-foreground/[0.06]"
-                      transition={{ type: "spring", stiffness: 400, damping: 35 }}
-                    />
-                  )}
-                  <span className={`relative ${active ? "text-foreground" : ""}`}>
-                    {link.label}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+    <header className="fixed inset-x-0 top-0 z-50 border-b border-line bg-background/80 backdrop-blur-md">
+      <div className="mx-auto max-w-3xl px-5 sm:px-8">
+        <div className="flex h-16 items-center gap-2">
+          {/* Resting indicator — a real child of the (fixed) nav so it stays
+              glued to the name during iOS overscroll. Hidden while the
+              floating indicator is traveling. */}
+          <span
+            id="nav-indicator"
+            className={`h-3 w-3 shrink-0 transition-opacity duration-200 ${
+              traveling ? "opacity-0" : "opacity-100"
+            }`}
+          >
+            <DitherDot />
+          </span>
+          <Link
+            href="/"
+            id="nav-name"
+            className="text-sm font-medium lowercase tracking-tight text-foreground"
+          >
+            Erik Wijnbladh
+          </Link>
+        </div>
+      </div>
     </header>
   );
 }

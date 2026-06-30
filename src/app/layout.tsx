@@ -1,8 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { Nav } from "@/components/nav";
-import { Footer } from "@/components/footer";
 import { ScrollReset } from "@/components/scroll-reset";
+import { IndicatorProvider } from "@/components/indicator-context";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -23,9 +23,9 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Erik Wijnbladh — Software Engineer",
+  title: "erik wijnbladh — fullstack engineer & designer",
   description:
-    "Software engineer working across product, design, and infrastructure. Selected work, projects, and writing.",
+    "Fullstack engineer and interaction designer in Stockholm, currently building at Compileit. Selected work, projects, and notes.",
 };
 
 export const viewport: Viewport = {
@@ -47,9 +47,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col font-sans">
         <ScrollReset />
         <div className="grain" aria-hidden />
-        <Nav />
-        <main className="flex-1 pt-24 sm:pt-28">{children}</main>
-        <Footer />
+        <IndicatorProvider>
+          <Nav />
+          <main className="flex-1 pt-24 sm:pt-28">{children}</main>
+        </IndicatorProvider>
       </body>
     </html>
   );
