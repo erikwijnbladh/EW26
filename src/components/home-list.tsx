@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { GrainGradient } from "@paper-design/shaders-react";
 import type { HomeListItem } from "@/lib/data";
 
 export function HomeList({ items }: { items: HomeListItem[] }) {
@@ -23,11 +24,25 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
         {items.map((item) => {
           const inner = (
             <>
-              <span
-                className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
-                  hovered === item.id ? "bg-blue-500" : "bg-transparent"
-                }`}
-              />
+              <span className="mt-1.5 h-3 w-3 shrink-0">
+                {hovered === item.id && (
+                  <GrainGradient
+                    speed={2}
+                    scale={2}
+                    rotation={0}
+                    offsetX={0}
+                    offsetY={0}
+                    softness={0}
+                    intensity={0.15}
+                    noise={0}
+                    shape="blob"
+                    frame={11386}
+                    colors={["#3E6172", "#A49B74", "#568C50"]}
+                    colorBack="#00000000"
+                    className="h-full w-full rounded-full"
+                  />
+                )}
+              </span>
               <span>
                 <span className="block text-base text-foreground">
                   {item.title}
