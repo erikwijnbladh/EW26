@@ -2,7 +2,7 @@ export const profile = {
   name: "Erik Wijnbladh",
   role: "Frontend Engineer & Interaction Designer",
   location: "Stockholm, Sweden",
-  email: "wijnbladherik@gmail.com",
+  email: "hello@erikwijnbladh.com",
   tagline: "I build interfaces and the systems behind them — design and frontend, treated as one craft.",
   bio: [
     "I'm a frontend engineer with a design eye, currently doing a master's in Human-Computer Interaction at Uppsala University. My work sits between interaction design, prototyping, and shipped product — most recently four years owning frontend delivery for an AI-driven SaaS platform at BrightBid.",
@@ -10,9 +10,26 @@ export const profile = {
   ],
   social: [
     { label: "GitHub", href: "https://github.com/erikwijnbladh" },
-    { label: "LinkedIn", href: "https://linkedin.com/in/erikwijnbladh" },
+    { label: "LinkedIn", href: "https://linkedin.com/in/erik-wijnbladh" },
   ],
 };
+
+/** Contact list for the About page. */
+export const contacts = [
+  { label: "hello@erikwijnbladh.com", href: "mailto:hello@erikwijnbladh.com" },
+  {
+    label: "linkedin",
+    handle: "in/erik-wijnbladh",
+    href: "https://linkedin.com/in/erik-wijnbladh",
+    external: true,
+  },
+  {
+    label: "github",
+    handle: "erikwijnbladh",
+    href: "https://github.com/erikwijnbladh",
+    external: true,
+  },
+];
 
 export type WorkItem = {
   period: string;

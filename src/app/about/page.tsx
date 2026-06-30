@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { profile, experience } from "@/lib/data";
+import { profile, experience, contacts } from "@/lib/data";
 import { Reveal, RevealGroup, RevealItem } from "@/components/reveal";
 import { TiltPhoto } from "@/components/tilt-photo";
 
@@ -35,35 +35,25 @@ export default function About() {
         ))}
       </section>
 
-      <section className="mt-16 border-t border-line pt-10">
-        <Reveal>
-          <p className="text-sm text-muted">
-            Reach me directly at{" "}
-            <a
-              href={`mailto:${profile.email}`}
-              className="text-foreground underline decoration-line underline-offset-4 transition-colors hover:decoration-foreground"
-            >
-              {profile.email}
-            </a>{" "}
-            or find me elsewhere:
-          </p>
-        </Reveal>
-        <Reveal delay={0.05}>
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {profile.social.map((item) => (
-              <li key={item.label}>
-                <a
-                  href={item.href}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="rounded-full shadow-ring px-4 py-1.5 text-sm transition-colors duration-300 hover:bg-surface"
-                >
-                  {item.label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </Reveal>
+      <section className="mt-12 border-t border-line pt-10">
+        <RevealGroup className="flex flex-col gap-2">
+          {contacts.map((item) => (
+            <RevealItem key={item.href}>
+              <a
+                href={item.href}
+                {...(item.external
+                  ? { target: "_blank", rel: "noreferrer" }
+                  : {})}
+                className="text-base text-foreground transition-colors hover:text-muted"
+              >
+                {item.label}
+                {item.handle && (
+                  <span className="text-muted"> ({item.handle})</span>
+                )}
+              </a>
+            </RevealItem>
+          ))}
+        </RevealGroup>
       </section>
 
       <section className="mt-24 sm:mt-32">
