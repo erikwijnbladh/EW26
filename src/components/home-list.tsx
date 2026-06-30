@@ -79,10 +79,10 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
         style={{ top: bulletTop }}
       >
         <Dithering
-          speed={1}
+          speed={2}
           shape="sphere"
-          type="8x8"
-          size={1.5}
+          type="4x4"
+          size={0.1}
           scale={1}
           colorBack="#00000000"
           colorFront="#15140f"
