@@ -19,6 +19,7 @@ export type WorkItem = {
   role: string;
   org: string;
   description: string;
+  current?: boolean;
 };
 
 export const work: WorkItem[] = [
@@ -27,6 +28,7 @@ export const work: WorkItem[] = [
     role: "Frontend Engineer",
     org: "Compileit",
     description: "Shipping world-class product, end to end.",
+    current: true,
   },
   {
     period: "Sep 2025 — Now",
@@ -59,7 +61,9 @@ export type Project = {
   title: string;
   year: string;
   tags: string[];
+  tagline: string;
   description: string;
+  preview: string;
   href?: string;
 };
 
@@ -69,7 +73,9 @@ export const projects: Project[] = [
     title: "Pane",
     year: "2026",
     tags: ["React", "Vite", "CodeMirror"],
+    tagline: "an infinite canvas for building react components",
     description: "An infinite canvas for developing React components visually, while keeping each component a real .tsx file — spatial organization, live previews, and local-first editing.",
+    preview: "linear-gradient(160deg, #1a1a2e 0%, #4338ca 50%, #a5b4fc 100%)",
     href: "https://github.com/erikwijnbladh",
   },
   {
@@ -77,7 +83,9 @@ export const projects: Project[] = [
     title: "D&D Campaign Generator",
     year: "2026",
     tags: ["React", "TypeScript", "Multi-agent AI"],
+    tagline: "multi-agent tabletop campaign generation",
     description: "A multi-agent workflow for generating complete tabletop campaigns from a single prompt, with an interface for directing, reviewing, and controlling generated content.",
+    preview: "linear-gradient(160deg, #1f1410 0%, #b45309 50%, #fde68a 100%)",
     href: "https://github.com/erikwijnbladh",
   },
 ];
@@ -140,4 +148,42 @@ export const posts: Post[] = [
       "None of this is fixed. I'll disagree with half of it by next year, which is sort of the point of writing it down.",
     ],
   },
+];
+
+export type HomeListItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  preview: string;
+  href: string;
+  external?: boolean;
+  current?: boolean;
+};
+
+const currentRole = work.find((item) => item.current) ?? work[0];
+
+export const homeItems: HomeListItem[] = [
+  {
+    id: "current-role",
+    title: currentRole.org.toLowerCase(),
+    subtitle: currentRole.description.toLowerCase(),
+    preview: "linear-gradient(160deg, #0f0f10 0%, #3730a3 50%, #818cf8 100%)",
+    href: "/about",
+    current: true,
+  },
+  ...projects.map((project) => ({
+    id: project.slug,
+    title: project.title.toLowerCase(),
+    subtitle: project.tagline,
+    preview: project.preview,
+    href: project.href ?? "#",
+    external: true,
+  })),
+  ...posts.map((post) => ({
+    id: post.slug,
+    title: post.title.toLowerCase(),
+    subtitle: post.excerpt.toLowerCase(),
+    preview: post.shade,
+    href: `/writing/${post.slug}`,
+  })),
 ];
