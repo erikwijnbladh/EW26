@@ -5,28 +5,37 @@ import Link from "next/link";
 import type { HomeListItem } from "@/lib/data";
 
 export function HomeList({ items }: { items: HomeListItem[] }) {
-  const [hovered, setHovered] = useState<string>(items[0]?.id);
-  const active = items.find((item) => item.id === hovered) ?? items[0];
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [center, setCenter] = useState(0);
+  const active = hovered ? items.find((item) => item.id === hovered) : null;
+
+  function track(el: HTMLElement, id: string) {
+    setHovered(id);
+    setCenter(el.offsetTop + el.offsetHeight / 2);
+  }
 
   return (
-    <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:items-start sm:gap-12">
-      <ul className="flex flex-col">
+    <div className="relative">
+      <ul
+        className="flex flex-col sm:w-1/2"
+        onMouseLeave={() => setHovered(null)}
+      >
         {items.map((item) => {
           const linkProps = item.external
             ? { href: item.href, target: "_blank", rel: "noreferrer" }
             : { href: item.href };
-          const isActive = item.id === active.id;
           return (
             <li key={item.id}>
               <Link
                 {...linkProps}
-                onMouseEnter={() => setHovered(item.id)}
-                onFocus={() => setHovered(item.id)}
+                onMouseEnter={(e) => track(e.currentTarget, item.id)}
+                onFocus={(e) => track(e.currentTarget, item.id)}
+                onBlur={() => setHovered(null)}
                 className="flex items-start gap-2 py-3"
               >
                 <span
                   className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full transition-colors ${
-                    isActive ? "bg-blue-500" : "bg-transparent"
+                    hovered === item.id ? "bg-blue-500" : "bg-transparent"
                   }`}
                 />
                 <span>
@@ -44,8 +53,10 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
       </ul>
 
       <div
-        className="sticky top-24 hidden aspect-video w-full overflow-hidden rounded-2xl border border-line shadow-lg transition-[background] duration-300 sm:block"
-        style={{ backgroundImage: active?.preview }}
+        className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 overflow-hidden rounded-2xl border border-line shadow-lg transition-all duration-300 ease-out sm:block ${
+          active ? "opacity-100" : "opacity-0"
+        }`}
+        style={{ top: center, backgroundImage: active?.preview }}
       />
     </div>
   );
