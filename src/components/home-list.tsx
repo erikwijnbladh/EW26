@@ -50,7 +50,9 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
                   {...(item.external
                     ? { target: "_blank", rel: "noreferrer" }
                     : {})}
-                  onMouseEnter={(e) => track(e.currentTarget, item.id)}
+                  onPointerEnter={(e) => {
+                    if (e.pointerType === "mouse") track(e.currentTarget, item.id);
+                  }}
                   onFocus={(e) => track(e.currentTarget, item.id)}
                   onBlur={() => setHovered(null)}
                   className={cls}
@@ -59,7 +61,9 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
                 </Link>
               ) : (
                 <div
-                  onMouseEnter={(e) => track(e.currentTarget, item.id)}
+                  onPointerEnter={(e) => {
+                    if (e.pointerType === "mouse") track(e.currentTarget, item.id);
+                  }}
                   className={cls}
                 >
                   {inner}
