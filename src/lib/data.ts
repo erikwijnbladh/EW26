@@ -56,7 +56,8 @@ export type HomeListItem = {
   id: string;
   title: string;
   subtitle?: string;
-  preview: string;
+  /** Hover preview gradient. Omit to show no thumbnail on hover. */
+  preview?: string;
   href?: string;
   external?: boolean;
   /** Adds a divider/spacing above this row in the list. */

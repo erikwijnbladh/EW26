@@ -186,7 +186,7 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
 
       <div
         className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out sm:block ${
-          active ? "opacity-100" : "opacity-0"
+          active?.preview ? "opacity-100" : "opacity-0"
         }`}
         style={{ top: center, backgroundImage: active?.preview }}
       />
