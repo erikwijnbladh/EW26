@@ -39,6 +39,7 @@ export function TiltPhoto({ src, alt }: { src: string; alt: string }) {
           alt={alt}
           fill
           sizes="224px"
+          quality={90}
           className="object-cover"
           priority
         />
