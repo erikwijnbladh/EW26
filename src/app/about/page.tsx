@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { profile } from "@/lib/data";
-import { Reveal } from "@/components/reveal";
+import { profile, work } from "@/lib/data";
+import { Reveal, RevealGroup, RevealItem } from "@/components/reveal";
 import { TiltPhoto } from "@/components/tilt-photo";
 
 export const metadata: Metadata = {
@@ -56,7 +56,7 @@ export default function About() {
                   href={item.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-full border border-line px-4 py-1.5 text-sm transition-colors duration-300 hover:bg-surface"
+                  className="rounded-full shadow-ring px-4 py-1.5 text-sm transition-colors duration-300 hover:bg-surface"
                 >
                   {item.label}
                 </a>
@@ -64,6 +64,29 @@ export default function About() {
             ))}
           </ul>
         </Reveal>
+      </section>
+
+      <section className="mt-16 border-t border-line pt-10">
+        <Reveal>
+          <h2 className="font-serif text-2xl italic text-muted">
+            Experience
+          </h2>
+        </Reveal>
+        <RevealGroup className="mt-6 flex flex-col">
+          {work.map((item) => (
+            <RevealItem key={item.org}>
+              <div className="flex flex-col gap-1 border-t border-line py-4 sm:flex-row sm:items-baseline sm:gap-6">
+                <span className="font-mono text-xs text-muted sm:w-32 sm:shrink-0">
+                  {item.period}
+                </span>
+                <p className="text-base">
+                  <span className="text-muted">{item.org}</span>{" "}
+                  <span className="font-medium">{item.role}</span>
+                </p>
+              </div>
+            </RevealItem>
+          ))}
+        </RevealGroup>
       </section>
     </div>
   );

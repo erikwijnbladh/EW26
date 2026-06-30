@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { posts } from "@/lib/data";
+import { MDXRemote } from "next-mdx-remote/rsc";
+import { getPagePosts, getPost } from "@/lib/content";
+import { mdxComponents } from "@/components/mdx";
 import { Reveal } from "@/components/reveal";
 
 type Params = { slug: string };
 
 export function generateStaticParams() {
-  return posts.map((post) => ({ slug: post.slug }));
+  return getPagePosts().map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata({
@@ -16,11 +18,11 @@ export async function generateMetadata({
   params: Promise<Params>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const post = posts.find((p) => p.slug === slug);
+  const post = getPost(slug);
   if (!post) return {};
   return {
     title: `${post.title} — Erik Wijnbladh`,
-    description: post.excerpt,
+    description: post.subtitle,
   };
 }
 
@@ -38,30 +40,32 @@ export default async function Post({
   params: Promise<Params>;
 }) {
   const { slug } = await params;
-  const index = posts.findIndex((p) => p.slug === slug);
-  if (index === -1) notFound();
+  const post = getPost(slug);
+  // External-link posts have no detail page.
+  if (!post || post.link) notFound();
 
-  const post = posts[index];
-  const next = posts[(index + 1) % posts.length];
+  const pages = getPagePosts();
+  const index = pages.findIndex((p) => p.slug === slug);
+  const next = pages[(index + 1) % pages.length];
 
   return (
     <article className="mx-auto w-full max-w-3xl px-5 pb-24 sm:px-8 sm:pb-32">
       <Reveal>
         <Link
-          href="/writing"
+          href="/"
           className="group inline-flex items-center gap-2 text-sm text-muted transition-colors hover:text-foreground"
         >
           <span className="transition-transform duration-300 group-hover:-translate-x-1">
             ←
           </span>
-          Writing
+          Back
         </Link>
       </Reveal>
 
       <Reveal delay={0.05}>
         <div
           className="mt-6 aspect-[16/9] w-full rounded-2xl grayscale sm:aspect-[21/9]"
-          style={{ backgroundImage: post.shade }}
+          style={{ backgroundImage: post.preview }}
         />
       </Reveal>
 
@@ -74,32 +78,28 @@ export default async function Post({
         </header>
       </Reveal>
 
-      <div className="mt-10 flex flex-col gap-5">
-        {post.body.map((paragraph, i) => (
-          <Reveal key={i} delay={0.05 + i * 0.04}>
-            <p className="max-w-xl text-base leading-relaxed text-muted">
-              {paragraph}
-            </p>
-          </Reveal>
-        ))}
+      <div className="mt-6">
+        <MDXRemote source={post.body} components={mdxComponents} />
       </div>
 
-      <Reveal delay={0.1}>
-        <Link
-          href={`/writing/${next.slug}`}
-          className="group mt-16 flex items-center justify-between border-t border-line pt-6"
-        >
-          <div>
-            <p className="text-xs text-muted">Next</p>
-            <p className="mt-1 text-lg tracking-tight transition-colors group-hover:text-foreground">
-              {next.title}
-            </p>
-          </div>
-          <span className="text-muted transition-transform duration-300 group-hover:translate-x-1 group-hover:text-foreground">
-            →
-          </span>
-        </Link>
-      </Reveal>
+      {next && next.slug !== slug && (
+        <Reveal delay={0.1}>
+          <Link
+            href={`/${next.slug}`}
+            className="group mt-16 flex items-center justify-between border-t border-line pt-6"
+          >
+            <div>
+              <p className="text-xs text-muted">Next</p>
+              <p className="mt-1 text-lg tracking-tight transition-colors group-hover:text-foreground">
+                {next.title}
+              </p>
+            </div>
+            <span className="text-muted transition-transform duration-300 group-hover:translate-x-1 group-hover:text-foreground">
+              →
+            </span>
+          </Link>
+        </Reveal>
+      )}
     </article>
   );
 }
