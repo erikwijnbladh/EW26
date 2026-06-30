@@ -33,7 +33,7 @@ export function TiltPhoto({ src, alt }: { src: string; alt: string }) {
       style={{ rotateX, rotateY }}
       className="relative aspect-square w-40 shrink-0 [perspective:600px] sm:w-48"
     >
-      <div className="relative h-full w-full overflow-hidden rounded-full border border-line">
+      <div className="relative h-full w-full overflow-hidden rounded-full shadow-ring">
         <Image
           src={src}
           alt={alt}

@@ -56,7 +56,7 @@ export default function About() {
                   href={item.href}
                   target="_blank"
                   rel="noreferrer"
-                  className="rounded-full border border-line px-4 py-1.5 text-sm transition-colors duration-300 hover:bg-surface"
+                  className="rounded-full shadow-ring px-4 py-1.5 text-sm transition-colors duration-300 hover:bg-surface"
                 >
                   {item.label}
                 </a>

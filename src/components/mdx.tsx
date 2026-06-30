@@ -8,7 +8,7 @@ function Video({ src, poster }: { src: string; poster?: string }) {
       poster={poster}
       controls
       playsInline
-      className="my-8 w-full rounded-2xl border border-line"
+      className="my-8 w-full rounded-2xl shadow-ring"
     />
   );
 }
@@ -25,7 +25,7 @@ function ButtonLink({
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="my-4 inline-flex items-center rounded-full border border-line px-4 py-1.5 text-sm no-underline transition-colors duration-300 hover:bg-surface"
+      className="my-4 inline-flex items-center rounded-full shadow-ring px-4 py-1.5 text-sm no-underline transition-colors duration-300 hover:bg-surface"
     >
       {children}
     </a>
@@ -34,7 +34,7 @@ function ButtonLink({
 
 function Image({ src, alt }: { src: string; alt: string }) {
   return (
-    <span className="my-8 block overflow-hidden rounded-2xl border border-line">
+    <span className="my-8 block overflow-hidden rounded-2xl shadow-ring">
       <NextImage
         src={src}
         alt={alt}

@@ -21,7 +21,7 @@ export default function Home() {
       <section className="flex flex-col gap-6 pb-16 pt-4 sm:pb-24">
         <Reveal>
           <div className="flex items-center gap-4">
-            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full border border-line sm:h-14 sm:w-14">
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full shadow-ring sm:h-14 sm:w-14">
               <Image
                 src="/images/pfp.png"
                 alt={profile.name}
