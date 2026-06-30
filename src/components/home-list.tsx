@@ -92,9 +92,11 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
                 <span className="block text-base text-foreground">
                   {item.title}
                 </span>
-                <span className="block text-sm text-muted">
-                  {item.subtitle}
-                </span>
+                {item.subtitle && (
+                  <span className="block text-sm text-muted">
+                    {item.subtitle}
+                  </span>
+                )}
               </span>
             </>
           );
@@ -102,7 +104,10 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
           const cls = "flex items-start gap-2 py-3";
 
           return (
-            <li key={item.id}>
+            <li
+              key={item.id}
+              className={item.separated ? "mt-8 border-t border-line pt-2" : ""}
+            >
               {item.href ? (
                 <Link
                   href={item.href}

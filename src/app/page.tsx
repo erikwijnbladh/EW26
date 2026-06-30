@@ -17,9 +17,9 @@ export default function Home() {
   const aboutItem: HomeListItem = {
     id: "about",
     title: "about",
-    subtitle: "experience, background & contact",
     preview: "linear-gradient(160deg, #2b2a27 0%, #6b6a64 55%, #d8d6d1 100%)",
     href: "/about",
+    separated: true,
   };
 
   const homeItems: HomeListItem[] = [

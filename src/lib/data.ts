@@ -60,10 +60,12 @@ export const work: WorkItem[] = [
 export type HomeListItem = {
   id: string;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   preview: string;
   href?: string;
   external?: boolean;
+  /** Adds a divider/spacing above this row in the list. */
+  separated?: boolean;
 };
 
 /** The current role row, rendered as plain text with no link. */
