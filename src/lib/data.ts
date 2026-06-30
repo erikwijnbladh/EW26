@@ -1,12 +1,12 @@
 export const profile = {
   name: "Erik Wijnbladh",
-  role: "Fullstack Engineer & Interaction Designer",
+  role: "Designer & developer",
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
-  tagline: "I build interfaces and the systems behind them — design and engineering, treated as one craft.",
+  tagline: "I design and build web products — I like living in the blend of tech and design.",
   bio: [
-    "I'm a fullstack engineer and interaction designer based in Stockholm, currently building at Compileit. I like working across the whole surface of a product — interaction design, frontend, and the systems underneath.",
-    "Before Compileit I spent four years owning frontend for an AI-driven SaaS platform at BrightBid, alongside a master's in Human-Computer Interaction at Uppsala. On the side I build small tools and prototypes — from AI-assisted interfaces to component-level dev tooling — to explore where design and engineering meet.",
+    "I'm a designer and developer based in Stockholm, currently at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I actually enjoy.",
+    "I spent four years owning the frontend of an AI ad-bidding platform at BrightBid, then went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human. On the side I build small tools — an AI playlist generator, an expense splitter my friends actually use, a canvas for sketching React components.",
   ],
 };
 

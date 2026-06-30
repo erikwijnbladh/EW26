@@ -41,9 +41,9 @@ export default function Home() {
         </Reveal>
         <Reveal delay={0.1}>
           <p className="max-w-md text-sm leading-relaxed text-muted">
-            I&apos;m {profile.name.split(" ")[0]} — a fullstack engineer and
-            interaction designer in Stockholm, currently building at Compileit.
-            Below is what I&apos;m making and thinking about, or{" "}
+            I&apos;m {profile.name.split(" ")[0]} — a designer and developer in
+            Stockholm, currently at Compileit. I design and build web things, and
+            below is some of what I&apos;ve made. Or{" "}
             <a
               href={`mailto:${profile.email}`}
               className="text-foreground underline decoration-line underline-offset-4 transition-colors hover:decoration-foreground"
