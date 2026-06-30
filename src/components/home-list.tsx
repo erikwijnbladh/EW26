@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { GrainGradient } from "@paper-design/shaders-react";
+import { Dithering } from "@paper-design/shaders-react";
 import type { HomeListItem } from "@/lib/data";
 
 export function HomeList({ items }: { items: HomeListItem[] }) {
@@ -78,19 +78,14 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
         }`}
         style={{ top: bulletTop }}
       >
-        <GrainGradient
-          speed={2}
-          scale={2}
-          rotation={0}
-          offsetX={0}
-          offsetY={0}
-          softness={0}
-          intensity={0.15}
-          noise={0}
-          shape="blob"
-          frame={11386}
-          colors={["#15140f", "#4a4943", "#847f6e"]}
+        <Dithering
+          speed={1}
+          shape="sphere"
+          type="8x8"
+          size={1.5}
+          scale={1}
           colorBack="#00000000"
+          colorFront="#15140f"
           className="h-full w-full rounded-full"
         />
       </div>
