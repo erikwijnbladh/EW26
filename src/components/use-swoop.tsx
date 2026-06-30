@@ -72,9 +72,13 @@ export function useSwoop() {
     if (settleTimer.current) clearTimeout(settleTimer.current);
     setTraveling(true);
     setHovered(id);
-    // offsetTop is relative to the (positioned) container, so it lives in the
-    // same scroll space as the rows and never shifts during overscroll.
-    setTop(el.offsetTop + TITLE_OFFSET);
+    // Align the dot to the row's leading spacer (the dot-sized placeholder), so
+    // it lands on the first text line regardless of the row's padding. The rows
+    // aren't positioned, so the spacer's offsetParent is the same `relative`
+    // container as the dot — its offsetTop is already container-relative and
+    // stays glued during scroll / iOS overscroll. Fall back to a fixed offset.
+    const spacer = el.querySelector<HTMLElement>(":scope > .shrink-0");
+    setTop(spacer ? spacer.offsetTop : el.offsetTop + TITLE_OFFSET);
   }
 
   function returnToOrigin() {

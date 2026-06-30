@@ -13,6 +13,9 @@ export function AboutLists() {
   const { containerRef, dot, rowProps, release } = useSwoop();
 
   const row = "flex items-start gap-2 py-3";
+  // Contacts sit flush with no gap between them; the dot's title offset still
+  // lands on the first text line (see TITLE_OFFSET).
+  const contactRow = "flex items-start gap-2 py-0";
 
   return (
     <div
@@ -34,7 +37,7 @@ export function AboutLists() {
                 ? { target: "_blank", rel: "noreferrer" }
                 : {})}
               {...rowProps(`contact-${item.href}`)}
-              className={`${row} text-base text-foreground transition-colors hover:text-muted`}
+              className={`${contactRow} text-base text-foreground transition-colors hover:text-muted`}
             >
               <DotSpacer />
               <span>{item.label}</span>
