@@ -50,8 +50,11 @@ export function AboutLists() {
           <span className="text-base text-foreground">experience</span>
         </div>
         {experience.map((item) => (
-          <div
+          <a
             key={item.org}
+            href={item.href}
+            target="_blank"
+            rel="noreferrer"
             {...rowProps(`exp-${item.org}`)}
             className={row}
           >
@@ -65,18 +68,25 @@ export function AboutLists() {
                 </span>
               </span>
             </span>
-          </div>
+          </a>
         ))}
       </div>
 
-      {/* Education — same layout, no hover */}
+      {/* Education */}
       <div className="mt-16">
         <div className={row}>
           <DotSpacer />
           <span className="text-base text-foreground">education</span>
         </div>
         {education.map((item) => (
-          <div key={item.org} className={row}>
+          <a
+            key={item.org}
+            href={item.href}
+            target="_blank"
+            rel="noreferrer"
+            {...rowProps(`edu-${item.org}`)}
+            className={row}
+          >
             <DotSpacer />
             <span className="grid grid-cols-[3rem_1fr] gap-6">
               <span className="text-base text-muted">{item.year}</span>
@@ -92,7 +102,7 @@ export function AboutLists() {
                 )}
               </span>
             </span>
-          </div>
+          </a>
         ))}
       </div>
     </div>

@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { DitherDot } from "@/components/dither-dot";
 import { useIndicator } from "@/components/indicator-context";
 
 const RETURN_DELAY = 3000; // wait after release before swooping back up
-const SWOOP_MS = 220; // swoop duration (kept in sync with the transition below)
+const SWOOP_MS = 320; // swoop duration (kept in sync with the transition below)
 // Distance from a row's top to the bullet: py-3 (12px) + mt-1.5 (6px). Lines
 // the bullet up with the first line of a row's title.
 export const TITLE_OFFSET = 18;
@@ -21,6 +22,7 @@ export function useSwoop() {
   const [hovered, setHovered] = useState<string | null>(null);
   const [top, setTop] = useState(0); // dot y (container-relative)
   const [armed, setArmed] = useState(false);
+  const pathname = usePathname();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const returnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -45,6 +47,17 @@ export function useSwoop() {
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // On navigation, spring the dot back up to the nav origin and clear any
+  // in-flight hover/return so it doesn't linger on the new page.
+  useEffect(() => {
+    if (returnTimer.current) clearTimeout(returnTimer.current);
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    setHovered(null);
+    setTop(originTop());
+    setTraveling(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   useEffect(
     () => () => {
@@ -117,7 +130,7 @@ export function useSwoop() {
         traveling ? "opacity-100" : "opacity-0"
       } ${
         armed
-          ? "[transition:top_220ms_ease-out,opacity_200ms]"
+          ? "[transition:top_320ms_cubic-bezier(0.34,1.56,0.64,1),opacity_200ms]"
           : "[transition:opacity_200ms]"
       }`}
       style={{ top }}

@@ -25,13 +25,33 @@ export const contacts = [
   },
 ];
 
-export type Experience = { year: string; org: string; role: string };
+export type Experience = {
+  year: string;
+  org: string;
+  role: string;
+  href?: string;
+};
 
 /** Curated experience for the About page — start year, company, role. */
 export const experience: Experience[] = [
-  { year: "2026", org: "compileit", role: "fullstack engineer" },
-  { year: "2022", org: "brightbid", role: "frontend engineer" },
-  { year: "2020", org: "selfcheck", role: "frontend engineer" },
+  {
+    year: "2026",
+    org: "compileit",
+    role: "fullstack engineer",
+    href: "https://compileit.io",
+  },
+  {
+    year: "2022",
+    org: "brightbid",
+    role: "frontend engineer",
+    href: "https://brightbid.com",
+  },
+  {
+    year: "2020",
+    org: "selfcheck",
+    role: "frontend engineer",
+    href: "https://selfcheck.io",
+  },
 ];
 
 export type Education = {
@@ -39,6 +59,7 @@ export type Education = {
   org: string;
   degree: string;
   note?: string;
+  href?: string;
 };
 
 /** Education for the About page. */
@@ -48,6 +69,7 @@ export const education: Education[] = [
     org: "uppsala university",
     degree: "msc human-computer interaction",
     note: "highest grade",
+    href: "https://www.uu.se",
   },
 ];
 
