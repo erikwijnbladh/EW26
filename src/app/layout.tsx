@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { Nav } from "@/components/nav";
-import { Footer } from "@/components/footer";
 import { ScrollReset } from "@/components/scroll-reset";
 import { IndicatorProvider } from "@/components/indicator-context";
 import "./globals.css";
@@ -52,7 +51,6 @@ export default function RootLayout({
           <Nav />
           <main className="flex-1 pt-24 sm:pt-28">{children}</main>
         </IndicatorProvider>
-        <Footer />
       </body>
     </html>
   );
