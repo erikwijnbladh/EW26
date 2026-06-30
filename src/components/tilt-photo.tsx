@@ -31,14 +31,14 @@ export function TiltPhoto({ src, alt }: { src: string; alt: string }) {
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
       style={{ rotateX, rotateY }}
-      className="relative aspect-square w-40 shrink-0 [perspective:600px] sm:w-48"
+      className="relative aspect-[7/6] w-44 shrink-0 [perspective:600px] sm:w-56"
     >
-      <div className="relative h-full w-full overflow-hidden rounded-full shadow-ring">
+      <div className="relative h-full w-full overflow-hidden rounded-2xl shadow-ring">
         <Image
           src={src}
           alt={alt}
           fill
-          sizes="192px"
+          sizes="224px"
           className="object-cover"
           priority
         />

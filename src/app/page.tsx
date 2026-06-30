@@ -38,7 +38,7 @@ export default function Home() {
                 alt={profile.name}
                 fill
                 sizes="56px"
-                className="object-cover"
+                className="object-cover object-top"
                 priority
               />
             </div>
