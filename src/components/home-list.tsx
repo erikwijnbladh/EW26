@@ -8,7 +8,8 @@ import { useIndicator } from "@/components/indicator-context";
 import type { HomeListItem } from "@/lib/data";
 
 const RETURN_DELAY = 3000; // wait after release before swooping back up
-const SWOOP_MS = 300; // matches the preview panel transition below
+const SWOOP_MS = 220; // swoop duration (kept in sync with the transition below)
+const DOT = 12; // indicator size (h-3 w-3)
 
 export function HomeList({ items }: { items: HomeListItem[] }) {
   const { traveling, setTraveling } = useIndicator();
@@ -29,24 +30,36 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
   const active = hovered ? items.find((item) => item.id === hovered) : null;
 
   // Keep the indicator glued to its target through scroll/resize. When a row
-  // is hovered it tracks that row's live position; otherwise it parks at the
-  // nav indicator's position.
+  // is hovered it tracks that row's live vertical center (so it lines up with
+  // the preview panel); otherwise it parks at the nav indicator's position.
   useEffect(() => {
     function measure() {
       const anchor = document.getElementById("nav-indicator");
       const list = listRef.current;
-      if (anchor) originRef.current = anchor.getBoundingClientRect().top;
+      if (anchor) {
+        const r = anchor.getBoundingClientRect();
+        originRef.current = r.top + r.height / 2 - DOT / 2;
+      }
       if (list) setLeft(list.getBoundingClientRect().left);
       const el = activeElRef.current;
       if (hovered && el) {
-        // Bullet sits at the row top + py-3 (12px) + mt-1.5 (6px).
-        setTop(el.getBoundingClientRect().top + 18);
+        const r = el.getBoundingClientRect();
+        setTop(r.top + r.height / 2 - DOT / 2); // vertically centered on the row
       } else {
         setTop(originRef.current);
       }
       setReady(true);
     }
+    // iOS rubber-band: while overscrolled past the top/bottom the whole
+    // document bounces, dragging getBoundingClientRect with it. Skip those
+    // frames so the bullet doesn't drift; re-measure once scroll settles back
+    // into range.
+    function overscrolled() {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      return window.scrollY < 0 || window.scrollY > max;
+    }
     function onScroll() {
+      if (overscrolled()) return;
       setTracking(true); // jump (no anim) so the bullet stays glued to the row
       measure();
     }
@@ -82,8 +95,8 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
     setTraveling(true);
     setHovered(id);
     setCenter(el.offsetTop + el.offsetHeight / 2);
-    // Bullet sits at the row top + py-3 (12px) + mt-1.5 (6px).
-    setTop(el.getBoundingClientRect().top + 18);
+    const r = el.getBoundingClientRect();
+    setTop(r.top + r.height / 2 - DOT / 2); // vertically centered on the row
   }
 
   // Swoop straight back to the name origin, no delay (used when the cursor
@@ -199,7 +212,7 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
               traveling ? "opacity-100" : "opacity-0"
             } ${
               armed && !tracking
-                ? "[transition:top_300ms_ease-out,opacity_200ms]"
+                ? "[transition:top_220ms_ease-out,opacity_200ms]"
                 : "[transition:opacity_200ms]"
             }`}
             style={{ top, left }}
