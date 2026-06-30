@@ -23,9 +23,9 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  title: "Erik Wijnbladh — Software Engineer",
+  title: "erik wijnbladh — fullstack engineer & designer",
   description:
-    "Software engineer working across product, design, and infrastructure. Selected work, projects, and writing.",
+    "Fullstack engineer and interaction designer in Stockholm, currently building at Compileit. Selected work, projects, and notes.",
 };
 
 export const viewport: Viewport = {

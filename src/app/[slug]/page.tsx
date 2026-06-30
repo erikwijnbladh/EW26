@@ -58,20 +58,22 @@ export default async function Post({
           <span className="transition-transform duration-300 group-hover:-translate-x-1">
             ←
           </span>
-          Back
+          back
         </Link>
       </Reveal>
 
       <Reveal delay={0.05}>
         <div
-          className="mt-6 aspect-[16/9] w-full rounded-2xl grayscale sm:aspect-[21/9]"
+          className="mt-6 aspect-[16/9] w-full rounded-2xl sm:aspect-[21/9]"
           style={{ backgroundImage: post.preview }}
         />
       </Reveal>
 
       <Reveal delay={0.1}>
         <header className="mt-8">
-          <h1 className="text-3xl tracking-tight sm:text-4xl">{post.title}</h1>
+          <h1 className="text-3xl lowercase tracking-tight sm:text-4xl">
+            {post.title}
+          </h1>
           <p className="mt-3 font-mono text-xs text-muted">
             {formatDate(post.date)}
           </p>
@@ -86,11 +88,11 @@ export default async function Post({
         <Reveal delay={0.1}>
           <Link
             href={`/${next.slug}`}
-            className="group mt-16 flex items-center justify-between border-t border-line pt-6"
+            className="group mt-16 flex items-center justify-between pt-6"
           >
             <div>
-              <p className="text-xs text-muted">Next</p>
-              <p className="mt-1 text-lg tracking-tight transition-colors group-hover:text-foreground">
+              <p className="text-xs text-muted">next</p>
+              <p className="mt-1 text-lg lowercase tracking-tight transition-colors group-hover:text-foreground">
                 {next.title}
               </p>
             </div>

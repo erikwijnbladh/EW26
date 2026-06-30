@@ -25,7 +25,7 @@ export function Nav() {
           <Link
             href="/"
             id="nav-name"
-            className="text-sm font-medium tracking-tight text-foreground"
+            className="text-sm font-medium lowercase tracking-tight text-foreground"
           >
             Erik Wijnbladh
           </Link>

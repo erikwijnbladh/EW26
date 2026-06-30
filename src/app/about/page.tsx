@@ -16,10 +16,10 @@ export default function About() {
           <TiltPhoto src="/images/pfp.png" alt={profile.name} />
         </Reveal>
         <Reveal delay={0.05} className="flex-1">
-          <h1 className="text-3xl tracking-tight sm:text-4xl">
+          <h1 className="text-3xl lowercase tracking-tight sm:text-4xl">
             {profile.name}
           </h1>
-          <p className="mt-2 font-serif text-xl italic text-muted">
+          <p className="mt-2 font-serif text-xl italic lowercase text-muted">
             {profile.role}, {profile.location}
           </p>
         </Reveal>

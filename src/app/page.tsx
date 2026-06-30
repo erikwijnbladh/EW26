@@ -43,7 +43,7 @@ export default function Home() {
                 priority
               />
             </div>
-            <p className="text-sm text-muted">
+            <p className="text-sm lowercase text-muted">
               {profile.role} · {profile.location}
             </p>
           </div>
@@ -55,8 +55,9 @@ export default function Home() {
         </Reveal>
         <Reveal delay={0.1}>
           <p className="max-w-md text-sm leading-relaxed text-muted">
-            I&apos;m {profile.name.split(" ")[0]} — currently taking on a
-            limited number of new projects. Have a look at the work, or{" "}
+            I&apos;m {profile.name.split(" ")[0]} — a fullstack engineer and
+            interaction designer in Stockholm, currently building at Compileit.
+            Below is what I&apos;m making and thinking about, or{" "}
             <a
               href={`mailto:${profile.email}`}
               className="text-foreground underline decoration-line underline-offset-4 transition-colors hover:decoration-foreground"
