@@ -8,7 +8,7 @@ import { useIndicator } from "@/components/indicator-context";
 import type { HomeListItem } from "@/lib/data";
 
 const RETURN_DELAY = 3000; // wait after release before swooping back up
-const SWOOP_MS = 700; // matches the transition duration below
+const SWOOP_MS = 300; // matches the preview panel transition below
 
 export function HomeList({ items }: { items: HomeListItem[] }) {
   const { traveling, setTraveling } = useIndicator();
@@ -18,27 +18,45 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
   const [top, setTop] = useState(0); // indicator y (viewport)
   const [ready, setReady] = useState(false);
   const [armed, setArmed] = useState(false);
+  const [tracking, setTracking] = useState(false); // disable top-anim while glued to a scrolling row
 
   const listRef = useRef<HTMLUListElement>(null);
   const originRef = useRef(0);
+  const activeElRef = useRef<HTMLElement | null>(null); // hovered row, for scroll tracking
   const returnTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const active = hovered ? items.find((item) => item.id === hovered) : null;
 
-  // Measure the origin (the resting nav indicator) and the left edge.
+  // Keep the indicator glued to its target through scroll/resize. When a row
+  // is hovered it tracks that row's live position; otherwise it parks at the
+  // nav indicator's position.
   useEffect(() => {
     function measure() {
       const anchor = document.getElementById("nav-indicator");
       const list = listRef.current;
       if (anchor) originRef.current = anchor.getBoundingClientRect().top;
       if (list) setLeft(list.getBoundingClientRect().left);
-      if (!hovered) setTop(originRef.current);
+      const el = activeElRef.current;
+      if (hovered && el) {
+        // Bullet sits at the row top + py-3 (12px) + mt-1.5 (6px).
+        setTop(el.getBoundingClientRect().top + 18);
+      } else {
+        setTop(originRef.current);
+      }
       setReady(true);
+    }
+    function onScroll() {
+      setTracking(true); // jump (no anim) so the bullet stays glued to the row
+      measure();
     }
     measure();
     window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("resize", measure);
+      window.removeEventListener("scroll", onScroll);
+    };
   }, [hovered]);
 
   // Arm the swoop transition after the first positioned frame.
@@ -59,6 +77,8 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
   function hover(el: HTMLElement, id: string) {
     if (returnTimer.current) clearTimeout(returnTimer.current);
     if (settleTimer.current) clearTimeout(settleTimer.current);
+    activeElRef.current = el;
+    setTracking(false); // animate the swoop into the row
     setTraveling(true);
     setHovered(id);
     setCenter(el.offsetTop + el.offsetHeight / 2);
@@ -66,13 +86,43 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
     setTop(el.getBoundingClientRect().top + 18);
   }
 
+  // Swoop straight back to the name origin, no delay (used when the cursor
+  // lands on the nav name).
+  function returnToOrigin() {
+    if (returnTimer.current) clearTimeout(returnTimer.current);
+    if (settleTimer.current) clearTimeout(settleTimer.current);
+    activeElRef.current = null;
+    setTracking(false); // animate the swoop home
+    setHovered(null);
+    settleTimer.current = setTimeout(() => setTraveling(false), SWOOP_MS);
+  }
+
   function release() {
     if (returnTimer.current) clearTimeout(returnTimer.current);
     returnTimer.current = setTimeout(() => {
+      activeElRef.current = null;
+      setTracking(false); // animate the swoop home
       setHovered(null); // measure effect swoops it back to the origin
       settleTimer.current = setTimeout(() => setTraveling(false), SWOOP_MS);
     }, RETURN_DELAY);
   }
+
+  // Let the nav name pull the indicator home immediately.
+  useEffect(() => {
+    const name = document.getElementById("nav-name");
+    const dot = document.getElementById("nav-indicator");
+    if (!name) return;
+    const onEnter = (e: PointerEvent) => {
+      if (e.pointerType === "mouse") returnToOrigin();
+    };
+    name.addEventListener("pointerenter", onEnter);
+    dot?.addEventListener("pointerenter", onEnter);
+    return () => {
+      name.removeEventListener("pointerenter", onEnter);
+      dot?.removeEventListener("pointerenter", onEnter);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="relative">
@@ -147,7 +197,11 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
           <div
             className={`pointer-events-none fixed z-50 h-3 w-3 transition-opacity duration-200 ${
               traveling ? "opacity-100" : "opacity-0"
-            } ${armed ? "[transition:top_700ms_ease-in-out,opacity_200ms]" : ""}`}
+            } ${
+              armed && !tracking
+                ? "[transition:top_300ms_ease-out,opacity_200ms]"
+                : "[transition:opacity_200ms]"
+            }`}
             style={{ top, left }}
           >
             <DitherDot />
