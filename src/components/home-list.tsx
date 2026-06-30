@@ -9,7 +9,22 @@ import type { HomeListItem } from "@/lib/data";
 
 const RETURN_DELAY = 3000; // wait after release before swooping back up
 const SWOOP_MS = 220; // swoop duration (kept in sync with the transition below)
-const DOT = 12; // indicator size (h-3 w-3)
+// Distance from a row's top to the bullet: py-3 (12px) + mt-1.5 (6px). This
+// lines the bullet up with the first line of the title.
+const TITLE_OFFSET = 18;
+
+// Document-relative top of an element (immune to iOS overscroll, unlike
+// getBoundingClientRect which moves while the page rubber-bands).
+function docTop(el: HTMLElement) {
+  return el.getBoundingClientRect().top + window.scrollY;
+}
+
+// Current scroll position clamped to the real scrollable range, so iOS
+// overscroll (scrollY < 0 or past the bottom) is ignored.
+function clampedScrollY() {
+  const max = document.documentElement.scrollHeight - window.innerHeight;
+  return Math.min(Math.max(window.scrollY, 0), Math.max(max, 0));
+}
 
 export function HomeList({ items }: { items: HomeListItem[] }) {
   const { traveling, setTraveling } = useIndicator();
@@ -29,37 +44,30 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
 
   const active = hovered ? items.find((item) => item.id === hovered) : null;
 
-  // Keep the indicator glued to its target through scroll/resize. When a row
-  // is hovered it tracks that row's live vertical center (so it lines up with
-  // the preview panel); otherwise it parks at the nav indicator's position.
+  // Keep the indicator glued to its target through scroll/resize. Positions
+  // are derived from document-relative offsets minus a *clamped* scroll, so
+  // the bullet stays level with the title and never drifts during iOS
+  // rubber-band overscroll. When nothing is hovered it parks at the nav dot.
   useEffect(() => {
     function measure() {
       const anchor = document.getElementById("nav-indicator");
       const list = listRef.current;
+      const scroll = clampedScrollY();
       if (anchor) {
         const r = anchor.getBoundingClientRect();
-        originRef.current = r.top + r.height / 2 - DOT / 2;
+        // Nav is fixed, so its viewport top is constant; keep it as-is.
+        originRef.current = r.top + r.height / 2 - 6;
       }
       if (list) setLeft(list.getBoundingClientRect().left);
       const el = activeElRef.current;
       if (hovered && el) {
-        const r = el.getBoundingClientRect();
-        setTop(r.top + r.height / 2 - DOT / 2); // vertically centered on the row
+        setTop(docTop(el) + TITLE_OFFSET - scroll); // level with the title line
       } else {
         setTop(originRef.current);
       }
       setReady(true);
     }
-    // iOS rubber-band: while overscrolled past the top/bottom the whole
-    // document bounces, dragging getBoundingClientRect with it. Skip those
-    // frames so the bullet doesn't drift; re-measure once scroll settles back
-    // into range.
-    function overscrolled() {
-      const max = document.documentElement.scrollHeight - window.innerHeight;
-      return window.scrollY < 0 || window.scrollY > max;
-    }
     function onScroll() {
-      if (overscrolled()) return;
       setTracking(true); // jump (no anim) so the bullet stays glued to the row
       measure();
     }
@@ -94,9 +102,9 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
     setTracking(false); // animate the swoop into the row
     setTraveling(true);
     setHovered(id);
-    setCenter(el.offsetTop + el.offsetHeight / 2);
-    const r = el.getBoundingClientRect();
-    setTop(r.top + r.height / 2 - DOT / 2); // vertically centered on the row
+    // Preview panel centers on the title line, matching the bullet.
+    setCenter(el.offsetTop + TITLE_OFFSET);
+    setTop(docTop(el) + TITLE_OFFSET - clampedScrollY()); // level with the title line
   }
 
   // Swoop straight back to the name origin, no delay (used when the cursor
