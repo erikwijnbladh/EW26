@@ -6,7 +6,7 @@ import { DitherDot } from "@/components/dither-dot";
 import { useIndicator } from "@/components/indicator-context";
 
 const RETURN_DELAY = 3000; // wait after release before swooping back up
-const SWOOP_MS = 320; // swoop duration (kept in sync with the transition below)
+const SWOOP_MS = 220; // swoop duration (kept in sync with the transition below)
 // Distance from a row's top to the bullet: py-3 (12px) + mt-1.5 (6px). Lines
 // the bullet up with the first line of a row's title.
 export const TITLE_OFFSET = 18;
@@ -130,7 +130,7 @@ export function useSwoop() {
         traveling ? "opacity-100" : "opacity-0"
       } ${
         armed
-          ? "[transition:top_320ms_cubic-bezier(0.34,1.56,0.64,1),opacity_200ms]"
+          ? "[transition:top_220ms_ease-out,opacity_200ms]"
           : "[transition:opacity_200ms]"
       }`}
       style={{ top }}
