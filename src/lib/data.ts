@@ -23,16 +23,16 @@ export type WorkItem = {
 
 export const work: WorkItem[] = [
   {
+    period: "Jun 2026 — Now",
+    role: "Frontend Engineer",
+    org: "Compileit",
+    description: "Shipping world-class product, end to end.",
+  },
+  {
     period: "Sep 2025 — Now",
     role: "MSc Human-Computer Interaction",
     org: "Uppsala University",
     description: "Studying interaction design, service design, ethics in IT and AI, and user-centered design. Design projects with Biotopia and Uppsala Kvinnojour.",
-  },
-  {
-    period: "Jan 2025 — May 2025",
-    role: "Product Owner",
-    org: "Edblad & Co",
-    description: "Coordinated website development priorities between internal stakeholders and an external web agency, and handled QA and incident reporting for the platform.",
   },
   {
     period: "Feb 2022 — Jan 2025",
