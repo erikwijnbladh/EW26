@@ -26,7 +26,7 @@ export default function About() {
         </Reveal>
       </section>
 
-      <section className="flex flex-col gap-5 pt-10">
+      <section className="flex flex-col gap-5 pt-10 pl-5">
         {profile.bio.map((paragraph, i) => (
           <Reveal key={i} delay={i * 0.05}>
             <p className="max-w-xl text-base leading-relaxed text-muted">
