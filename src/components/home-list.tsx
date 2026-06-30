@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { Dithering } from "@paper-design/shaders-react";
 import type { HomeListItem } from "@/lib/data";
@@ -13,6 +14,7 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
   const [left, setLeft] = useState(0); // indicator x (viewport)
   const [top, setTop] = useState(0); // indicator y (viewport)
   const [ready, setReady] = useState(false);
+  const [armed, setArmed] = useState(false);
 
   const listRef = useRef<HTMLUListElement>(null);
   const originRef = useRef(0);
@@ -38,6 +40,14 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
     window.addEventListener("resize", measure);
     return () => window.removeEventListener("resize", measure);
   }, [hovered]);
+
+  // Enable the swoop transition only after the first positioned frame, so
+  // the indicator appears at the origin instantly instead of animating in.
+  useEffect(() => {
+    if (!ready) return;
+    const id = requestAnimationFrame(() => setArmed(true));
+    return () => cancelAnimationFrame(id);
+  }, [ready]);
 
   useEffect(
     () => () => {
@@ -123,24 +133,29 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
       </ul>
 
       {/* Single shader indicator that travels from the name down to the
-          active row and back. */}
-      {ready && (
-        <div
-          className="pointer-events-none fixed z-50 h-3 w-3 transition-[top] duration-700 ease-in-out"
-          style={{ top, left }}
-        >
-          <Dithering
-            speed={2}
-            shape="sphere"
-            type="4x4"
-            size={0.1}
-            scale={1}
-            colorBack="#00000000"
-            colorFront="#15140f"
-            className="h-full w-full rounded-full"
-          />
-        </div>
-      )}
+          active row and back. Portaled to <body> so `fixed` resolves
+          against the viewport, not the transformed page-transition wrapper. */}
+      {ready &&
+        createPortal(
+          <div
+            className={`pointer-events-none fixed z-50 h-3 w-3 ${
+              armed ? "transition-[top] duration-700 ease-in-out" : ""
+            }`}
+            style={{ top, left }}
+          >
+            <Dithering
+              speed={2}
+              shape="sphere"
+              type="4x4"
+              size={0.1}
+              scale={1}
+              colorBack="#00000000"
+              colorFront="#15140f"
+              className="h-full w-full rounded-full"
+            />
+          </div>,
+          document.body,
+        )}
 
       <div
         className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out sm:block ${
