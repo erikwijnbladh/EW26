@@ -92,6 +92,6 @@ export const currentRoleItem: HomeListItem = (() => {
     id: "current-role",
     title: "compileit",
     subtitle: "shipping world-class product, end to end.",
-    preview: "linear-gradient(160deg, #0f0f10 0%, #3730a3 50%, #818cf8 100%)",
+    // Preview is the compileit logo on black — see previewLogos in logos.tsx.
   };
 })();
