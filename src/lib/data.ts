@@ -1,12 +1,12 @@
 export const profile = {
   name: "Erik Wijnbladh",
-  role: "Fullstack Engineer & Interaction Designer",
+  role: "Tech & Design",
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
-  tagline: "I build interfaces and the systems behind them — design and engineering, treated as one craft.",
+  tagline: "I design and build web products. Living in the blend of tech and design.",
   bio: [
-    "I'm a fullstack engineer and interaction designer based in Stockholm, currently building at Compileit. I like working across the whole surface of a product — interaction design, frontend, and the systems underneath.",
-    "Before Compileit I spent four years owning frontend for an AI-driven SaaS platform at BrightBid, alongside a master's in Human-Computer Interaction at Uppsala. On the side I build small tools and prototypes — from AI-assisted interfaces to component-level dev tooling — to explore where design and engineering meet.",
+    "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
+    "Prior I've spent my time owning the frontend of an AI ad-bidding platform at BrightBid, then went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human.", "On the side I build small tools, apps and workflows. With, for and because of AI.",
   ],
 };
 
@@ -37,19 +37,19 @@ export const experience: Experience[] = [
   {
     year: "2026",
     org: "compileit",
-    role: "fullstack engineer",
+    role: "fullstack",
     href: "https://compileit.com/",
   },
   {
     year: "2022",
     org: "brightbid",
-    role: "frontend engineer",
+    role: "frontend",
     href: "https://brightbid.com/",
   },
   {
     year: "2020",
     org: "selfcheck",
-    role: "frontend engineer",
+    role: "frontend",
     href: "https://selfcheck.se/",
   },
 ];
@@ -92,6 +92,6 @@ export const currentRoleItem: HomeListItem = (() => {
     id: "current-role",
     title: "compileit",
     subtitle: "shipping world-class product, end to end.",
-    preview: "linear-gradient(160deg, #0f0f10 0%, #3730a3 50%, #818cf8 100%)",
+    // Preview is the compileit logo on black — see previewLogos in logos.tsx.
   };
 })();

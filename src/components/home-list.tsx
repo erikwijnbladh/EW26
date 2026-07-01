@@ -3,12 +3,14 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { useSwoop, DotSpacer } from "@/components/use-swoop";
+import { previewLogos } from "@/components/logos";
 import type { HomeListItem } from "@/lib/data";
 
 export function HomeList({ items }: { items: HomeListItem[] }) {
   const { containerRef, dot, rowProps, release, hovered, top } = useSwoop();
 
   const active = hovered ? items.find((item) => item.id === hovered) : null;
+  const ActiveLogo = active ? previewLogos[active.id] : undefined;
 
   // The preview panel parks at the last hovered row and only fades out — it
   // must NOT follow the blob back up to its origin (which would make the
@@ -71,11 +73,17 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
       </ul>
 
       <div
-        className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out sm:block ${
-          active?.preview ? "opacity-100" : "opacity-0"
+        className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out sm:flex ${
+          active?.preview || ActiveLogo ? "opacity-100" : "opacity-0"
         }`}
-        style={{ top: center, backgroundImage: active?.preview }}
-      />
+        style={{
+          top: center,
+          backgroundImage: ActiveLogo ? undefined : active?.preview,
+          backgroundColor: ActiveLogo ? "#000000" : undefined,
+        }}
+      >
+        {ActiveLogo && <ActiveLogo className="h-1/3 w-auto" />}
+      </div>
     </div>
   );
 }

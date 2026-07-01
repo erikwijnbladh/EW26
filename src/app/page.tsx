@@ -1,4 +1,4 @@
-import { profile, currentRoleItem, type HomeListItem } from "@/lib/data";
+import { currentRoleItem, type HomeListItem } from "@/lib/data";
 import { getAllPosts } from "@/lib/content";
 import { Reveal } from "@/components/reveal";
 import { HomeList } from "@/components/home-list";
@@ -28,29 +28,11 @@ export default function Home() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-5 sm:px-8">
-      <section className="flex flex-col gap-6 pb-16 pt-4 pl-5 sm:pb-24">
+      <section className="pb-16 pt-4 pl-5 sm:pb-24">
         <Reveal>
-          <p className="text-sm lowercase text-muted">
-            {profile.role} · {profile.location}
-          </p>
-        </Reveal>
-        <Reveal delay={0.05}>
-          <h1 className="max-w-xl text-3xl leading-[1.15] tracking-tight sm:text-4xl">
-            {profile.tagline}
-          </h1>
-        </Reveal>
-        <Reveal delay={0.1}>
           <p className="max-w-md text-sm leading-relaxed text-muted">
-            I&apos;m {profile.name.split(" ")[0]} — a fullstack engineer and
-            interaction designer in Stockholm, currently building at Compileit.
-            Below is what I&apos;m making and thinking about, or{" "}
-            <a
-              href={`mailto:${profile.email}`}
-              className="text-foreground underline decoration-line underline-offset-4 transition-colors hover:decoration-foreground"
-            >
-              get in touch
-            </a>
-            .
+            I build stuff and sometimes do design, based in Stockholm and
+            currently at Compileit.
           </p>
         </Reveal>
       </section>
