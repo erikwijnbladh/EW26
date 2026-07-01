@@ -1,12 +1,12 @@
 export const profile = {
   name: "Erik Wijnbladh",
-  role: "Designer & developer",
+  role: "Tech & Design",
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
-  tagline: "I design and build web products — I like living in the blend of tech and design.",
+  tagline: "I design and build web products. Living in the blend of tech and design.",
   bio: [
-    "I'm a designer and developer based in Stockholm, currently at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I actually enjoy.",
-    "I spent four years owning the frontend of an AI ad-bidding platform at BrightBid, then went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human. On the side I build small tools — an AI playlist generator, an expense splitter my friends actually use, a canvas for sketching React components.",
+    "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
+    "Prior I've spent my time owning the frontend of an AI ad-bidding platform at BrightBid, then went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human.", "On the side I build small tools, apps and workflows. With, for and because of AI.",
   ],
 };
 
@@ -37,19 +37,19 @@ export const experience: Experience[] = [
   {
     year: "2026",
     org: "compileit",
-    role: "fullstack engineer",
+    role: "fullstack",
     href: "https://compileit.com/",
   },
   {
     year: "2022",
     org: "brightbid",
-    role: "frontend engineer",
+    role: "frontend",
     href: "https://brightbid.com/",
   },
   {
     year: "2020",
     org: "selfcheck",
-    role: "frontend engineer",
+    role: "frontend",
     href: "https://selfcheck.se/",
   },
 ];
