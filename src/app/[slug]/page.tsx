@@ -21,7 +21,7 @@ export async function generateMetadata({
   const post = getPost(slug);
   if (!post) return {};
   return {
-    title: `${post.title} — Erik Wijnbladh`,
+    title: `${post.title.toLowerCase()} — erik wijnbladh`,
     description: post.subtitle,
   };
 }

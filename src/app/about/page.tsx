@@ -5,7 +5,7 @@ import { Reveal } from "@/components/reveal";
 import { AboutLists } from "@/components/about-lists";
 
 export const metadata: Metadata = {
-  title: "About — Erik Wijnbladh",
+  title: "about — erik wijnbladh",
   description: profile.tagline,
 };
 
