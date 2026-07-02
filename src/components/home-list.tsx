@@ -4,6 +4,7 @@ import { useRef } from "react";
 import Link from "next/link";
 import { useSwoop, DotSpacer } from "@/components/use-swoop";
 import { previewLogos } from "@/components/logos";
+import { PostShader, hasPostShader } from "@/components/post-shader";
 import type { HomeListItem } from "@/lib/data";
 
 export function HomeList({ items }: { items: HomeListItem[] }) {
@@ -74,15 +75,24 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
 
       <div
         className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out sm:flex ${
-          active?.preview || ActiveLogo ? "opacity-100" : "opacity-0"
+          active?.preview || active?.shader || ActiveLogo
+            ? "opacity-100"
+            : "opacity-0"
         }`}
         style={{
           top: center,
-          backgroundImage: ActiveLogo ? undefined : active?.preview,
+          backgroundImage:
+            ActiveLogo || hasPostShader(active?.shader)
+              ? undefined
+              : active?.preview,
           backgroundColor: ActiveLogo ? "#000000" : undefined,
         }}
       >
-        {ActiveLogo && <ActiveLogo className="h-1/3 w-auto" />}
+        {ActiveLogo ? (
+          <ActiveLogo className="h-1/3 w-auto" />
+        ) : (
+          <PostShader name={active?.shader} className="h-full w-full" />
+        )}
       </div>
     </div>
   );

@@ -9,6 +9,8 @@ export type PostMeta = {
   title: string;
   subtitle: string;
   preview: string;
+  /** Named PostShader scene. When set, it replaces the `preview` gradient. */
+  shader?: string;
   date: string;
   /** External URL. When set, the post opens this link and has no detail page. */
   link?: string;
@@ -24,6 +26,7 @@ function readPost(slug: string): Post {
     title: data.title,
     subtitle: data.subtitle,
     preview: data.preview,
+    shader: data.shader,
     date: data.date instanceof Date ? data.date.toISOString() : String(data.date),
     link: data.link,
     body: content,

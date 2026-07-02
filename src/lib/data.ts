@@ -81,6 +81,8 @@ export type HomeListItem = {
   subtitle?: string;
   /** Hover preview gradient. Omit to show no thumbnail on hover. */
   preview?: string;
+  /** Named PostShader scene; takes precedence over `preview`. */
+  shader?: string;
   href?: string;
   external?: boolean;
   /** Adds a divider/spacing above this row in the list. */
