@@ -1,10 +1,10 @@
 "use client";
 
 import {
-  Dithering,
   GrainGradient,
   MeshGradient,
-  Swirl,
+  NeuroNoise,
+  Warp,
 } from "@paper-design/shaders-react";
 
 type SceneProps = { className?: string };
@@ -16,42 +16,33 @@ type SceneProps = { className?: string };
  * the `shader` frontmatter key; the `preview` gradient stays as fallback.
  */
 const scenes: Record<string, (props: SceneProps) => React.ReactNode> = {
-  /**
-   * A glowing sphere rendered in ordered dither — the nav dot grown up.
-   * Discrete dots reading as one continuous form: a machine approximating
-   * something human. For "designing for intelligence".
-   */
-  dither: ({ className }) => (
-    <Dithering
+  /** Electric synapses on ink — designing for intelligence. */
+  neuro: ({ className }) => (
+    <NeuroNoise
       speed={0}
-      frame={30000}
-      shape="sphere"
-      type="4x4"
-      size={3}
-      scale={0.9}
-      colorBack="#0a0e1a"
-      colorFront="#38bdf8"
+      frame={52000}
+      scale={0.6}
+      colorBack="#0b0a14"
+      colorMid="#6d5cff"
+      colorFront="#b7f4e0"
+      brightness={0.1}
+      contrast={0.42}
       className={className}
     />
   ),
-  /**
-   * A galaxy swirl in the meme's deep-space palette — ink, bone, gold —
-   * so the hero and the astronaut image inside read as one piece.
-   * For "judgement and taste".
-   */
-  galaxy: ({ className }) => (
-    <Swirl
+  /** A warm nebula swirl — judgement and taste. */
+  nebula: ({ className }) => (
+    <Warp
       speed={0}
-      frame={24000}
-      colorBack="#15140f"
-      colors={["#e4e0d6", "#c9a86a", "#3a3428"]}
-      bandCount={4}
-      twist={0.25}
-      center={0.15}
-      proportion={0.45}
-      softness={0.2}
-      noiseFrequency={0.4}
-      noise={0.15}
+      frame={38000}
+      colors={["#14101f", "#ff6b4a", "#2c1b45", "#ffc46b"]}
+      proportion={0.42}
+      softness={1}
+      distortion={0.22}
+      swirl={0.9}
+      swirlIterations={10}
+      shape="checks"
+      shapeScale={0.08}
       className={className}
     />
   ),
