@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
 import { getPagePosts, getPost } from "@/lib/content";
 import { mdxComponents } from "@/components/mdx";
+import { PostArt } from "@/components/post-shader";
 import { Reveal } from "@/components/reveal";
 
 type Params = { slug: string };
@@ -21,7 +22,7 @@ export async function generateMetadata({
   const post = getPost(slug);
   if (!post) return {};
   return {
-    title: `${post.title} — Erik Wijnbladh`,
+    title: `${post.title.toLowerCase()} — erik wijnbladh`,
     description: post.subtitle,
   };
 }
@@ -63,10 +64,13 @@ export default async function Post({
       </Reveal>
 
       <Reveal delay={0.05}>
-        <div
-          className="mt-6 aspect-[16/9] w-full rounded-2xl sm:aspect-[21/9]"
-          style={{ backgroundImage: post.preview }}
-        />
+        <div className="mt-6 aspect-[16/9] w-full overflow-hidden rounded-2xl sm:aspect-[21/9]">
+          <PostArt
+            shader={post.shader}
+            preview={post.preview}
+            className="h-full w-full"
+          />
+        </div>
       </Reveal>
 
       <Reveal delay={0.1}>

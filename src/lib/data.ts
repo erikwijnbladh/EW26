@@ -6,7 +6,8 @@ export const profile = {
   tagline: "I design and build web products. Living in the blend of tech and design.",
   bio: [
     "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
-    "Prior I've spent my time owning the frontend of an AI ad-bidding platform at BrightBid, then went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human.", "On the side I build small tools, apps and workflows. With, for and because of AI.",
+    "Prior I've spent my time owning the frontend of an AI ad-bidding platform at BrightBid, then went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human.",
+    "On the side I build small tools, apps and workflows. With, for and because of AI.",
   ],
 };
 
@@ -80,6 +81,8 @@ export type HomeListItem = {
   subtitle?: string;
   /** Hover preview gradient. Omit to show no thumbnail on hover. */
   preview?: string;
+  /** Named PostShader scene; takes precedence over `preview`. */
+  shader?: string;
   href?: string;
   external?: boolean;
   /** Adds a divider/spacing above this row in the list. */
@@ -87,11 +90,9 @@ export type HomeListItem = {
 };
 
 /** The current role row, rendered as plain text with no link. */
-export const currentRoleItem: HomeListItem = (() => {
-  return {
-    id: "current-role",
-    title: "compileit",
-    subtitle: "shipping world-class product, end to end.",
-    // Preview is the compileit logo on black — see previewLogos in logos.tsx.
-  };
-})();
+export const currentRoleItem: HomeListItem = {
+  id: "current-role",
+  title: "compileit",
+  subtitle: "shipping world-class product, end to end.",
+  // Preview is the compileit logo on black — see previewLogos in logos.tsx.
+};

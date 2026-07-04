@@ -23,6 +23,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://erikwijnbladh.com"),
   title: "erik wijnbladh — designer & developer",
   description:
     "Designer and developer in Stockholm, currently at Compileit. I design and build web products.",

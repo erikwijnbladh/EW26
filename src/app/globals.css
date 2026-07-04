@@ -32,6 +32,12 @@ body {
   user-select: none;
 }
 
+/* Posts are for reading — let people select and copy the text. */
+article {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* Clickable elements get the pointer cursor. */
 a,
 button,

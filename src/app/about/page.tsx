@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { profile } from "@/lib/data";
-import { Reveal } from "@/components/reveal";
+import { Reveal, RevealGroup, RevealItem } from "@/components/reveal";
 import { AboutLists } from "@/components/about-lists";
 
 export const metadata: Metadata = {
-  title: "About — Erik Wijnbladh",
+  title: "about — erik wijnbladh",
   description: profile.tagline,
 };
 
@@ -28,15 +28,17 @@ export default function About() {
         </Reveal>
       </section>
 
-      <section className="flex flex-col gap-5 pl-5">
+      {/* One group so all paragraphs reveal together with a small stagger —
+          per-paragraph whileInView made the last one wait until scrolled to. */}
+      <RevealGroup className="flex flex-col gap-5 pl-5" stagger={0.05}>
         {profile.bio.map((paragraph, i) => (
-          <Reveal key={i} delay={i * 0.05}>
+          <RevealItem key={i}>
             <p className="max-w-xl text-base leading-relaxed text-muted">
               {paragraph}
             </p>
-          </Reveal>
+          </RevealItem>
         ))}
-      </section>
+      </RevealGroup>
 
       <AboutLists />
     </div>

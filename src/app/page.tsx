@@ -9,6 +9,7 @@ export default function Home() {
     title: post.title.toLowerCase(),
     subtitle: post.subtitle.toLowerCase(),
     preview: post.preview,
+    shader: post.shader,
     href: post.link ?? `/${post.slug}`,
     external: Boolean(post.link),
   }));
