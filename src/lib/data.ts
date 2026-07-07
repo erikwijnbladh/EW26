@@ -42,6 +42,12 @@ export const experience: Experience[] = [
     href: "https://compileit.com/",
   },
   {
+    year: "2026",
+    org: "kth",
+    role: "frontend",
+    href: "https://www.kth.se/",
+  },
+  {
     year: "2022",
     org: "brightbid",
     role: "frontend",
