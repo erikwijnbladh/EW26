@@ -38,25 +38,25 @@ export const experience: Experience[] = [
   {
     year: "2026",
     org: "kth",
-    role: "dev & design (temp)",
+    role: "design engineer (temp)",
     href: "https://www.kth.se/",
   },
   {
     year: "2026",
     org: "compileit",
-    role: "fullstack",
+    role: "fullstack engineer",
     href: "https://compileit.com/",
   },
   {
     year: "2022",
     org: "brightbid",
-    role: "frontend",
+    role: "frontend engineer",
     href: "https://brightbid.com/",
   },
   {
     year: "2020",
     org: "selfcheck",
-    role: "frontend",
+    role: "frontend dev",
     href: "https://selfcheck.se/",
   },
 ];
