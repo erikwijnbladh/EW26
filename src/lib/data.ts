@@ -44,7 +44,7 @@ export const experience: Experience[] = [
   {
     year: "2026",
     org: "kth",
-    role: "design engineer (temp)",
+    role: "design engineer",
     href: "https://www.kth.se/",
   },
   {
