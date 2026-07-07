@@ -37,15 +37,15 @@ export type Experience = {
 export const experience: Experience[] = [
   {
     year: "2026",
-    org: "kth",
-    role: "design engineer (temp)",
-    href: "https://www.kth.se/",
-  },
-  {
-    year: "2026",
     org: "compileit",
     role: "fullstack engineer",
     href: "https://compileit.com/",
+  },
+  {
+    year: "2026",
+    org: "kth",
+    role: "design engineer (temp)",
+    href: "https://www.kth.se/",
   },
   {
     year: "2022",
