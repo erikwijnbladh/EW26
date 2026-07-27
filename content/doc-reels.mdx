@@ -1,63 +1,31 @@
 ---
 title: Doc Reels
-subtitle: a fifth of a second is the whole design
+subtitle: docs as brain-rot, which turned out to be about timing
 preview: "linear-gradient(160deg, #f5f3ef 0%, #cfd6e4 55%, #8b93a8 100%)"
 shader: feed
 date: 2026-07-06
 ---
 
-Nobody reads the docs. So: paste a documentation URL and get five vertical
-reels — voiceover, word-by-word subtitles, Subway-Surfers footage running
-behind. The format that ate everyone's attention span, aimed at something
-mildly useful.
+Paste a documentation URL, get five vertical reels — voiceover, word-by-word
+subtitles, gameplay footage behind. A joke that turned out to be about timing.
 
-It's a joke. But it turned out to be about timing, which isn't.
-
-Press play, then drag the slider:
+Press play, then drag the slider.
 
 <SubtitleSync />
 
-Captions that are slightly late don't read as slightly late. They read as
-broken. Somewhere around a fifth of a second the thing stops feeling like a
-video and starts feeling like a bug — and there's no gentle slope into it, just
-a line you're suddenly on the wrong side of.
+That's why it can't be a `setInterval`: speech has no fixed rate, so a schedule
+drifts and the error compounds. The timing comes from character-level
+timestamps in the speech API instead, folded into words — the player asks which
+word's start has most recently passed, every frame. Nothing to drift from.
 
-Almost nothing else in an interface is that unforgiving. A button can be 80ms
-slow and nobody files a ticket. Speech and text have to agree, because you're
-reading and listening at once and your ear is the stricter of the two.
-
-## Why it can't be a timer
-
-The tempting build is a `setInterval` stepping through words at a steady rate.
-It falls apart immediately, because speech has no steady rate — "a" and
-"authentication" don't take the same time to say, and the error compounds until
-the highlight is a whole phrase behind the voice.
-
-So the timing comes from the audio. The speech API returns *character*-level
-timestamps, which get folded into words, and the player asks every frame which
-word's start has most recently passed. The subtitles aren't animated so much as
-*queried* — there's no schedule to drift from.
-
-Subtitles show one line at a time with the current word scaled and yellowed.
-That's TikTok's grammar, copied deliberately: the format only works if it
-reads as the thing it's imitating.
+Without an API key it still runs. Word durations get estimated from length and
+the clock falls back to `performance.now()` — silent, but the subtitles still
+land. That's the version above.
 
 <Image src="/images/docreels-player.jpg" alt="The Doc Reels player — a 9:16 frame with a five-segment progress bar, title overlay and play control" />
 
-## When the audio isn't there
-
-Without an API key the whole thing still runs. A mock model estimates each word
-from its length, the clock falls back to `performance.now()`, and the reel plays
-silently with subtitles that still land. It's the demo above, in fact.
-
-That started as a convenience for developing without burning credits, and ended
-up being the more interesting version — proof the interaction doesn't depend on
-the expensive part.
-
-TanStack Start · Claude for scripts · ElevenLabs with timestamps · Tailwind v4.
-
-It began as a Bun and Elysia backend with Remotion compositing video, then got
-rebuilt once it was clear the browser could do all of it — a `<video>`, an
-`<audio>`, and a clock. The public repo is that first version.
+Started as Bun and Elysia with Remotion compositing video, then got rebuilt once
+it was clear the browser could do all of it — a `<video>`, an `<audio>`, and a
+clock. The public repo is that first version.
 
 <ButtonLink href="https://github.com/erikwijnbladh/doc-reels">View on GitHub →</ButtonLink>

@@ -6,52 +6,22 @@ shader: mist
 date: 2026-06-17
 ---
 
-Describe a character for your table and get three things back: a stat sheet, a
-portrait, and a voice you can hear.
+Describe a character and get three things back: a stat sheet, a portrait, and a
+voice you can hear. Text is quick, audio is slower, images take as long as they
+take.
 
-Three things, three very different costs. Text lands quickly. A voice line
-takes a moment. An image takes as long as it takes. Build it the obvious way —
-generate everything, then render — and you've quietly decided that the user
-waits for the slowest one, every time, and gets nothing at all if it fails.
-
-Which is a design decision. It just usually gets made by accident.
-
-Press forge. Then tick the box and press it again:
+Press forge — then tick the box and press it again.
 
 <ParallelForge />
 
-The sheet arrives first and you can already read it. The portrait takes more
-than twice as long and nothing waits for it. Kill the portrait and it dies
-alone, leaving a character you can still use.
-
-Waiting is the thing being designed here. Not the loading state — whether there
-is one.
-
-## What the badge is for
-
-Each panel says `READY` on its own, and that's not chrome. It's the interface
-admitting that these are three separate things that happen to share a page.
-
-Once you accept that, the rest follows. Every output gets its own status, all
-three run without a barrier between them, and progress lives in the database
-rather than in a request — so closing the tab doesn't throw the work away. A
-failed portrait is a failed portrait, not a failed character.
+Each output has its own status, so nothing waits on the slowest and a failure
+stays where it happened. Progress lives in the database rather than the request,
+which is what lets you close the tab and come back to it.
 
 <Image src="/images/mythforge-character.jpg" alt="A generated character page in Mythforge — portrait panel and character sheet side by side, each with its own READY badge, showing armor, hit points, ability scores and traits" />
 
-The hard part wasn't the concurrency. It was resisting the urge to hold
-everything back until the page looked "finished" — one clean reveal is more
-satisfying to build and worse to use.
-
-## Everything else stays quiet
-
-One teal mist behind the whole thing. Heavy display type for the name. Stats in
-a plain numeric grid that reads like a character sheet instead of a dashboard.
-The generated portrait is the only real colour on the page, so nothing else
-competes with it.
-
-Sharing is one toggle, and asset URLs get signed per request — the share link
-works without opening the bucket to the world.
+The rest is restraint: one teal mist, heavy display type for the name, stats in
+a plain numeric grid. The portrait is the only real colour on the page.
 
 Vite · TanStack Router + Query · Supabase · Anthropic · fal.ai Flux · ElevenLabs.
 
