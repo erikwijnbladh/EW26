@@ -137,7 +137,7 @@ export function IntentField() {
               key={ex}
               type="button"
               onClick={() => setValue(ex)}
-              className="rounded-full border border-line px-2.5 py-1 text-xs text-muted transition-colors hover:bg-surface hover:text-foreground"
+              className="pressable rounded-full border border-line px-2.5 py-1 text-xs text-muted hover:bg-surface hover:text-foreground"
             >
               {ex}
             </button>
@@ -154,8 +154,12 @@ export function IntentField() {
                 key={intent.id + String(low)}
                 initial={reduce ? false : { opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={reduce ? undefined : { opacity: 0, y: -4 }}
-                transition={{ duration: 0.18, ease: [0.2, 0, 0, 1] }}
+                exit={
+                  reduce
+                    ? undefined
+                    : { opacity: 0, y: -2, transition: { duration: 0.12 } }
+                }
+                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
               >
                 <p className="text-muted">
                   {low ? "I might be about to " : "I'm about to "}
@@ -171,14 +175,19 @@ export function IntentField() {
                     aria-label={`Confidence ${pct} percent`}
                     className="h-1 flex-1 overflow-hidden rounded-full bg-surface"
                   >
+                    {/* scaleX rather than width: the bar retargets on every
+                        keystroke, and width would relayout each time. */}
                     <motion.div
-                      className="h-full rounded-full bg-foreground"
+                      className="h-full w-full origin-left rounded-full bg-foreground"
                       initial={false}
-                      animate={{ width: `${pct}%`, opacity: low ? 0.4 : 1 }}
+                      animate={{
+                        transform: `scaleX(${confidence})`,
+                        opacity: low ? 0.4 : 1,
+                      }}
                       transition={
                         reduce
                           ? { duration: 0 }
-                          : { duration: 0.3, ease: [0.2, 0, 0, 1] }
+                          : { duration: 0.3, ease: [0.23, 1, 0.32, 1] }
                       }
                     />
                   </div>

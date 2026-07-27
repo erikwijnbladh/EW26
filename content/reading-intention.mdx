@@ -1,52 +1,74 @@
 ---
 title: Reading intention
-subtitle: a chatbox that tells you what it thinks you meant
+subtitle: what if the box told you what it heard
 preview: "linear-gradient(160deg, #191821 0%, #4a4458 55%, #cfc9d8 100%)"
 shader: haze
 date: 2026-07-24
 ---
 
-Every chat interface has the same gap in it. You type something, you press
-enter, and then you find out whether you were understood — by reading whatever
-it produced. If it misread you, you've already paid for the answer.
+Every chat box has the same shape. One field, one button, and no idea what's
+about to happen. You type, you send, and the first thing you learn about how
+you were understood is whatever comes back.
 
-The correction is cheap before you commit and expensive after. So why is the
-understanding only ever shown afterwards?
+Compare that to asking a person. They tell you what they heard — "so you want
+me to rip out the old one?" — and you get to say *no, wait* before anyone's
+done anything. That check costs a second and saves an afternoon.
 
-Here's the smallest version of the alternative. Type into it, or hit one of the
-examples:
+We dropped it. Not for a reason: it just never made it into the pattern, and
+now every product copies the same empty box.
+
+So: what if it told you what it heard?
 
 <IntentField />
 
-## What it's doing
+## What changes
 
-The reading is deliberately dumb — keyword matching, no model behind it —
-because the thing I want to test is the interaction, not the inference. It
-picks a verb, states what it's about to do, and shows how sure it is.
+Notice it's not showing you a number. It's changing what it *says*.
 
-Confidence moves on three things. It drops when a second intent scores nearly
-as well as the first, because that's genuine ambiguity rather than noise. It
-drops on very short input, since three words rarely pin down a task. And it
-drops when you hedge — *maybe*, *sort of*, *or something* — which is the part I
-find most interesting.
+At high confidence it commits — "I'm about to fix." Drop below the line and the
+same sentence goes soft — "I **might** be about to fix" — and it names the one
+thing that would settle it. The percentage is the least useful thing on screen;
+a bar that moves while the words stay certain is just decoration.
 
-Try "maybe add a dark mode or something" and watch it hedge back at you. You
-were uncertain, so it's uncertain, and it says so. Most assistants launder your
-hedge into a confident answer, which is exactly backwards.
+The case I care about most is hedging. Type *maybe*, *sort of*, *or something*,
+and it hedges back. It knows the verb perfectly well — "add a dark mode" is
+unambiguously a build — but knowing the verb isn't knowing the ask. Confidence
+gets capped rather than nudged, because a clear verb inside a vague request
+should never come back sounding sure.
 
-## The bit that matters
+That's the failure mode worth naming. Ask an assistant something woolly today
+and you get a crisp, confident answer to a question you didn't quite ask. Your
+uncertainty goes in and someone else's certainty comes out. The hedge gets
+laundered, and you only find out downstream.
 
-Low confidence changes the *sentence*, not just the number. "I'm about to fix"
-becomes "I might be about to fix", and it names the one thing that would
-resolve it — how to reproduce, where it should live. A percentage alone is
-decoration; a percentage that changes what the system says about itself is a
-design decision.
+## How it actually works
 
-I don't think this exact widget is the answer. The move I'm fairly convinced by
-is narrower: **show the reading while it's still cheap to correct.** A model
-that tells you it's 40% sure before it spends two minutes being wrong is worth
-more than one that's confidently wrong faster.
+The version above is keyword matching. Roughly forty words voting for four
+verbs, a margin check between the top two, a length penalty, and a hedge list.
+No model, a few dozen lines, and it runs as you type.
 
-Whether people would actually read it, or just press enter through it the way
-they press enter through everything else, I genuinely don't know. That's the
-part I'd want to test with real users rather than argue about.
+A real one wouldn't work like that. You'd get the reading from the same
+model that's about to do the work — a cheap structured call returning a verb, a
+one-line restatement, a confidence, and the missing piece, before the expensive
+call runs. Model-based classification also catches what keywords can't: "this
+worked yesterday" is a bug report with no bug words in it.
+
+What wouldn't change is the interface. Same four things on screen, same rule
+that low confidence rewrites the sentence instead of just dimming a bar. That's
+the part I think is right, and it's why the demo is deliberately dumb — swapping
+the classifier is an afternoon, and it wouldn't teach me anything about whether
+the pattern works.
+
+## The part I'm unsure about
+
+There's an obvious objection: people will learn to ignore it. We're very good
+at not seeing things next to the button we're trying to press, and a reading
+that's usually right is a reading you stop reading.
+
+I think that's survivable if it only speaks up when it's unsure — silence at
+90%, a sentence at 40%. But that's a guess, and it's the kind of guess that
+gets settled by watching ten people use it, not by arguing about it.
+
+The narrow claim I'll defend: **show the reading while it's still cheap to
+correct.** A system that says it's 40% sure before it spends two minutes being
+wrong beats one that's confidently wrong faster.

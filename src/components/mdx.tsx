@@ -1,6 +1,8 @@
 import NextImage from "next/image";
 import type { MDXComponents } from "mdx/types";
 import { IntentField } from "@/components/intent-field";
+import { ParallelForge } from "@/components/parallel-forge";
+import { SubtitleSync } from "@/components/subtitle-sync";
 
 function Video({ src, poster }: { src: string; poster?: string }) {
   return (
@@ -64,6 +66,8 @@ export const mdxComponents: MDXComponents = {
   Image,
   Gallery,
   IntentField,
+  ParallelForge,
+  SubtitleSync,
   p: ({ children }) => (
     <p className="my-5 max-w-xl text-base leading-relaxed text-muted">
       {children}

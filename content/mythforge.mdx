@@ -1,52 +1,58 @@
 ---
 title: Mythforge
-subtitle: describe a character, watch it take shape three ways at once
+subtitle: three things at once, none of them waiting
 preview: "linear-gradient(160deg, #05121a 0%, #0f5f5a 55%, #7fd8c4 100%)"
 shader: mist
 date: 2026-06-17
 ---
 
-Describe any hero or monster for your table and get three things back: a
-stat sheet, a portrait, and a voice you can actually hear. All generated in
-parallel, all streaming in independently.
+Describe a character for your table and get three things back: a stat sheet, a
+portrait, and a voice you can hear.
 
-<Image src="/images/mythforge-hero.jpg" alt="Mythforge landing — 'Forge a character. Hear it speak.' over a dark teal mist, with a prompt field and a freshly forged innkeeper card below" />
+Three things, three very different costs. Text lands quickly. A voice line
+takes a moment. An image takes as long as it takes. Build it the obvious way —
+generate everything, then render — and you've quietly decided that the user
+waits for the slowest one, every time, and gets nothing at all if it fails.
 
-## Three generators, one row, no waiting on the slowest
+Which is a design decision. It just usually gets made by accident.
 
-The obvious build is: generate everything, then show the result. That means
-staring at a spinner for as long as the slowest of three model calls, and
-losing all of it if one fails.
+Press forge. Then tick the box and press it again:
 
-So each output gets its own status column in Postgres — `sheet_status`,
-`portrait_status`, `voice_status` — and the edge function fires all three under
-`Promise.allSettled`, handed to `EdgeRuntime.waitUntil` so generation outlives
-the HTTP response. The browser subscribes to Realtime updates on the row and
-each panel fills itself in when its own generator lands.
+<ParallelForge />
 
-<Image src="/images/mythforge-character.jpg" alt="A generated character page — portrait panel and character sheet side by side, each with its own READY badge, showing armor, hit points, ability scores and traits" />
+The sheet arrives first and you can already read it. The portrait takes more
+than twice as long and nothing waits for it. Kill the portrait and it dies
+alone, leaving a character you can still use.
 
-Two things fall out of that. Generation survives a page refresh, because
-progress lives in the database rather than in a request. And a failed portrait
-still leaves you a working stat sheet and a voice — the panels degrade
-independently instead of the whole page failing together.
+Waiting is the thing being designed here. Not the loading state — whether there
+is one.
 
-The `READY` badge per panel isn't decoration. It's the architecture, made
-visible.
+## What the badge is for
 
-## Making the seams the interesting part
+Each panel says `READY` on its own, and that's not chrome. It's the interface
+admitting that these are three separate things that happen to share a page.
 
-The visual work is mostly restraint: one dark teal mist behind everything,
-heavy display type for the character name, and stats in a plain numeric grid
-that reads like a character sheet rather than a dashboard.
+Once you accept that, the rest follows. Every output gets its own status, all
+three run without a barrier between them, and progress lives in the database
+rather than in a request — so closing the tab doesn't throw the work away. A
+failed portrait is a failed portrait, not a failed character.
 
-<Image src="/images/mythforge-browse.jpg" alt="The browse page — a grid of community-shared characters, each with portrait, description and SHEET / ART / VOICE badges" />
+<Image src="/images/mythforge-character.jpg" alt="A generated character page in Mythforge — portrait panel and character sheet side by side, each with its own READY badge, showing armor, hit points, ability scores and traits" />
 
-Sharing is a single toggle that flips row visibility, and asset URLs are signed
-per request based on whether you own the row or it's public — so the share link
-works without making the storage bucket public.
+The hard part wasn't the concurrency. It was resisting the urge to hold
+everything back until the page looked "finished" — one clean reveal is more
+satisfying to build and worse to use.
 
-Vite · TanStack Router + Query · Supabase (Postgres, Auth, Storage, Realtime,
-Edge Functions) · Anthropic · fal.ai Flux · ElevenLabs.
+## Everything else stays quiet
+
+One teal mist behind the whole thing. Heavy display type for the name. Stats in
+a plain numeric grid that reads like a character sheet instead of a dashboard.
+The generated portrait is the only real colour on the page, so nothing else
+competes with it.
+
+Sharing is one toggle, and asset URLs get signed per request — the share link
+works without opening the bucket to the world.
+
+Vite · TanStack Router + Query · Supabase · Anthropic · fal.ai Flux · ElevenLabs.
 
 <ButtonLink href="https://npc-forger.vercel.app">Enter the forge →</ButtonLink>

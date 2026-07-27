@@ -7,6 +7,17 @@
   --line: rgba(21, 20, 15, 0.12);
   --surface: #ebe9e5;
   --accent: #15140f;
+
+  /* Motion. The built-in CSS easings are too weak to read as intentional, so
+     these are the stronger variants — ease-out for anything entering, in-out
+     for things moving on screen. Never ease-in: it withholds movement at the
+     exact moment the eye is watching, and reads as lag. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+
+  --duration-press: 160ms;
+  --duration-fast: 180ms;
+  --duration-base: 240ms;
 }
 
 @theme inline {
@@ -52,6 +63,44 @@ summary {
     0 0 0 1px var(--line),
     0 1px 2px rgba(21, 20, 15, 0.04),
     0 6px 20px rgba(21, 20, 15, 0.06);
+}
+
+/* Pressable things should feel pressed. Scale is subtle on purpose — the point
+   is confirming the interface heard you, not putting on a show. */
+.pressable {
+  transition:
+    transform var(--duration-press) var(--ease-out),
+    background-color var(--duration-press) ease;
+}
+
+.pressable:active {
+  transform: scale(0.97);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable:active {
+    transform: none;
+  }
+}
+
+/* Skeleton pulse. CSS rather than JS: this runs off the main thread and does
+   not restart when the panel around it re-renders. */
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 1;
+  }
+}
+
+.skeleton {
+  opacity: 0.45;
+  animation: skeleton-pulse 1.1s var(--ease-in-out) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    opacity: 0.6;
+  }
 }
 
 .no-scrollbar::-webkit-scrollbar {
