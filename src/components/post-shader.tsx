@@ -46,6 +46,45 @@ const scenes: Record<string, (props: SceneProps) => React.ReactNode> = {
       className={className}
     />
   ),
+  /** Teal mist over dark water — mythforge. */
+  mist: ({ className }) => (
+    <Warp
+      speed={0}
+      frame={44000}
+      colors={["#04121a", "#0f766e", "#5eead4", "#062a2c"]}
+      proportion={0.5}
+      softness={1}
+      distortion={0.3}
+      swirl={0.75}
+      swirlIterations={8}
+      className={className}
+    />
+  ),
+  /** Bright vertical wash — doc reels. */
+  feed: ({ className }) => (
+    <MeshGradient
+      speed={0}
+      frame={12000}
+      colors={["#f7f5f1", "#c3ccdd", "#8e97ad", "#e7e2d8"]}
+      distortion={0.8}
+      swirl={0.35}
+      className={className}
+    />
+  ),
+  /** Violet haze, softly undecided — reading intention. */
+  haze: ({ className }) => (
+    <GrainGradient
+      speed={0}
+      frame={33000}
+      colorBack="#141320"
+      colors={["#8b7ff0", "#3b3357", "#d8d2ec", "#1e1a2e"]}
+      softness={0.9}
+      intensity={0.32}
+      noise={0.38}
+      shape="corners"
+      className={className}
+    />
+  ),
   /** Indigo glass panes — pane. */
   prism: ({ className }) => (
     <MeshGradient

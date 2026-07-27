@@ -1,5 +1,6 @@
 import NextImage from "next/image";
 import type { MDXComponents } from "mdx/types";
+import { IntentField } from "@/components/intent-field";
 
 function Video({ src, poster }: { src: string; poster?: string }) {
   return (
@@ -62,6 +63,7 @@ export const mdxComponents: MDXComponents = {
   ButtonLink,
   Image,
   Gallery,
+  IntentField,
   p: ({ children }) => (
     <p className="my-5 max-w-xl text-base leading-relaxed text-muted">
       {children}

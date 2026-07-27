@@ -1,0 +1,57 @@
+---
+title: Doc Reels
+subtitle: brain-rot your way through documentation
+preview: "linear-gradient(160deg, #f5f3ef 0%, #cfd6e4 55%, #8b93a8 100%)"
+shader: feed
+date: 2026-07-06
+---
+
+Nobody reads the docs. So: paste a documentation URL and get five vertical
+reels — AI voiceover, word-by-word subtitles, Subway-Surfers gameplay footage
+running behind. The format that ate everyone's attention span, pointed at
+something mildly useful.
+
+<Image src="/images/docreels-landing.jpg" alt="Doc Reels landing screen — a URL field and an optional 'what are you trying to learn' box on a soft mesh gradient" />
+
+It's a joke that works. The pipeline is real: the server scrapes the page,
+Claude writes five punchy scripts covering the key concepts, ElevenLabs turns
+each into speech, and the player composes it in-browser. No video rendering
+pipeline — it's a `<video>`, an `<audio>`, and subtitles synced to a clock.
+
+## Getting the subtitles to land on the beat
+
+The whole thing lives or dies on subtitle timing. Slightly-off captions read
+as broken in a way that slightly-off anything else doesn't.
+
+ElevenLabs returns *character*-level timestamps, not word-level, so the first
+job is folding characters into words — walking the alignment array and closing
+off a word at each boundary, keeping the first character's start and the last
+character's end. From there the player keeps its own clock: a
+`requestAnimationFrame` loop reading `audio.currentTime`, finding the last word
+whose start has passed, and highlighting it.
+
+Subtitles render a line at a time rather than the full script, with the current
+word scaled up and turned yellow. That's TikTok's grammar, and copying it
+exactly is the point.
+
+<Image src="/images/docreels-player.jpg" alt="The reel player — a 9:16 frame with a five-segment progress bar, title overlay, and play control" />
+
+## Degrading without keys
+
+Without an ElevenLabs key the app still runs. A mock timing model estimates
+word durations from length — `0.09 + length * 0.055`, plus a pause after
+sentence-ending punctuation — and the player falls back from `audio.currentTime`
+to a `performance.now()` clock. Silent, but the whole interaction is intact and
+the subtitles still land.
+
+Keyboard is wired the way a media player should be: arrows to move between
+reels, space to play/pause, escape to exit.
+
+TanStack Start · Claude for scripts · ElevenLabs with timestamps · Tailwind v4.
+
+It started as a Bun and Elysia backend with Remotion doing the composition,
+then got rebuilt on TanStack Start server functions once it was clear the whole
+thing could run in-browser without a render pipeline. The public repo below is
+that first version.
+
+<ButtonLink href="https://github.com/erikwijnbladh/doc-reels">View on GitHub →</ButtonLink>

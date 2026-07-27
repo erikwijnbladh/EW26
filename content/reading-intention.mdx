@@ -1,0 +1,52 @@
+---
+title: Reading intention
+subtitle: a chatbox that tells you what it thinks you meant
+preview: "linear-gradient(160deg, #191821 0%, #4a4458 55%, #cfc9d8 100%)"
+shader: haze
+date: 2026-07-24
+---
+
+Every chat interface has the same gap in it. You type something, you press
+enter, and then you find out whether you were understood — by reading whatever
+it produced. If it misread you, you've already paid for the answer.
+
+The correction is cheap before you commit and expensive after. So why is the
+understanding only ever shown afterwards?
+
+Here's the smallest version of the alternative. Type into it, or hit one of the
+examples:
+
+<IntentField />
+
+## What it's doing
+
+The reading is deliberately dumb — keyword matching, no model behind it —
+because the thing I want to test is the interaction, not the inference. It
+picks a verb, states what it's about to do, and shows how sure it is.
+
+Confidence moves on three things. It drops when a second intent scores nearly
+as well as the first, because that's genuine ambiguity rather than noise. It
+drops on very short input, since three words rarely pin down a task. And it
+drops when you hedge — *maybe*, *sort of*, *or something* — which is the part I
+find most interesting.
+
+Try "maybe add a dark mode or something" and watch it hedge back at you. You
+were uncertain, so it's uncertain, and it says so. Most assistants launder your
+hedge into a confident answer, which is exactly backwards.
+
+## The bit that matters
+
+Low confidence changes the *sentence*, not just the number. "I'm about to fix"
+becomes "I might be about to fix", and it names the one thing that would
+resolve it — how to reproduce, where it should live. A percentage alone is
+decoration; a percentage that changes what the system says about itself is a
+design decision.
+
+I don't think this exact widget is the answer. The move I'm fairly convinced by
+is narrower: **show the reading while it's still cheap to correct.** A model
+that tells you it's 40% sure before it spends two minutes being wrong is worth
+more than one that's confidently wrong faster.
+
+Whether people would actually read it, or just press enter through it the way
+they press enter through everything else, I genuinely don't know. That's the
+part I'd want to test with real users rather than argue about.

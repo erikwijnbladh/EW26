@@ -1,0 +1,52 @@
+---
+title: Mythforge
+subtitle: describe a character, watch it take shape three ways at once
+preview: "linear-gradient(160deg, #05121a 0%, #0f5f5a 55%, #7fd8c4 100%)"
+shader: mist
+date: 2026-06-17
+---
+
+Describe any hero or monster for your table and get three things back: a
+stat sheet, a portrait, and a voice you can actually hear. All generated in
+parallel, all streaming in independently.
+
+<Image src="/images/mythforge-hero.jpg" alt="Mythforge landing — 'Forge a character. Hear it speak.' over a dark teal mist, with a prompt field and a freshly forged innkeeper card below" />
+
+## Three generators, one row, no waiting on the slowest
+
+The obvious build is: generate everything, then show the result. That means
+staring at a spinner for as long as the slowest of three model calls, and
+losing all of it if one fails.
+
+So each output gets its own status column in Postgres — `sheet_status`,
+`portrait_status`, `voice_status` — and the edge function fires all three under
+`Promise.allSettled`, handed to `EdgeRuntime.waitUntil` so generation outlives
+the HTTP response. The browser subscribes to Realtime updates on the row and
+each panel fills itself in when its own generator lands.
+
+<Image src="/images/mythforge-character.jpg" alt="A generated character page — portrait panel and character sheet side by side, each with its own READY badge, showing armor, hit points, ability scores and traits" />
+
+Two things fall out of that. Generation survives a page refresh, because
+progress lives in the database rather than in a request. And a failed portrait
+still leaves you a working stat sheet and a voice — the panels degrade
+independently instead of the whole page failing together.
+
+The `READY` badge per panel isn't decoration. It's the architecture, made
+visible.
+
+## Making the seams the interesting part
+
+The visual work is mostly restraint: one dark teal mist behind everything,
+heavy display type for the character name, and stats in a plain numeric grid
+that reads like a character sheet rather than a dashboard.
+
+<Image src="/images/mythforge-browse.jpg" alt="The browse page — a grid of community-shared characters, each with portrait, description and SHEET / ART / VOICE badges" />
+
+Sharing is a single toggle that flips row visibility, and asset URLs are signed
+per request based on whether you own the row or it's public — so the share link
+works without making the storage bucket public.
+
+Vite · TanStack Router + Query · Supabase (Postgres, Auth, Storage, Realtime,
+Edge Functions) · Anthropic · fal.ai Flux · ElevenLabs.
+
+<ButtonLink href="https://npc-forger.vercel.app">Enter the forge →</ButtonLink>
