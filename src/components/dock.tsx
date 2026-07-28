@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { profile, contacts } from "@/lib/data";
-import { duration, ease, springSnappy, springSoft } from "@/lib/motion";
-import { SayHi, SAY_HI_LAYOUT_ID } from "@/components/say-hi";
+import { duration, ease, springSnappy, springSoft, springSurface } from "@/lib/motion";
+import { SayHiForm } from "@/components/say-hi";
 
 const stroke = {
   fill: "none",
@@ -170,13 +170,19 @@ function DockItem({
 }
 
 /**
- * Floating dock — the only chrome on the site. Holds the face, the "what's up"
- * form and the two places I keep things.
+ * Floating dock — the only chrome on the site.
+ *
+ * Opening the form doesn't mount a separate panel: this one surface grows from
+ * pill to card and swaps its contents, so there's a single thing moving on
+ * screen. The entrance animation lives on an outer wrapper so its transform
+ * never fights the inner element's layout projection.
  */
 export function Dock() {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const still = useReducedMotion();
+
+  const close = useCallback(() => setOpen(false), []);
 
   const copyEmail = useCallback(() => {
     void navigator.clipboard.writeText(profile.email);
@@ -186,69 +192,126 @@ export function Dock() {
 
   return (
     <>
-      <SayHi open={open} onClose={() => setOpen(false)} />
+      {/* Plain tint, no backdrop-filter — blurring the whole viewport while a
+          surface animates over it is what makes these feel heavy. */}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: duration.base, ease }}
+            onClick={close}
+            className="fixed inset-0 z-40 bg-foreground/[0.07]"
+          />
+        )}
+      </AnimatePresence>
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-5 sm:p-8">
-        <motion.nav
-          aria-label="Shortcuts"
-          initial={still ? { opacity: 0 } : { opacity: 0, y: 24, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
+        <motion.div
+          initial={still ? { opacity: 0 } : { opacity: 0, y: 24 }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ ...springSoft, delay: 0.35 }}
-          className="dock pointer-events-auto flex h-15 items-center gap-1 rounded-full px-2.5"
+          className="pointer-events-auto w-full max-w-md"
         >
-          <Link
-            href="/"
-            aria-label="Home"
-            className="shrink-0 rounded-full transition-opacity duration-150 hover:opacity-75"
+          <motion.div
+            layout
+            animate={{ borderRadius: open ? 26 : 999 }}
+            transition={still ? { duration: 0 } : springSurface}
+            style={{ borderRadius: 999 }}
+            className={`dock mx-auto overflow-hidden ${
+              open ? "w-full" : "w-fit"
+            }`}
           >
-            <Image
-              src="/images/pfp.png"
-              alt={profile.name}
-              width={40}
-              height={40}
-              quality={90}
-              className="size-10 rounded-full object-cover object-top grayscale"
-            />
-          </Link>
+            <AnimatePresence mode="popLayout" initial={false}>
+              {open ? (
+                <motion.div
+                  key="form"
+                  initial={still ? { opacity: 0 } : { opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 6 }}
+                  transition={{
+                    duration: duration.base * 0.6,
+                    ease,
+                    delay: still ? 0 : 0.05,
+                  }}
+                >
+                  <SayHiForm onClose={close} />
+                </motion.div>
+              ) : (
+                <motion.nav
+                  key="bar"
+                  aria-label="Shortcuts"
+                  initial={still ? { opacity: 0 } : { opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{
+                    duration: duration.base * 0.5,
+                    ease,
+                    delay: still ? 0 : 0.05,
+                  }}
+                  className="flex h-15 items-center gap-1 px-2.5"
+                >
+                  <Link
+                    href="/"
+                    aria-label="Home"
+                    className="shrink-0 rounded-full transition-opacity duration-150 hover:opacity-75"
+                  >
+                    <Image
+                      src="/images/pfp.png"
+                      alt={profile.name}
+                      width={40}
+                      height={40}
+                      quality={90}
+                      className="size-10 rounded-full object-cover object-top grayscale"
+                    />
+                  </Link>
 
-          <span className="mx-1.5 h-6 w-px bg-line" aria-hidden />
+                  <span className="mx-1.5 h-6 w-px bg-line" aria-hidden />
 
-          <DockItem label="Say hi" onClick={() => setOpen((v) => !v)}>
-            {/* Morph anchor: the form's panel grows out of this button. */}
-            {!open && !still && (
-              <motion.span
-                layoutId={SAY_HI_LAYOUT_ID}
-                style={{ borderRadius: 9999 }}
-                className="absolute inset-0 -z-10"
-              />
-            )}
-            <ChatIcon />
-          </DockItem>
+                  <DockItem label="Say hi" onClick={() => setOpen(true)}>
+                    <ChatIcon />
+                  </DockItem>
 
-          <DockItem label={copied ? "Copied" : "Copy email"} onClick={copyEmail}>
-            {/* Crossfade so the tick doesn't pop in. */}
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.span
-                key={copied ? "check" : "mail"}
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                transition={{ duration: duration.fast, ease }}
-                className="grid place-items-center"
-              >
-                {copied ? <CheckIcon /> : <MailIcon />}
-              </motion.span>
+                  <DockItem
+                    label={copied ? "Copied" : "Copy email"}
+                    onClick={copyEmail}
+                  >
+                    {/* Crossfade so the tick doesn't pop in. */}
+                    <AnimatePresence mode="wait" initial={false}>
+                      <motion.span
+                        key={copied ? "check" : "mail"}
+                        initial={{ opacity: 0, scale: 0.7 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.7 }}
+                        transition={{ duration: duration.fast, ease }}
+                        className="grid place-items-center"
+                      >
+                        {copied ? <CheckIcon /> : <MailIcon />}
+                      </motion.span>
+                    </AnimatePresence>
+                  </DockItem>
+
+                  <DockItem
+                    label="GitHub"
+                    href={contactHref("github")}
+                    external
+                  >
+                    <GithubIcon />
+                  </DockItem>
+
+                  <DockItem
+                    label="LinkedIn"
+                    href={contactHref("linkedin")}
+                    external
+                  >
+                    <LinkedinIcon />
+                  </DockItem>
+                </motion.nav>
+              )}
             </AnimatePresence>
-          </DockItem>
-
-          <DockItem label="GitHub" href={contactHref("github")} external>
-            <GithubIcon />
-          </DockItem>
-
-          <DockItem label="LinkedIn" href={contactHref("linkedin")} external>
-            <LinkedinIcon />
-          </DockItem>
-        </motion.nav>
+          </motion.div>
+        </motion.div>
       </div>
     </>
   );

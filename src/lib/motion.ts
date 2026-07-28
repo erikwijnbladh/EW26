@@ -37,6 +37,18 @@ export const springSoft: Transition = {
   mass: 0.9,
 };
 
+/**
+ * Big surfaces changing size (the dock expanding into the card). Critically
+ * damped and deliberately unhurried — ~380ms end to end. Anything snappier at
+ * this size reads as a jump rather than a movement.
+ */
+export const springSurface: Transition = {
+  type: "spring",
+  stiffness: 240,
+  damping: 30,
+  mass: 1,
+};
+
 /** Enter: rise, sharpen, fade in. Exit is deliberately quicker than enter. */
 export const enter = {
   hidden: { opacity: 0, y: 12, filter: "blur(6px)" },

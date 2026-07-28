@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { nowPlaying, NOW_PLAYING_PREVIEW } from "@/lib/data";
-import { duration, ease, springSnappy } from "@/lib/motion";
+import { duration, ease, springSnappy, springSurface } from "@/lib/motion";
 
 /**
  * How much a row dims as it goes down the list. Collapsed, the tail fades out
@@ -79,24 +79,22 @@ export function LatestPlaying() {
         Latest playing
       </p>
 
-      <motion.ol layout className="mt-4">
-        <AnimatePresence initial={false}>
+      <motion.ol layout transition={{ layout: springSurface }} className="mt-4">
+        <AnimatePresence initial={false} mode="popLayout">
           {tracks.map((track, i) => (
             <motion.li
               key={`${track.artist}-${track.title}`}
               layout
-              initial={
-                still
-                  ? { opacity: 0 }
-                  : { opacity: 0, y: 8, filter: "blur(4px)" }
-              }
-              animate={{ opacity: dim(i, expanded), y: 0, filter: "blur(0px)" }}
+              initial={still ? { opacity: 0 } : { opacity: 0, y: 8 }}
+              animate={{ opacity: dim(i, expanded), y: 0 }}
               exit={
                 still
                   ? { opacity: 0 }
                   : { opacity: 0, y: -4, transition: { duration: 0.15, ease } }
               }
               transition={{
+                // Rows sliding to a new position spring; opacity just fades.
+                layout: springSurface,
                 duration: duration.base,
                 // Stagger only the rows being revealed, not the ones already there.
                 delay:
@@ -131,7 +129,7 @@ export function LatestPlaying() {
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
         whileTap={still ? undefined : { scale: 0.97 }}
-        transition={springSnappy}
+        transition={{ layout: springSurface, scale: springSnappy }}
         className="mt-4 flex items-center gap-1.5 text-xs uppercase tracking-[0.08em] text-muted/70 transition-colors duration-150 hover:text-foreground"
       >
         {expanded ? "Show less" : `View more (${nowPlaying.length})`}
