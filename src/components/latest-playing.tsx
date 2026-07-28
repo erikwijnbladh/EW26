@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { nowPlaying, NOW_PLAYING_PREVIEW } from "@/lib/data";
-import { duration, ease, springSnappy, springSurface } from "@/lib/motion";
+import { ease, springSnappy, springSurface } from "@/lib/motion";
 
 /**
  * How much a row dims as it goes down the list. Collapsed, the tail fades out
@@ -12,24 +19,11 @@ import { duration, ease, springSnappy, springSurface } from "@/lib/motion";
 const dim = (i: number, expanded: boolean) =>
   expanded ? 1 : Math.max(0.18, 1 - i * 0.19);
 
-/** Live height of an element, tracked through content and viewport changes. */
-function useMeasuredHeight<T extends HTMLElement>() {
-  const ref = useRef<T>(null);
-  const [height, setHeight] = useState<number | null>(null);
+/** Gap between one row's fade and the next. */
+const STAGGER = 0.05;
 
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-
-    const observer = new ResizeObserver(([entry]) => {
-      setHeight(entry.contentRect.height);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return [ref, height] as const;
-}
+/** Rows always live in the DOM; these are the two heights the curtain moves between. */
+type Heights = { collapsed: number; full: number };
 
 /** Three little bars, pulsing. Marks the most recent track. */
 function Equalizer() {
@@ -83,18 +77,70 @@ function Chevron({ up }: { up: boolean }) {
 /**
  * The last few tracks, with the rest of the ten behind a toggle.
  *
- * Built as a clipped drawer rather than a list of individually-animated rows.
- * All ten stay mounted; only the wrapper's height animates. That matters at
- * the bottom of a short page: shrinking the document by five rows in one frame
- * makes the browser clamp the scroll position instantly, and any layout
- * projection running at the same time gets measured against a viewport that
- * moved underneath it. Animating one height lets the page shrink over the
- * same ~380ms, so the scroll follows it smoothly instead of snapping.
+ * Every row stays mounted and only the wrapper's height moves, so the document
+ * shrinks gradually instead of in one frame — which is what made collapsing at
+ * the bottom of a phone screen jump.
+ *
+ * The choreography is deliberately asymmetric. Opening, the curtain goes up
+ * first and rows fade in behind it, top down. Closing, the rows fade out from
+ * the bottom up and the curtain follows a beat later, so it draws down over
+ * rows that are already leaving rather than chopping them off.
  */
 export function LatestPlaying() {
   const [expanded, setExpanded] = useState(false);
   const still = useReducedMotion();
-  const [innerRef, innerHeight] = useMeasuredHeight<HTMLOListElement>();
+  const listRef = useRef<HTMLOListElement>(null);
+  const [heights, setHeights] = useState<Heights | null>(null);
+
+  // Render the preview only until hydrated, so no-JS and the first paint show
+  // five rows rather than flashing all ten before we can measure them.
+  const mounted = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
+
+  const measure = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+
+    const rows = Array.from(el.children) as HTMLElement[];
+    const lastPreview = rows[NOW_PLAYING_PREVIEW - 1];
+    if (!lastPreview || rows.length < nowPlaying.length) return;
+
+    const top = el.getBoundingClientRect().top;
+    setHeights({
+      collapsed: Math.round(lastPreview.getBoundingClientRect().bottom - top),
+      full: Math.round(el.getBoundingClientRect().height),
+    });
+  }, []);
+
+  // Measured before paint, so the collapsed height is in place on the same
+  // frame the extra rows mount.
+  useLayoutEffect(measure, [mounted, measure]);
+
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el) return;
+    // Re-measure when the rows rewrap at a new width.
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [measure]);
+
+  const rows = mounted ? nowPlaying : nowPlaying.slice(0, NOW_PLAYING_PREVIEW);
+  const lastIndex = nowPlaying.length - 1;
+
+  /** When a given row starts its fade. */
+  function rowDelay(i: number, extra: boolean) {
+    if (still) return 0;
+    if (expanded) {
+      // Behind the rising curtain, top down.
+      return extra ? 0.08 + (i - NOW_PLAYING_PREVIEW) * STAGGER : 0;
+    }
+    // Bottom row first, working back up towards the ones that stay.
+    return extra ? (lastIndex - i) * STAGGER : 0.06;
+  }
 
   return (
     <section aria-label="Latest playing" style={{ overflowAnchor: "none" }}>
@@ -105,32 +151,41 @@ export function LatestPlaying() {
       <motion.div
         className="mt-4 overflow-hidden"
         initial={false}
-        animate={{ height: innerHeight ?? "auto" }}
-        transition={still ? { duration: 0 } : springSurface}
+        animate={{
+          height: heights
+            ? expanded
+              ? heights.full
+              : heights.collapsed
+            : "auto",
+        }}
+        transition={
+          still
+            ? { duration: 0 }
+            : {
+                ...springSurface,
+                // Closing, let the last row start leaving before the curtain
+                // moves; opening, the curtain leads.
+                delay: expanded ? 0 : 0.12,
+              }
+        }
       >
-        <ol ref={innerRef}>
-          {nowPlaying.map((track, i) => {
-            const hidden = !expanded && i >= NOW_PLAYING_PREVIEW;
+        <ol ref={listRef}>
+          {rows.map((track, i) => {
+            const extra = i >= NOW_PLAYING_PREVIEW;
+            const gone = extra && !expanded;
 
             return (
               <motion.li
                 key={`${track.artist}-${track.title}`}
                 initial={false}
-                animate={{ opacity: hidden ? 0 : dim(i, expanded) }}
+                animate={{ opacity: gone ? 0 : dim(i, expanded) }}
                 transition={{
-                  duration: duration.base,
+                  duration: still ? 0 : 0.32,
                   ease,
-                  // Rows being revealed trail in behind the height.
-                  delay:
-                    expanded && i >= NOW_PLAYING_PREVIEW
-                      ? (i - NOW_PLAYING_PREVIEW) * 0.04
-                      : 0,
+                  delay: rowDelay(i, extra),
                 }}
-                // Collapsed rows are clipped anyway; take them out of the
-                // measured height so the drawer closes to the right size.
-                className={`flex items-baseline gap-4 border-t border-line py-2.5 first:border-t-0 ${
-                  hidden ? "hidden" : ""
-                }`}
+                aria-hidden={gone}
+                className="flex items-baseline gap-4 border-t border-line py-2.5 first:border-t-0"
               >
                 <span className="flex min-w-0 items-baseline gap-2.5">
                   {i === 0 && (
