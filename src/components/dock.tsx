@@ -1,12 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "motion/react";
 import { profile } from "@/lib/data";
-import { actionById, contactHref } from "@/components/actions";
-import { CommandMenu } from "@/components/command-menu";
+import { contacts, profile as me } from "@/lib/data";
+import { SayHi } from "@/components/say-hi";
 
 const stroke = {
   fill: "none",
@@ -59,49 +59,41 @@ function LinkedinIcon() {
   );
 }
 
-function CommandIcon() {
+function ChatIcon() {
   return (
     <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
       <path
-        d="M9 9V6.5a2.5 2.5 0 1 0-2.5 2.5H9Zm0 0h6m-6 0v6m6-6V6.5A2.5 2.5 0 1 1 17.5 9H15Zm0 0v6m0 0h2.5A2.5 2.5 0 1 1 15 17.5V15Zm0 0H9m0 0v2.5A2.5 2.5 0 1 1 6.5 15H9Z"
+        d="M12 3c5 0 9 3.4 9 7.6s-4 7.6-9 7.6a10.7 10.7 0 0 1-2.6-.3L5 20.4l.5-3.4C3.9 15.6 3 13.4 3 10.6 3 6.4 7 3 12 3Z"
         {...stroke}
       />
     </svg>
   );
 }
 
+/** Look up a contact URL by its label in `contacts`. */
+const contactHref = (label: string) =>
+  contacts.find((c) => c.label === label)?.href ?? "";
+
 const itemClass =
   "relative grid size-10 place-items-center rounded-full text-foreground/80 transition-colors hover:bg-foreground/[0.06] hover:text-foreground";
 
 /**
- * Floating dock — the only chrome on the site. Holds the face, the ⌘K trigger
- * and the three ways to reach me.
+ * Floating dock — the only chrome on the site. Holds the face, the "what's up"
+ * form and the three ways to reach me.
  */
 export function Dock() {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // ⌘K / Ctrl+K from anywhere on the page.
-  useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key.toLowerCase() === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((v) => !v);
-      }
-    }
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
   const copyEmail = useCallback(() => {
-    actionById("copy-email").run();
+    void navigator.clipboard.writeText(me.email);
     setCopied(true);
     setTimeout(() => setCopied(false), 1400);
   }, []);
 
   return (
     <>
-      <CommandMenu open={open} onClose={() => setOpen(false)} />
+      <SayHi open={open} onClose={() => setOpen(false)} />
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-5 sm:p-8">
         <motion.nav
@@ -132,11 +124,11 @@ export function Dock() {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            aria-label="Open command menu (⌘K)"
-            title="Command menu — ⌘K"
+            aria-label="Say hi"
+            title="Say hi"
             className={itemClass}
           >
-            <CommandIcon />
+            <ChatIcon />
           </button>
 
           <button
