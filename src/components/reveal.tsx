@@ -1,11 +1,27 @@
 "use client";
 
-import { motion, type Variants } from "motion/react";
+import { motion, useReducedMotion, type Variants } from "motion/react";
+import { duration, ease, enter } from "@/lib/motion";
 
-const variants: Variants = {
-  hidden: { opacity: 0, y: 16 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.16, 1, 0.3, 1] } },
-};
+/** Rise + sharpen + fade. Flattened to a plain fade when motion is reduced. */
+function useVariants(): Variants {
+  const still = useReducedMotion();
+
+  if (still) {
+    return {
+      hidden: { opacity: 0 },
+      show: { opacity: 1, transition: { duration: duration.fast } },
+    };
+  }
+
+  return {
+    hidden: enter.hidden,
+    show: {
+      ...enter.show,
+      transition: { duration: duration.slow, ease },
+    },
+  };
+}
 
 export function Reveal({
   children,
@@ -16,6 +32,8 @@ export function Reveal({
   delay?: number;
   className?: string;
 }) {
+  const variants = useVariants();
+
   return (
     <motion.div
       initial="hidden"
@@ -59,6 +77,8 @@ export function RevealItem({
   children: React.ReactNode;
   className?: string;
 }) {
+  const variants = useVariants();
+
   return (
     <motion.div variants={variants} className={className}>
       {children}

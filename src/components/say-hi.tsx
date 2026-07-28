@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { profile } from "@/lib/data";
+import { duration, ease, springSnappy, springSoft } from "@/lib/motion";
 
 const fieldClass =
   "w-full rounded-xl border border-line bg-surface/50 px-3.5 py-2.5 text-[15px] text-foreground outline-none transition-colors placeholder:text-muted/70 focus:border-foreground/25 focus:bg-surface/80";
@@ -12,6 +13,7 @@ const fieldClass =
  * submitting hands the message off to the visitor's mail client.
  */
 export function SayHi({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const still = useReducedMotion();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
@@ -54,7 +56,7 @@ export function SayHi({ open, onClose }: { open: boolean; onClose: () => void })
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.15 }}
+          transition={{ duration: duration.fast, ease }}
           onClick={onClose}
           className="fixed inset-0 z-[70] flex items-end justify-center bg-foreground/10 px-4 pb-28 backdrop-blur-sm sm:items-center sm:p-6"
         >
@@ -62,10 +64,25 @@ export function SayHi({ open, onClose }: { open: boolean; onClose: () => void })
             role="dialog"
             aria-modal="true"
             aria-label="Say hi"
-            initial={{ opacity: 0, y: 12, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.98 }}
-            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            initial={
+              still
+                ? { opacity: 0 }
+                : { opacity: 0, y: 16, scale: 0.96, filter: "blur(8px)" }
+            }
+            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={
+              still
+                ? { opacity: 0, transition: { duration: duration.fast } }
+                : {
+                    opacity: 0,
+                    y: 8,
+                    scale: 0.98,
+                    filter: "blur(4px)",
+                    // Leaving is quicker than arriving.
+                    transition: { duration: 0.18, ease },
+                  }
+            }
+            transition={springSoft}
             onClick={(e) => e.stopPropagation()}
             className="w-full max-w-md select-text rounded-3xl bg-background p-6 shadow-ring sm:p-7"
           >
@@ -104,18 +121,32 @@ export function SayHi({ open, onClose }: { open: boolean; onClose: () => void })
                 onChange={(e) => setMessage(e.target.value)}
                 required
                 rows={4}
-                placeholder="hey erik, the dots on your face are sick"
+                placeholder="hey erik, i have a stupid idea and a budget"
                 aria-label="Message"
                 className={`${fieldClass} resize-none`}
               />
 
-              <button
+              <motion.button
                 type="submit"
-                className="mt-1 rounded-xl bg-foreground px-4 py-3 text-[15px] font-medium text-background transition-opacity hover:opacity-90 disabled:opacity-60"
+                whileHover={still ? undefined : { scale: 1.01 }}
+                whileTap={still ? undefined : { scale: 0.985 }}
+                transition={springSnappy}
+                className="mt-1 overflow-hidden rounded-xl bg-foreground px-4 py-3 text-[15px] font-medium text-background transition-opacity duration-150 hover:opacity-90 disabled:opacity-70"
                 disabled={sent}
               >
-                {sent ? "Opening your mail app…" : "Send it"}
-              </button>
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={sent ? "sent" : "idle"}
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    transition={{ duration: duration.fast, ease }}
+                    className="block"
+                  >
+                    {sent ? "Opening your mail app…" : "Send it"}
+                  </motion.span>
+                </AnimatePresence>
+              </motion.button>
             </form>
 
             <p className="mt-4 text-xs font-light text-muted">

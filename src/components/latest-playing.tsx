@@ -2,6 +2,7 @@
 
 import { motion, useReducedMotion } from "motion/react";
 import { nowPlaying } from "@/lib/data";
+import { duration, ease } from "@/lib/motion";
 
 /** How much each row dims as it goes down the list. */
 const dim = (i: number) => Math.max(0.18, 1 - i * 0.19);
@@ -39,6 +40,8 @@ function Equalizer() {
  * the bottom, so the newest one reads first and the rest trail off.
  */
 export function LatestPlaying() {
+  const still = useReducedMotion();
+
   return (
     <section aria-label="Latest playing">
       <p className="text-xs uppercase tracking-[0.08em] text-muted/70">
@@ -49,13 +52,17 @@ export function LatestPlaying() {
         {nowPlaying.map((track, i) => (
           <motion.li
             key={`${track.artist}-${track.title}`}
-            initial={{ opacity: 0, y: 6 }}
-            whileInView={{ opacity: dim(i), y: 0 }}
-            viewport={{ once: true }}
+            initial={
+              still
+                ? { opacity: 0 }
+                : { opacity: 0, y: 10, filter: "blur(5px)" }
+            }
+            whileInView={{ opacity: dim(i), y: 0, filter: "blur(0px)" }}
+            viewport={{ once: true, margin: "-8% 0px" }}
             transition={{
-              duration: 0.5,
-              delay: 0.15 + i * 0.06,
-              ease: [0.16, 1, 0.3, 1],
+              duration: duration.slow,
+              delay: 0.15 + i * 0.07,
+              ease,
             }}
             className="flex items-baseline gap-4 border-t border-line py-3 first:border-t-0"
           >

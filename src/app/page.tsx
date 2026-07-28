@@ -5,7 +5,7 @@ import { LatestPlaying } from "@/components/latest-playing";
 
 export default function Home() {
   return (
-    <div className="w-full px-6 pb-44 pt-20 sm:px-20 sm:pt-28">
+    <div className="mx-auto w-full max-w-5xl px-6 pb-44 pt-20 sm:px-16 sm:pt-28">
       <Reveal>
         <h1 className="max-w-[15ch] text-[clamp(2rem,5.5vw,3.5rem)] font-medium leading-[1.1] tracking-[-0.02em] text-foreground">
           {profile.headline}
