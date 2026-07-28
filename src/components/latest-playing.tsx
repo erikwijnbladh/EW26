@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { useEffect, useRef, useState } from "react";
+import { motion, useReducedMotion } from "motion/react";
 import { nowPlaying, NOW_PLAYING_PREVIEW } from "@/lib/data";
 import { duration, ease, springSnappy, springSurface } from "@/lib/motion";
 
@@ -11,6 +11,25 @@ import { duration, ease, springSnappy, springSurface } from "@/lib/motion";
  */
 const dim = (i: number, expanded: boolean) =>
   expanded ? 1 : Math.max(0.18, 1 - i * 0.19);
+
+/** Live height of an element, tracked through content and viewport changes. */
+function useMeasuredHeight<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [height, setHeight] = useState<number | null>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    const observer = new ResizeObserver(([entry]) => {
+      setHeight(entry.contentRect.height);
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return [ref, height] as const;
+}
 
 /** Three little bars, pulsing. Marks the most recent track. */
 function Equalizer() {
@@ -62,74 +81,82 @@ function Chevron({ up }: { up: boolean }) {
 }
 
 /**
- * The last few tracks — a hairline list that dims toward the bottom, with the
- * rest of the ten a click away.
+ * The last few tracks, with the rest of the ten behind a toggle.
+ *
+ * Built as a clipped drawer rather than a list of individually-animated rows.
+ * All ten stay mounted; only the wrapper's height animates. That matters at
+ * the bottom of a short page: shrinking the document by five rows in one frame
+ * makes the browser clamp the scroll position instantly, and any layout
+ * projection running at the same time gets measured against a viewport that
+ * moved underneath it. Animating one height lets the page shrink over the
+ * same ~380ms, so the scroll follows it smoothly instead of snapping.
  */
 export function LatestPlaying() {
   const [expanded, setExpanded] = useState(false);
   const still = useReducedMotion();
-
-  const tracks = expanded
-    ? nowPlaying
-    : nowPlaying.slice(0, NOW_PLAYING_PREVIEW);
+  const [innerRef, innerHeight] = useMeasuredHeight<HTMLOListElement>();
 
   return (
-    <section aria-label="Latest playing">
+    <section aria-label="Latest playing" style={{ overflowAnchor: "none" }}>
       <p className="text-xs uppercase tracking-[0.08em] text-muted/70">
         Latest playing
       </p>
 
-      <motion.ol layout transition={{ layout: springSurface }} className="mt-4">
-        <AnimatePresence initial={false} mode="popLayout">
-          {tracks.map((track, i) => (
-            <motion.li
-              key={`${track.artist}-${track.title}`}
-              layout
-              initial={still ? { opacity: 0 } : { opacity: 0, y: 8 }}
-              animate={{ opacity: dim(i, expanded), y: 0 }}
-              exit={
-                still
-                  ? { opacity: 0 }
-                  : { opacity: 0, y: -4, transition: { duration: 0.15, ease } }
-              }
-              transition={{
-                // Rows sliding to a new position spring; opacity just fades.
-                layout: springSurface,
-                duration: duration.base,
-                // Stagger only the rows being revealed, not the ones already there.
-                delay:
-                  i >= NOW_PLAYING_PREVIEW
-                    ? (i - NOW_PLAYING_PREVIEW) * 0.05
-                    : 0,
-                ease,
-              }}
-              className="flex items-baseline gap-4 border-t border-line py-2.5 first:border-t-0"
-            >
-              <span className="flex min-w-0 items-baseline gap-2.5">
-                {i === 0 && (
-                  <span className="translate-y-[1px]">
-                    <Equalizer />
+      <motion.div
+        className="mt-4 overflow-hidden"
+        initial={false}
+        animate={{ height: innerHeight ?? "auto" }}
+        transition={still ? { duration: 0 } : springSurface}
+      >
+        <ol ref={innerRef}>
+          {nowPlaying.map((track, i) => {
+            const hidden = !expanded && i >= NOW_PLAYING_PREVIEW;
+
+            return (
+              <motion.li
+                key={`${track.artist}-${track.title}`}
+                initial={false}
+                animate={{ opacity: hidden ? 0 : dim(i, expanded) }}
+                transition={{
+                  duration: duration.base,
+                  ease,
+                  // Rows being revealed trail in behind the height.
+                  delay:
+                    expanded && i >= NOW_PLAYING_PREVIEW
+                      ? (i - NOW_PLAYING_PREVIEW) * 0.04
+                      : 0,
+                }}
+                // Collapsed rows are clipped anyway; take them out of the
+                // measured height so the drawer closes to the right size.
+                className={`flex items-baseline gap-4 border-t border-line py-2.5 first:border-t-0 ${
+                  hidden ? "hidden" : ""
+                }`}
+              >
+                <span className="flex min-w-0 items-baseline gap-2.5">
+                  {i === 0 && (
+                    <span className="translate-y-[1px]">
+                      <Equalizer />
+                    </span>
+                  )}
+                  <span className="truncate text-[15px] text-foreground">
+                    {track.title}
                   </span>
-                )}
-                <span className="truncate text-[15px] text-foreground">
-                  {track.title}
                 </span>
-              </span>
-              <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
-                {track.artist}
-              </span>
-            </motion.li>
-          ))}
-        </AnimatePresence>
-      </motion.ol>
+                <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
+                  {track.artist}
+                </span>
+              </motion.li>
+            );
+          })}
+        </ol>
+      </motion.div>
 
       <motion.button
-        layout
         type="button"
         onClick={() => setExpanded((v) => !v)}
         aria-expanded={expanded}
         whileTap={still ? undefined : { scale: 0.97 }}
-        transition={{ layout: springSurface, scale: springSnappy }}
+        transition={springSnappy}
         className="mt-4 flex items-center gap-1.5 text-xs uppercase tracking-[0.08em] text-muted/70 transition-colors duration-150 hover:text-foreground"
       >
         {expanded ? "Show less" : `View more (${nowPlaying.length})`}

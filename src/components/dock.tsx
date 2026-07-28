@@ -220,7 +220,7 @@ export function Dock() {
             transition={still ? { duration: 0 } : springSurface}
             style={{ borderRadius: 999 }}
             className={`dock mx-auto overflow-hidden ${
-              open ? "w-full" : "w-fit"
+              open ? "dock-open w-full" : "w-fit"
             }`}
           >
             <AnimatePresence mode="popLayout" initial={false}>

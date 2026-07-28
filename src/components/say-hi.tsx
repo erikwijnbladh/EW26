@@ -53,7 +53,7 @@ export function SayHiForm({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="select-text p-6 sm:p-7">
+    <div className="select-text p-5 sm:p-7">
       <div className="flex items-start justify-between gap-4">
         <h2 className="text-[26px] font-medium leading-tight tracking-[-0.02em] text-foreground">
           What&rsquo;s up?
@@ -110,7 +110,7 @@ export function SayHiForm({ onClose }: { onClose: () => void }) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           required
-          rows={4}
+          rows={3}
           placeholder="hey erik, i have a stupid idea and a budget"
           aria-label="Message"
           className={`${fieldClass} resize-none`}
