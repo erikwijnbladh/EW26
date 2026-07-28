@@ -3,13 +3,6 @@ export const profile = {
   role: "Tech & Design",
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
-  /** The big opening statement on the home page. */
-  headline:
-    "Erik designs and builds web products, and is currently doing both at Compileit.",
-  intro:
-    "I work in the blend of tech and design — owning frontends, shaping products, sweating the details that most people never notice. Away from the screen I listen to heavy music, ski, play games and skateboard.",
-  /** Home timezone for the live clock line. */
-  timezone: "Europe/Stockholm",
   tagline: "I design and build web products. Living in the blend of tech and design.",
   bio: [
     "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
@@ -31,20 +24,6 @@ export const contacts = [
     href: "https://github.com/erikwijnbladh",
     external: true,
   },
-];
-
-export type Track = {
-  title: string;
-  artist: string;
-};
-
-/** Latest playing — a static list, newest first. Edit by hand. */
-export const nowPlaying: Track[] = [
-  { title: "Don't Reach For Me", artist: "Knocked Loose" },
-  { title: "Cellar Door", artist: "Spiritbox" },
-  { title: "Two-Way Mirror", artist: "Loathe" },
-  { title: "Silvera", artist: "Gojira" },
-  { title: "Bleed", artist: "Meshuggah" },
 ];
 
 export type Experience = {

@@ -1,31 +1,48 @@
-import { profile } from "@/lib/data";
+import { currentRoleItem, type HomeListItem } from "@/lib/data";
+import { getAllPosts } from "@/lib/content";
 import { Reveal } from "@/components/reveal";
-import { LocalTime } from "@/components/local-time";
-import { LatestPlaying } from "@/components/latest-playing";
+import { HomeList } from "@/components/home-list";
 
 export default function Home() {
+  const postItems: HomeListItem[] = getAllPosts().map((post) => ({
+    id: post.slug,
+    title: post.title.toLowerCase(),
+    subtitle: post.subtitle.toLowerCase(),
+    preview: post.preview,
+    shader: post.shader,
+    href: post.link ?? `/${post.slug}`,
+    external: Boolean(post.link),
+  }));
+
+  const aboutItem: HomeListItem = {
+    id: "about",
+    title: "about",
+    href: "/about",
+    separated: true,
+  };
+
+  const homeItems: HomeListItem[] = [
+    currentRoleItem,
+    ...postItems,
+    aboutItem,
+  ];
+
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 pb-44 pt-20 sm:px-16 sm:pt-28">
-      <Reveal>
-        <h1 className="max-w-[15ch] text-[clamp(2rem,5.5vw,3.5rem)] font-medium leading-[1.1] tracking-[-0.02em] text-foreground">
-          {profile.headline}
-        </h1>
-      </Reveal>
+    <div className="mx-auto w-full max-w-3xl px-5 sm:px-8">
+      <section className="pb-16 pt-4 pl-5 sm:pb-24">
+        <Reveal>
+          <p className="max-w-md text-sm leading-relaxed text-muted">
+            I build stuff and sometimes do design, based in Stockholm and
+            currently at Compileit.
+          </p>
+        </Reveal>
+      </section>
 
-      <Reveal delay={0.06}>
-        <p className="mt-8 max-w-[46ch] text-lg font-light leading-[1.75] text-muted sm:mt-10">
-          {profile.intro}
-          <br />
-          <br />
-          <LocalTime />
-        </p>
-      </Reveal>
-
-      <Reveal delay={0.12}>
-        <div className="mt-14 max-w-sm sm:mt-16">
-          <LatestPlaying />
-        </div>
-      </Reveal>
+      <section className="pb-40 sm:pb-44">
+        <Reveal>
+          <HomeList items={homeItems} />
+        </Reveal>
+      </section>
     </div>
   );
 }
