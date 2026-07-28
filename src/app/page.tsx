@@ -1,48 +1,40 @@
-import { currentRoleItem, type HomeListItem } from "@/lib/data";
-import { getAllPosts } from "@/lib/content";
+import Image from "next/image";
+import { profile } from "@/lib/data";
 import { Reveal } from "@/components/reveal";
-import { HomeList } from "@/components/home-list";
+import { LatestPlaying } from "@/components/latest-playing";
 
 export default function Home() {
-  const postItems: HomeListItem[] = getAllPosts().map((post) => ({
-    id: post.slug,
-    title: post.title.toLowerCase(),
-    subtitle: post.subtitle.toLowerCase(),
-    preview: post.preview,
-    shader: post.shader,
-    href: post.link ?? `/${post.slug}`,
-    external: Boolean(post.link),
-  }));
-
-  const aboutItem: HomeListItem = {
-    id: "about",
-    title: "about",
-    href: "/about",
-    separated: true,
-  };
-
-  const homeItems: HomeListItem[] = [
-    currentRoleItem,
-    ...postItems,
-    aboutItem,
-  ];
-
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 sm:px-8">
-      <section className="pb-16 pt-4 pl-5 sm:pb-24">
+    <div className="mx-auto w-full max-w-3xl px-5 pb-40 sm:px-8 sm:pb-44">
+      <section className="pt-4 sm:pl-5">
         <Reveal>
-          <p className="max-w-md text-sm leading-relaxed text-muted">
-            I build stuff and sometimes do design, based in Stockholm and
-            currently at Compileit.
+          <div className="relative aspect-[7/6] w-full max-w-sm overflow-hidden rounded-2xl shadow-ring">
+            <Image
+              src="/images/pfp.png"
+              alt={profile.name}
+              fill
+              sizes="(max-width: 640px) 90vw, 384px"
+              quality={90}
+              className="object-cover object-top grayscale"
+              priority
+            />
+          </div>
+        </Reveal>
+      </section>
+
+      <div className="sm:pl-5">
+        <Reveal delay={0.06}>
+          <p className="mt-8 max-w-md text-base leading-relaxed text-muted">
+            {profile.intro}
           </p>
         </Reveal>
-      </section>
 
-      <section className="pb-40 sm:pb-44">
-        <Reveal>
-          <HomeList items={homeItems} />
+        <Reveal delay={0.12}>
+          <div className="mt-12 max-w-sm">
+            <LatestPlaying />
+          </div>
         </Reveal>
-      </section>
+      </div>
     </div>
   );
 }
