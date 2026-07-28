@@ -6,7 +6,7 @@ import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { profile, contacts } from "@/lib/data";
 import { duration, ease, springSnappy, springSoft } from "@/lib/motion";
-import { SayHi } from "@/components/say-hi";
+import { SayHi, SAY_HI_LAYOUT_ID } from "@/components/say-hi";
 
 const stroke = {
   fill: "none",
@@ -213,7 +213,15 @@ export function Dock() {
 
           <span className="mx-1.5 h-6 w-px bg-line" aria-hidden />
 
-          <DockItem label="Say hi" onClick={() => setOpen(true)}>
+          <DockItem label="Say hi" onClick={() => setOpen((v) => !v)}>
+            {/* Morph anchor: the form's panel grows out of this button. */}
+            {!open && !still && (
+              <motion.span
+                layoutId={SAY_HI_LAYOUT_ID}
+                style={{ borderRadius: 9999 }}
+                className="absolute inset-0 -z-10"
+              />
+            )}
             <ChatIcon />
           </DockItem>
 

@@ -1,11 +1,16 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
-import { nowPlaying } from "@/lib/data";
-import { duration, ease } from "@/lib/motion";
+import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { nowPlaying, NOW_PLAYING_PREVIEW } from "@/lib/data";
+import { duration, ease, springSnappy } from "@/lib/motion";
 
-/** How much each row dims as it goes down the list. */
-const dim = (i: number) => Math.max(0.18, 1 - i * 0.19);
+/**
+ * How much a row dims as it goes down the list. Collapsed, the tail fades out
+ * to hint there's more; expanded, everything reads at full strength.
+ */
+const dim = (i: number, expanded: boolean) =>
+  expanded ? 1 : Math.max(0.18, 1 - i * 0.19);
 
 /** Three little bars, pulsing. Marks the most recent track. */
 function Equalizer() {
@@ -35,12 +40,38 @@ function Equalizer() {
   );
 }
 
+function Chevron({ up }: { up: boolean }) {
+  return (
+    <motion.svg
+      viewBox="0 0 24 24"
+      className="size-3.5"
+      animate={{ rotate: up ? 180 : 0 }}
+      transition={springSnappy}
+      aria-hidden
+    >
+      <path
+        d="m7 10 5 5 5-5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </motion.svg>
+  );
+}
+
 /**
- * The last few tracks — a plain hairline list that dims and fades out toward
- * the bottom, so the newest one reads first and the rest trail off.
+ * The last few tracks — a hairline list that dims toward the bottom, with the
+ * rest of the ten a click away.
  */
 export function LatestPlaying() {
+  const [expanded, setExpanded] = useState(false);
   const still = useReducedMotion();
+
+  const tracks = expanded
+    ? nowPlaying
+    : nowPlaying.slice(0, NOW_PLAYING_PREVIEW);
 
   return (
     <section aria-label="Latest playing">
@@ -48,40 +79,64 @@ export function LatestPlaying() {
         Latest playing
       </p>
 
-      <ol className="mt-4 [mask-image:linear-gradient(to_bottom,#000_45%,transparent_100%)]">
-        {nowPlaying.map((track, i) => (
-          <motion.li
-            key={`${track.artist}-${track.title}`}
-            initial={
-              still
-                ? { opacity: 0 }
-                : { opacity: 0, y: 10, filter: "blur(5px)" }
-            }
-            whileInView={{ opacity: dim(i), y: 0, filter: "blur(0px)" }}
-            viewport={{ once: true, margin: "-8% 0px" }}
-            transition={{
-              duration: duration.slow,
-              delay: 0.15 + i * 0.07,
-              ease,
-            }}
-            className="flex items-baseline gap-4 border-t border-line py-2.5 first:border-t-0"
-          >
-            <span className="flex min-w-0 items-baseline gap-2.5">
-              {i === 0 && (
-                <span className="translate-y-[1px]">
-                  <Equalizer />
+      <motion.ol layout className="mt-4">
+        <AnimatePresence initial={false}>
+          {tracks.map((track, i) => (
+            <motion.li
+              key={`${track.artist}-${track.title}`}
+              layout
+              initial={
+                still
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: 8, filter: "blur(4px)" }
+              }
+              animate={{ opacity: dim(i, expanded), y: 0, filter: "blur(0px)" }}
+              exit={
+                still
+                  ? { opacity: 0 }
+                  : { opacity: 0, y: -4, transition: { duration: 0.15, ease } }
+              }
+              transition={{
+                duration: duration.base,
+                // Stagger only the rows being revealed, not the ones already there.
+                delay:
+                  i >= NOW_PLAYING_PREVIEW
+                    ? (i - NOW_PLAYING_PREVIEW) * 0.05
+                    : 0,
+                ease,
+              }}
+              className="flex items-baseline gap-4 border-t border-line py-2.5 first:border-t-0"
+            >
+              <span className="flex min-w-0 items-baseline gap-2.5">
+                {i === 0 && (
+                  <span className="translate-y-[1px]">
+                    <Equalizer />
+                  </span>
+                )}
+                <span className="truncate text-[15px] text-foreground">
+                  {track.title}
                 </span>
-              )}
-              <span className="truncate text-[15px] text-foreground">
-                {track.title}
               </span>
-            </span>
-            <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
-              {track.artist}
-            </span>
-          </motion.li>
-        ))}
-      </ol>
+              <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
+                {track.artist}
+              </span>
+            </motion.li>
+          ))}
+        </AnimatePresence>
+      </motion.ol>
+
+      <motion.button
+        layout
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        whileTap={still ? undefined : { scale: 0.97 }}
+        transition={springSnappy}
+        className="mt-4 flex items-center gap-1.5 text-xs uppercase tracking-[0.08em] text-muted/70 transition-colors duration-150 hover:text-foreground"
+      >
+        {expanded ? "Show less" : `View more (${nowPlaying.length})`}
+        <Chevron up={expanded} />
+      </motion.button>
     </section>
   );
 }

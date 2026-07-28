@@ -33,13 +33,23 @@ export type Track = {
   artist: string;
 };
 
-/** Latest playing — a static list, newest first. Edit by hand. */
+/**
+ * Latest playing — a static list, newest first. Edit by hand. The first
+ * `NOW_PLAYING_PREVIEW` show by default; the rest are behind "view more".
+ */
+export const NOW_PLAYING_PREVIEW = 5;
+
 export const nowPlaying: Track[] = [
   { title: "Don't Reach For Me", artist: "Knocked Loose" },
   { title: "Cellar Door", artist: "Spiritbox" },
   { title: "Two-Way Mirror", artist: "Loathe" },
   { title: "Silvera", artist: "Gojira" },
   { title: "Bleed", artist: "Meshuggah" },
+  { title: "The Summoning", artist: "Sleep Token" },
+  { title: "Animals", artist: "Architects" },
+  { title: "My Own Summer", artist: "Deftones" },
+  { title: "To the Hellfire", artist: "Lorna Shore" },
+  { title: "Jane Doe", artist: "Converge" },
 ];
 
 export type Experience = {
