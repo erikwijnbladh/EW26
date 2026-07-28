@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
-import { Nav } from "@/components/nav";
+import { Dock } from "@/components/dock";
 import { ScrollReset } from "@/components/scroll-reset";
 import { IndicatorProvider } from "@/components/indicator-context";
 import "./globals.css";
@@ -49,8 +49,8 @@ export default function RootLayout({
         <ScrollReset />
         <div className="grain" aria-hidden />
         <IndicatorProvider>
-          <Nav />
-          <main className="flex-1 pt-24 sm:pt-28">{children}</main>
+          <main className="flex-1">{children}</main>
+          <Dock />
         </IndicatorProvider>
       </body>
     </html>

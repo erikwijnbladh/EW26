@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 
 export default function About() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 pb-24 sm:px-8 sm:pb-32">
+    <div className="mx-auto w-full max-w-3xl px-5 pb-40 pt-20 sm:px-8 sm:pt-28">
       <section className="pb-12 pt-4 sm:pl-5">
         <Reveal>
           <div className="relative aspect-[7/6] w-full max-w-xl overflow-hidden rounded-2xl shadow-ring">

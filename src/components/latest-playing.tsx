@@ -7,25 +7,25 @@ import { nowPlaying } from "@/lib/data";
 export function LatestPlaying() {
   return (
     <div>
-      <p className="pb-4 font-mono text-xs lowercase tracking-wide text-muted">
-        latest playing
+      <p className="pb-5 text-xs uppercase tracking-[0.08em] text-muted/70">
+        Latest playing
       </p>
 
-      <ol className="[mask-image:linear-gradient(to_bottom,#000_25%,transparent_100%)]">
+      <ol className="[mask-image:linear-gradient(to_bottom,#000_30%,transparent_100%)]">
         {nowPlaying.map((track, i) => (
           <li
             key={`${track.artist}-${track.title}`}
-            className="relative flex items-baseline gap-3 rounded-xl border border-line bg-surface/70 px-4 py-3 first:mt-0 -mt-1"
+            className="relative -mt-1 flex items-baseline gap-4 rounded-2xl bg-surface/80 px-5 py-4 shadow-ring first:mt-0"
             style={{
               zIndex: nowPlaying.length - i,
-              opacity: 1 - i * 0.16,
-              transform: `scale(${1 - i * 0.018})`,
+              opacity: 1 - i * 0.17,
+              transform: `scale(${1 - i * 0.02})`,
             }}
           >
-            <span className="truncate text-sm text-foreground">
+            <span className="truncate text-[15px] text-foreground">
               {track.title}
             </span>
-            <span className="ml-auto shrink-0 text-sm text-muted">
+            <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
               {track.artist}
             </span>
           </li>

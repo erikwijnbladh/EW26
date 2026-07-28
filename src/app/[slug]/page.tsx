@@ -50,7 +50,7 @@ export default async function Post({
   const next = pages[(index + 1) % pages.length];
 
   return (
-    <article className="mx-auto w-full max-w-3xl px-5 pb-24 sm:px-8 sm:pb-32">
+    <article className="mx-auto w-full max-w-3xl px-5 pb-40 pt-20 sm:px-8 sm:pt-28">
       <Reveal>
         <Link
           href="/"
