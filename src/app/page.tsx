@@ -1,48 +1,37 @@
-import { currentRoleItem, type HomeListItem } from "@/lib/data";
-import { getAllPosts } from "@/lib/content";
+import Image from "next/image";
+import { profile } from "@/lib/data";
 import { Reveal } from "@/components/reveal";
-import { HomeList } from "@/components/home-list";
+import { LatestPlaying } from "@/components/latest-playing";
+import { CommandMenu } from "@/components/command-menu";
 
 export default function Home() {
-  const postItems: HomeListItem[] = getAllPosts().map((post) => ({
-    id: post.slug,
-    title: post.title.toLowerCase(),
-    subtitle: post.subtitle.toLowerCase(),
-    preview: post.preview,
-    shader: post.shader,
-    href: post.link ?? `/${post.slug}`,
-    external: Boolean(post.link),
-  }));
-
-  const aboutItem: HomeListItem = {
-    id: "about",
-    title: "about",
-    href: "/about",
-    separated: true,
-  };
-
-  const homeItems: HomeListItem[] = [
-    currentRoleItem,
-    ...postItems,
-    aboutItem,
-  ];
-
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 sm:px-8">
-      <section className="pb-16 pt-4 pl-5 sm:pb-24">
-        <Reveal>
-          <p className="max-w-md text-sm leading-relaxed text-muted">
-            I build stuff and sometimes do design, based in Stockholm and
-            currently at Compileit.
-          </p>
-        </Reveal>
-      </section>
+    <div className="mx-auto flex w-full max-w-md flex-col gap-10 px-5 pb-24 sm:px-8">
+      <Reveal>
+        <div className="relative size-24 overflow-hidden rounded-full shadow-ring">
+          <Image
+            src="/images/pfp.png"
+            alt={profile.name}
+            fill
+            sizes="96px"
+            quality={90}
+            className="object-cover object-top grayscale"
+            priority
+          />
+        </div>
+      </Reveal>
 
-      <section className="pb-24 sm:pb-32">
-        <Reveal>
-          <HomeList items={homeItems} />
-        </Reveal>
-      </section>
+      <Reveal delay={0.05}>
+        <p className="text-sm leading-relaxed text-muted">{profile.intro}</p>
+      </Reveal>
+
+      <Reveal delay={0.1}>
+        <LatestPlaying />
+      </Reveal>
+
+      <Reveal delay={0.15}>
+        <CommandMenu />
+      </Reveal>
     </div>
   );
 }

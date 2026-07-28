@@ -3,6 +3,8 @@ export const profile = {
   role: "Tech & Design",
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
+  intro:
+    "I design and build web products, currently fullstack at Compileit in Stockholm. I listen to heavy music, ski, play games and skateboard.",
   tagline: "I design and build web products. Living in the blend of tech and design.",
   bio: [
     "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
@@ -24,6 +26,20 @@ export const contacts = [
     href: "https://github.com/erikwijnbladh",
     external: true,
   },
+];
+
+export type Track = {
+  title: string;
+  artist: string;
+};
+
+/** Latest playing — a static list, newest first. Edit by hand. */
+export const nowPlaying: Track[] = [
+  { title: "Don't Reach For Me", artist: "Knocked Loose" },
+  { title: "Cellar Door", artist: "Spiritbox" },
+  { title: "Two-Way Mirror", artist: "Loathe" },
+  { title: "Silvera", artist: "Gojira" },
+  { title: "Bleed", artist: "Meshuggah" },
 ];
 
 export type Experience = {
