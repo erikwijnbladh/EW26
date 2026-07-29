@@ -17,10 +17,12 @@ import type { Track } from "@/lib/data";
  * The two things Spotify will actually tell you, kept apart.
  *
  * They used to be merged into one list with the live track at the front, which
- * read as "newest first" and wasn't. `recently-played` is a log of *finished*
- * plays: it never contains what is playing right now, and it only records a
- * track once it has been played far enough in — skip after eight seconds and
- * Spotify has decided you didn't play it, so it never appears at all.
+ * read as "newest first" and wasn't. `recently-played` is a log of plays, each
+ * carrying the `played_at` it happened at; what is playing right now has no
+ * `played_at` yet and is not in it. When a play becomes an entry — and whether
+ * a track skipped after a few seconds ever does — is not documented, so the
+ * only safe assumption is that the log's contents are Spotify's to decide and
+ * a live track may never join it.
  *
  * Merged, that produced the complaint this shape exists to fix. The live track
  * sat in slot 1 of what looked like a history, and skipping silently replaced
@@ -30,8 +32,14 @@ import type { Track } from "@/lib/data";
  * otherwise.
  */
 export type Playing = {
-  /** Playing right this second, or null when the player is idle. */
+  /**
+   * What the player is on — playing or paused — or null when nothing is
+   * loaded. A paused track still belongs here: it hasn't finished, so it is
+   * not in the log, and dropping it is how pausing used to make a song vanish.
+   */
   current: Track | null;
+  /** Whether `current` is actually advancing, as opposed to paused on it. */
+  playing: boolean;
   /** Finished plays, newest first. Never contains `current`. */
   history: Track[];
 };
@@ -233,8 +241,21 @@ async function complain(what: string, res: Response) {
   console.error(`[spotify] ${what} failed: ${res.status} ${detail}`);
 }
 
-/** The track playing right now, or null when nothing is. */
-async function getCurrent(token: string): Promise<Track | null> {
+/**
+ * What the player is sitting on, playing or paused, or null when there's
+ * nothing loaded at all.
+ *
+ * `is_playing` is a property of the *playback*, not of whether there is a
+ * track: pausing returns 200 with `is_playing: false` and `item` still holding
+ * the track you paused on. This used to return null on that, which threw the
+ * track away — and a paused song is in neither half of the widget, because it
+ * hasn't finished so it isn't in the log either. Pausing made the song vanish.
+ *
+ * A 204 is the genuinely empty case: no active session, nothing loaded.
+ */
+async function getCurrent(
+  token: string,
+): Promise<{ track: Track; playing: boolean } | null> {
   const res = await call("/me/player/currently-playing", token);
 
   // 204 means the player is idle — a normal answer, not a failure.
@@ -251,10 +272,15 @@ async function getCurrent(token: string): Promise<Track | null> {
     item?: SpotifyTrack | null;
   };
 
-  // Podcasts come back on the same endpoint with a different item shape.
-  if (!json.is_playing || json.currently_playing_type !== "track") return null;
+  // Podcasts and ads come back on the same endpoint. `currently_playing_type`
+  // is documented as one of track, episode, ad or unknown, and only the first
+  // has the shape this widget renders.
+  if (json.currently_playing_type !== "track") return null;
 
-  return toTrack(json.item);
+  const track = toTrack(json.item);
+  if (!track) return null;
+
+  return { track, playing: json.is_playing ?? false };
 }
 
 async function getRecent(token: string): Promise<Track[] | null> {
@@ -322,14 +348,15 @@ async function fetchPlaying(count: number): Promise<Playing | null> {
     // The log is filtered against the live track only because the same song
     // can genuinely appear in both: play it, finish it, then play it again.
     // Left in, it would show twice — once as playing and once as played.
+    const track = current?.track ?? null;
+
     const history = (recent ?? [])
       .filter(
-        (t) =>
-          !current || !(t.title === current.title && t.artist === current.artist),
+        (t) => !track || !(t.title === track.title && t.artist === track.artist),
       )
       .slice(0, count);
 
-    return { current, history };
+    return { current: track, playing: current?.playing ?? false, history };
   } catch {
     return null;
   }

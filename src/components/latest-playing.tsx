@@ -203,11 +203,11 @@ function Chevron({ up }: { up: boolean }) {
  *
  * The live track is deliberately not part of the deck. It sits above it, in its
  * own slot, because it is a different kind of fact: `recently-played` is a log
- * of finished plays and the song playing right now is not in it — and may never
- * be, since skipping early means Spotify never records the play. Kept in one
- * list they read as newest-first, so skipping looked like the top entry of a
- * history vanishing out of that history. Kept apart, the live slot changes and
- * the log below it simply doesn't, which is what actually happened.
+ * of plays and the song playing right now has not been logged as one — and may
+ * never be, since what earns an entry is Spotify's to decide. Kept in one list
+ * they read as newest-first, so skipping looked like the top entry of a history
+ * vanishing out of that history. Kept apart, the live slot changes and the log
+ * below it simply doesn't, which is what actually happened.
  *
  * The props are the server's answer, streamed in at request time. `usePlaying`
  * takes over once there's a client to poll with, and a song that finishes
@@ -216,10 +216,12 @@ function Chevron({ up }: { up: boolean }) {
  */
 export function LatestPlaying({
   current: initialCurrent,
+  playing: initialPlaying,
   history: initialHistory,
 }: Playing) {
-  const { current, history } = usePlaying({
+  const { current, playing, history } = usePlaying({
     current: initialCurrent,
+    playing: initialPlaying,
     history: initialHistory,
   });
 
@@ -355,9 +357,14 @@ export function LatestPlaying({
         least — and it read as a play button, as though the tile were a
         control. Up here it's just a status next to the word that states it.
       */}
+      {/*
+        Three states, not two. A paused player still has a track loaded, and
+        saying "Playing now" over it would be wrong while dropping it entirely
+        is how pausing used to make the song disappear.
+      */}
       <p className="flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-muted/70">
-        {current ? "Playing now" : "Recently played"}
-        {current ? <AudioLines /> : <PlayOff />}
+        {playing ? "Playing now" : current ? "Paused" : "Recently played"}
+        {playing ? <AudioLines /> : <PlayOff />}
       </p>
 
       {/*

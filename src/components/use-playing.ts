@@ -58,6 +58,7 @@ export function usePlaying(initial: Playing): Playing {
         if (!stopped && next) {
           setPlaying((prev) => ({
             current: next.current,
+            playing: next.playing,
             history: next.history.length ? next.history : prev.history,
           }));
         }

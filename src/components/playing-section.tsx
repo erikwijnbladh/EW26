@@ -37,7 +37,13 @@ export async function PlayingSection() {
   const log = playing?.history ?? [];
   const history = (log.length ? log : nowPlaying).slice(0, NOW_PLAYING_COUNT);
 
-  return <LatestPlaying current={playing?.current ?? null} history={history} />;
+  return (
+    <LatestPlaying
+      current={playing?.current ?? null}
+      playing={playing?.playing ?? false}
+      history={history}
+    />
+  );
 }
 
 /**
