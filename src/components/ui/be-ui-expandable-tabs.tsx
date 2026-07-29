@@ -62,10 +62,18 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * LOCAL MODIFICATION (diverges from upstream):
- * an item without `content` is an action, not a tab — it renders with the same
- * styling, hover and press feedback, but never expands the shell or reveals a
- * label. Lets one bar mix a single expanding tab with plain icon buttons.
+ * LOCAL MODIFICATIONS (diverges from upstream):
+ *
+ * 1. An item without `content` is an action, not a tab — same styling, hover
+ *    and press feedback, but it never expands the shell or reveals a label.
+ *    Lets one bar mix a single expanding tab with plain icon buttons.
+ *
+ * 2. The panel anchors its content bottom-centre instead of top-left. The
+ *    shell grows from a centred, bottom-docked bar, so both its top and left
+ *    edges move during the expansion; content pinned to those edges travels
+ *    with them (measured: 429px up and 106px left over one open). Anchored to
+ *    the fixed edges instead, the content doesn't move at all — the shell just
+ *    uncovers it.
  */
 export type ExpandableTabsItem = {
   id: string;
@@ -419,13 +427,18 @@ export function ExpandableTabs({
 
         <div
           className={cn(
-            "absolute left-0 right-0 top-0 z-10 overflow-hidden px-2 pt-2",
+            "absolute inset-x-0 top-0 z-10 overflow-hidden",
             classNames?.panel,
           )}
           style={{
             bottom: BAR_H + PANEL_DOCK_GAP,
           }}
         >
+          {/* Absolutely pinned rather than flex-aligned: the content is taller
+              than this box for most of the expansion, and an overflowing flex
+              item falls back to start alignment, which puts it back on the
+              moving edge. */}
+          <div className="absolute inset-x-0 bottom-0 flex justify-center px-2">
           <AnimatePresence mode="popLayout" initial={false}>
             {active ? (
               <motion.div
@@ -452,6 +465,7 @@ export function ExpandableTabs({
               </motion.div>
             ) : null}
           </AnimatePresence>
+          </div>
         </div>
 
         <div
