@@ -3,7 +3,7 @@
 import { useCallback, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { profile, contacts } from "@/lib/data";
-import { ease } from "@/lib/motion";
+import { ease, easeInOut } from "@/lib/motion";
 import { ExpandableTabs } from "@/components/ui/be-ui-expandable-tabs";
 import { SayHiForm } from "@/components/say-hi";
 
@@ -15,19 +15,21 @@ const stroke = {
   strokeLinejoin: "round" as const,
 };
 
-/**
- * Strokes draw themselves on mount: opacity snaps in over 100ms while the line
- * unspools over 400ms, so it reads as being drawn rather than faded up.
- */
-const draw = (delay = 0) => ({
-  initial: { pathLength: 0, opacity: 0 },
-  animate: { pathLength: 1, opacity: 1 },
-  transition: {
-    duration: 0.4,
-    ease,
-    delay,
-    opacity: { duration: 0.1, delay },
-  },
+/** Unspooling on. Opacity snaps in early so the line reads as being drawn. */
+const drawOn = (delay = 0) => ({
+  duration: 0.4,
+  ease,
+  delay,
+  opacity: { duration: 0.1, delay },
+});
+
+/** Retracting off — the stroke shortens away instead of the icon popping. */
+const drawOff = (delay = 0) => ({
+  duration: 0.26,
+  ease: easeInOut,
+  delay,
+  // Held visible until the line has almost finished retracting.
+  opacity: { duration: 0.1, delay: delay + 0.18 },
 });
 
 function ChatIcon() {
@@ -41,32 +43,47 @@ function ChatIcon() {
   );
 }
 
-function MailIcon() {
-  return (
-    <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
-      <motion.rect
-        x="2.5"
-        y="5"
-        width="19"
-        height="14"
-        rx="3.5"
-        {...stroke}
-        {...draw()}
-      />
-      <motion.path
-        d="M3.5 7.5 10.9 12.6a2 2 0 0 0 2.2 0L20.5 7.5"
-        {...stroke}
-        {...draw(0.1)}
-      />
-    </svg>
-  );
-}
+const svgClass = "absolute inset-0 size-4";
 
-function CheckIcon() {
+/**
+ * Envelope and tick share one box and never unmount — each just draws itself
+ * on or retracts off as `copied` flips, so neither can pop in or out. Copying
+ * retracts the envelope and draws the tick; reverting does the reverse.
+ */
+function CopyIcon({ copied }: { copied: boolean }) {
   return (
-    <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
-      <motion.path d="M4 12 9 17L20 6" {...stroke} {...draw()} />
-    </svg>
+    <span className="relative block size-4" aria-hidden>
+      <svg viewBox="0 0 24 24" className={svgClass}>
+        <motion.rect
+          x="2.5"
+          y="5"
+          width="19"
+          height="14"
+          rx="3.5"
+          {...stroke}
+          initial={false}
+          animate={{ pathLength: copied ? 0 : 1, opacity: copied ? 0 : 1 }}
+          transition={copied ? drawOff() : drawOn(0.2)}
+        />
+        <motion.path
+          d="M3.5 7.5 10.9 12.6a2 2 0 0 0 2.2 0L20.5 7.5"
+          {...stroke}
+          initial={false}
+          animate={{ pathLength: copied ? 0 : 1, opacity: copied ? 0 : 1 }}
+          transition={copied ? drawOff(0.04) : drawOn(0.3)}
+        />
+      </svg>
+
+      <svg viewBox="0 0 24 24" className={svgClass}>
+        <motion.path
+          d="M4 12 9 17L20 6"
+          {...stroke}
+          initial={false}
+          animate={{ pathLength: copied ? 1 : 0, opacity: copied ? 1 : 0 }}
+          transition={copied ? drawOn(0.16) : drawOff()}
+        />
+      </svg>
+    </span>
   );
 }
 
@@ -151,30 +168,7 @@ export function Dock() {
               {
                 id: "email",
                 label: copied ? "Copied" : "Copy email",
-                // The envelope un-draws and the tick draws itself in its place.
-                icon: (
-                  <AnimatePresence mode="wait" initial={false}>
-                    <motion.span
-                      key={copied ? "check" : "mail"}
-                      initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{
-                        scale: 0.7,
-                        opacity: 0,
-                        transition: { duration: 0.14, ease },
-                      }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 30,
-                        mass: 0.6,
-                      }}
-                      className="grid place-items-center"
-                    >
-                      {copied ? <CheckIcon /> : <MailIcon />}
-                    </motion.span>
-                  </AnimatePresence>
-                ),
+                icon: <CopyIcon copied={copied} />,
                 onClick: copyEmail,
               },
               {
