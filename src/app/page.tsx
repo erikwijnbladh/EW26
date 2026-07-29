@@ -1,28 +1,14 @@
+import { Suspense } from "react";
 import Image from "next/image";
-import { profile, nowPlaying, NOW_PLAYING_COUNT } from "@/lib/data";
+import { profile } from "@/lib/data";
 import { getContributions } from "@/lib/github";
-import { getPlaying } from "@/lib/spotify";
 import { Reveal } from "@/components/reveal";
-import { LatestPlaying } from "@/components/latest-playing";
+import { PlayingSection, PlayingSkeleton } from "@/components/playing-section";
 import { Contributions } from "@/components/contributions";
 import { BuiltWith } from "@/components/built-with";
 
 export default async function Home() {
-  const [contributions, playing] = await Promise.all([
-    getContributions("erikwijnbladh"),
-    getPlaying(NOW_PLAYING_COUNT),
-  ]);
-
-  // Spotify unconfigured or unreachable: fall back to the hand-written list,
-  // which is history rather than a live player, so it never claims to be
-  // playing. Keyed on the list being empty rather than the answer being null,
-  // so a paused player with no history still gets rows.
-  const spotify = playing?.tracks ?? [];
-  const tracks = (spotify.length ? spotify : nowPlaying).slice(
-    0,
-    NOW_PLAYING_COUNT,
-  );
-  const live = playing?.live ?? false;
+  const contributions = await getContributions("erikwijnbladh");
 
   return (
     <div className="mx-auto w-full max-w-md px-5 pb-40 pt-4 sm:pb-44">
@@ -51,7 +37,12 @@ export default async function Home() {
 
         <Reveal onMount delay={0.12}>
           <div className="mt-12">
-            <LatestPlaying tracks={tracks} live={live} />
+            {/* Inside the reveal, not around it: the reveal plays once, on the
+                skeleton, and the tracks then swap in underneath it. Around it,
+                the strip would animate in a second time when it streamed. */}
+            <Suspense fallback={<PlayingSkeleton />}>
+              <PlayingSection />
+            </Suspense>
           </div>
         </Reveal>
 

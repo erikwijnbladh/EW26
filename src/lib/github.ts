@@ -1,3 +1,5 @@
+import { cacheLife } from "next/cache";
+
 export type ContributionDay = {
   date: string;
   /** GitHub's own 0–4 bucketing. */
@@ -86,14 +88,17 @@ export function parseContributions(html: string): Contributions | null {
 export async function getContributions(
   user: string,
 ): Promise<Contributions | null> {
+  // Refresh once a day; the page stays static in between. Under
+  // `cacheComponents` this is what keeps the graph out of the dynamic path —
+  // uncached, it would be re-fetched per request and would drag the whole
+  // prerendered shell to request time with it.
+  "use cache";
+  cacheLife("days");
+
   try {
     const res = await fetch(
       `https://github.com/users/${encodeURIComponent(user)}/contributions`,
-      {
-        headers: { "x-requested-with": "XMLHttpRequest" },
-        // Refresh once a day; the page stays static in between.
-        next: { revalidate: 86400 },
-      },
+      { headers: { "x-requested-with": "XMLHttpRequest" } },
     );
 
     if (!res.ok) return null;

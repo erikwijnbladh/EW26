@@ -54,8 +54,11 @@ function fadeStops(m: Metrics) {
  * Same ramp in percentages, for the first paint and the no-JS case. The rows
  * are equal height, so this lands within a pixel or two of the measured
  * version and there's no visible correction once measurement arrives.
+ *
+ * Exported for the loading skeleton, which has to fade on exactly the same
+ * ramp — two hand-tuned gradients would drift and make the swap visible.
  */
-const STATIC_MASK =
+export const STATIC_MASK =
   "linear-gradient(to bottom, #000 0px, #000 20%, transparent 118%)";
 
 /**
@@ -156,9 +159,10 @@ function Chevron({ up }: { up: boolean }) {
  * covers the reveal too — rows emerge out of the soft edge as the drawer opens
  * instead of needing a fade of their own to be timed against it.
  *
- * The props are the server's answer, which for a statically rendered page is
- * a snapshot from whenever it was last built. `usePlaying` takes over once
- * there's a client to poll with.
+ * The props are the server's answer, streamed in at request time by
+ * `PlayingSection` rather than baked into the prerender, so they're current on
+ * arrival — including with JavaScript off. `usePlaying` takes over from there
+ * and keeps them current while the tab is open.
  */
 export function LatestPlaying({
   tracks: initialTracks,
