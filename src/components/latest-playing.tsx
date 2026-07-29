@@ -18,7 +18,11 @@ import {
   useReducedMotion,
   useTransform,
 } from "motion/react";
-import { NOW_PLAYING_PREVIEW, type Track } from "@/lib/data";
+import {
+  NOW_PLAYING_COUNT,
+  NOW_PLAYING_PREVIEW,
+  type Track,
+} from "@/lib/data";
 import {
   FADE,
   FLAT,
@@ -112,7 +116,7 @@ function AudioLines() {
   );
 }
 
-/** Nothing playing — the top card is the most recent thing, not a live one. */
+/** Not advancing — the player is paused, or there's nothing loaded at all. */
 function PlayOff() {
   return (
     <svg
@@ -133,11 +137,8 @@ function PlayOff() {
 }
 
 /**
- * The inside of a card, shared by the live slot and the deck below it.
- *
- * They are different kinds of fact and animate differently, but they are the
- * same object on screen — one definition, so a change to the art size or the
- * truncation can't land on one and miss the other.
+ * The inside of a card. Split out of the deck's markup so the shape of a row
+ * is stated once, whatever ends up wrapping it.
  */
 function CardBody({ track, hasArt }: { track: Track; hasArt: boolean }) {
   return (
@@ -201,18 +202,16 @@ function Chevron({ up }: { up: boolean }) {
  * the bottom of a phone screen jump. Height, tuck, blur, dim and scale all run
  * off the same spring pair, so it's one movement and not five.
  *
- * The live track is deliberately not part of the deck. It sits above it, in its
- * own slot, because it is a different kind of fact: `recently-played` is a log
- * of plays and the song playing right now has not been logged as one — and may
- * never be, since what earns an entry is Spotify's to decide. Kept in one list
- * they read as newest-first, so skipping looked like the top entry of a history
- * vanishing out of that history. Kept apart, the live slot changes and the log
- * below it simply doesn't, which is what actually happened.
+ * The live track heads the same deck rather than sitting in a slot of its own.
+ * `Playing` keeps it apart from the log because they are different facts — one
+ * is the player's state, the other is what Spotify has logged as played — but
+ * that is a distinction about where the data comes from, not one the deck has
+ * to draw. They stack.
  *
  * The props are the server's answer, streamed in at request time. `usePlaying`
- * takes over once there's a client to poll with, and a song that finishes
- * lands at the top of the deck: the card fades in out of a blur while the rest
- * slide down a place under it and the last one drops off the bottom.
+ * takes over once there's a client to poll with, and a new song lands on top:
+ * the card fades in out of a blur while the rest slide down a place under it
+ * and the last one drops off the bottom.
  */
 export function LatestPlaying({
   current: initialCurrent,
@@ -230,12 +229,20 @@ export function LatestPlaying({
   const listRef = useRef<HTMLOListElement>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
 
+  // One deck: whatever the player is on, then the log behind it. Re-trimmed
+  // because `current` and `history` are counted separately by the server, so
+  // together they run one past what the list shows.
+  const tracks = (current ? [current, ...history] : history).slice(
+    0,
+    NOW_PLAYING_COUNT,
+  );
+
   // Spotify can hand back fewer plays than the preview wants — a short log, or
   // a run of the same song collapsing under de-duplication. Then there's
   // nothing behind the fold, so there's no drawer, no stack and no toggle: the
   // list is simply the list, flat and sharp.
-  const preview = Math.min(NOW_PLAYING_PREVIEW, history.length);
-  const expandable = history.length > preview;
+  const preview = Math.min(NOW_PLAYING_PREVIEW, tracks.length);
+  const expandable = tracks.length > preview;
 
   // Render the preview only until hydrated, so no-JS and the first paint show
   // five cards rather than flashing all ten before we can measure them.
@@ -287,13 +294,13 @@ export function LatestPlaying({
     const nodes = (Array.from(el.children) as HTMLElement[]).filter(
       (node) => getComputedStyle(node).position !== "absolute",
     );
-    if (nodes.length < history.length) return;
+    if (nodes.length < tracks.length) return;
 
     // `offsetTop`/`offsetHeight` rather than bounding boxes: the cards carry a
     // transform at rest, and a measured box would fold the tuck and the shrink
     // back into the numbers the tuck is computed from.
     const fold = nodes[preview - 1];
-    const last = nodes[history.length - 1];
+    const last = nodes[tracks.length - 1];
     if (!fold || !last) return;
 
     setMetrics({
@@ -301,7 +308,7 @@ export function LatestPlaying({
         fold.offsetTop + fold.offsetHeight - TUCK * (preview - 1) + PEEK,
       full: last.offsetTop + last.offsetHeight + PAD,
     });
-  }, [history.length, preview]);
+  }, [tracks.length, preview]);
 
   // Measured before paint, so the collapsed height is in place on the same
   // frame the extra cards mount.
@@ -331,7 +338,7 @@ export function LatestPlaying({
     return () => controls.stop();
   }, [expanded, still, progress]);
 
-  const cards = mounted ? history : history.slice(0, preview);
+  const cards = mounted ? tracks : tracks.slice(0, preview);
   const keys = keysFor(cards);
   const drawer = expandable && metrics !== null;
   const deck = expandable && !expanded;
@@ -346,10 +353,10 @@ export function LatestPlaying({
   // All or nothing in practice — Spotify has art for everything, the
   // hand-written fallback for nothing. Ten empty tiles would just read as a
   // broken grid, so without art the cards keep their plain layout.
-  const hasArt = [current, ...history].some((track) => track?.image);
+  const hasArt = tracks.some((track) => track.image);
 
   return (
-    <section aria-label="Music" style={{ overflowAnchor: "none" }}>
+    <section aria-label="Latest playing" style={{ overflowAnchor: "none" }}>
       {/*
         The live marker sits with the heading rather than on the card's album
         art. Over the art it needed a scrim to stay legible, which meant the
@@ -363,47 +370,9 @@ export function LatestPlaying({
         is how pausing used to make the song disappear.
       */}
       <p className="flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-muted/70">
-        {playing ? "Playing now" : current ? "Paused" : "Recently played"}
+        {playing ? "Playing now" : current ? "Paused" : "Latest playing"}
         {playing ? <AudioLines /> : <PlayOff />}
       </p>
-
-      {/*
-        The live slot. Bled out and padded back in like the deck below, so the
-        card's shadow isn't clipped flat against the column edges.
-
-        `popLayout` pulls the outgoing song out of the flow as it goes, so the
-        incoming one doesn't wait for the fade to finish before taking the
-        space. `initial={false}` keeps the server's settled render from
-        animating itself in on hydration.
-      */}
-      {current && (
-        <div className="-mx-3 mt-4 overflow-hidden px-3 pb-1">
-          <AnimatePresence initial={false} mode="popLayout">
-            <motion.div
-              key={`${current.title}::${current.artist}`}
-              initial={{ opacity: 0, filter: "blur(10px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              exit={{ opacity: 0, transition: still ? instant : trackLeave }}
-              transition={still ? instant : trackShift}
-              className={`track-card flex items-center gap-3 rounded-xl px-3 ${
-                hasArt ? "py-2" : "py-2.5"
-              }`}
-            >
-              <CardBody track={current} hasArt={hasArt} />
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/*
-        Named only when there's a live card above it to tell it apart from.
-        On its own the section heading already says what the deck is.
-      */}
-      {current && history.length > 0 && (
-        <p className="mt-6 text-xs uppercase tracking-[0.08em] text-muted/70">
-          Recently played
-        </p>
-      )}
 
       {/*
         Bled out sideways and padded back in: the clip that hides the deck would
@@ -495,7 +464,7 @@ export function LatestPlaying({
           transition={springSnappy}
           className="mt-4 flex items-center gap-1.5 text-xs uppercase tracking-[0.08em] text-muted/70 transition-colors duration-150 hover:text-foreground"
         >
-          {expanded ? "Show less" : `View more (${history.length})`}
+          {expanded ? "Show less" : `View more (${tracks.length})`}
           <Chevron up={expanded} />
         </motion.button>
       )}
