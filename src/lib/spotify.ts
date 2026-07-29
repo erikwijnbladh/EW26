@@ -35,13 +35,16 @@ const API = "https://api.spotify.com/v1";
 const RECENT_LIMIT = 50;
 
 /**
- * How long a cached response is served before Spotify is asked again. This is
- * the lowest revalidate on the page, so it also sets how often `/` itself
- * regenerates — the contributions fetch keeps its own 24h entry and is not
- * re-fetched along with it.
+ * How long an answer is reused before Spotify is asked again.
  *
- * Two calls per regeneration, so at most 12 a minute against a limit measured
- * in the hundreds. The access token is held separately and outlives this by an
+ * Enforced by `pending` at the bottom of this file, not by the Data Cache:
+ * under `cacheComponents` nothing is cached unless it says `use cache`, and
+ * both callers here — the streamed strip on `/` and the endpoint the widget
+ * polls — are deliberately request-time. So this is the only throttle, and it
+ * covers every caller rather than the subset Next chose to cache.
+ *
+ * Two calls per refresh, so at most 12 a minute against a limit measured in
+ * the hundreds. The access token is held separately and outlives this by an
  * hour, so it isn't re-minted each time.
  */
 export const REVALIDATE = 10;
@@ -185,9 +188,11 @@ async function getAccessToken(): Promise<string | null> {
 }
 
 async function call(path: string, token: string) {
+  // No `next: { revalidate }` — under `cacheComponents` a fetch outside a
+  // `use cache` scope isn't stored, so it would have been inert config that
+  // read like the thing doing the throttling. `pending` does that.
   return fetch(`${API}${path}`, {
     headers: { authorization: `Bearer ${token}` },
-    next: { revalidate: REVALIDATE },
   });
 }
 
@@ -314,11 +319,11 @@ async function fetchPlaying(count: number): Promise<Playing | null> {
 /**
  * The last answer, reused for `REVALIDATE` seconds.
  *
- * `next: { revalidate }` on the calls above already collapses repeats, but only
- * for requests Next decides to cache — and the endpoint the widget polls is
- * deliberately dynamic, so it can't rely on that. This makes the throttle
- * unconditional: however many tabs are polling, Spotify is asked at most once
- * per interval per instance.
+ * Every caller here is request-time by design — the strip streamed into `/` and
+ * the endpoint the widget polls — so there is no framework-level cache in front
+ * of any of them. This is the throttle, and it is unconditional: however many
+ * tabs are polling and however many people are loading the page, Spotify is
+ * asked at most once per interval per instance.
  *
  * The in-flight promise is held rather than the resolved value, so callers that
  * arrive together share one request instead of each starting its own.
