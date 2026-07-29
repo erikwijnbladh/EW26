@@ -1,4 +1,4 @@
-import { nowPlaying } from "@/lib/data";
+import { NOW_PLAYING_COUNT } from "@/lib/data";
 import { getPlaying } from "@/lib/spotify";
 
 /**
@@ -16,7 +16,7 @@ import { getPlaying } from "@/lib/spotify";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const playing = await getPlaying(nowPlaying.length);
+  const playing = await getPlaying(NOW_PLAYING_COUNT);
 
   return Response.json(playing, {
     // Belt and braces alongside `force-dynamic`: no CDN in front and no

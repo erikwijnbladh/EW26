@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { profile, nowPlaying } from "@/lib/data";
+import { profile, nowPlaying, NOW_PLAYING_COUNT } from "@/lib/data";
 import { getContributions } from "@/lib/github";
 import { getPlaying } from "@/lib/spotify";
 import { Reveal } from "@/components/reveal";
@@ -10,12 +10,13 @@ import { BuiltWith } from "@/components/built-with";
 export default async function Home() {
   const [contributions, playing] = await Promise.all([
     getContributions("erikwijnbladh"),
-    getPlaying(nowPlaying.length),
+    getPlaying(NOW_PLAYING_COUNT),
   ]);
 
   // Spotify unconfigured or down: fall back to the hand-written list, which is
-  // history rather than a live player, so it never claims to be playing.
-  const tracks = playing?.tracks ?? nowPlaying;
+  // history rather than a live player, so it never claims to be playing. Sliced
+  // so an over-long fallback can't render more rows than Spotify ever would.
+  const tracks = (playing?.tracks ?? nowPlaying).slice(0, NOW_PLAYING_COUNT);
   const live = playing?.live ?? false;
 
   return (

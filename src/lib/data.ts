@@ -38,11 +38,21 @@ export type Track = {
 };
 
 /**
- * Latest playing — a static list, newest first. Edit by hand. The first
- * `NOW_PLAYING_PREVIEW` show by default; the rest are behind "view more".
+ * How many tracks the list keeps, and how many of those it shows before you
+ * ask for the rest. Spotify is asked for `NOW_PLAYING_COUNT`, the first
+ * `NOW_PLAYING_PREVIEW` render, and "view more" opens onto the full set.
+ *
+ * The count used to be read off `nowPlaying.length` below, which tied how much
+ * listening history the site fetches to how many songs happened to be typed
+ * out by hand — editing the fallback silently changed the live widget.
  */
+export const NOW_PLAYING_COUNT = 10;
 export const NOW_PLAYING_PREVIEW = 5;
 
+/**
+ * The fallback list, newest first. Edit by hand. Shown only when Spotify is
+ * unconfigured or unreachable, so keep it at least `NOW_PLAYING_COUNT` long.
+ */
 export const nowPlaying: Track[] = [
   { title: "Don't Reach For Me", artist: "Knocked Loose" },
   { title: "Cellar Door", artist: "Spiritbox" },
