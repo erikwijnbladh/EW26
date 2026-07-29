@@ -1,8 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
 import {
   AnimatePresence,
   motion,
@@ -380,23 +378,6 @@ export function Dock() {
               ref={barRef}
               className="absolute bottom-0 left-0 flex h-15 w-max items-center gap-1 px-2.5"
             >
-              <Link
-                href="/"
-                aria-label="Home"
-                className="shrink-0 rounded-full transition-opacity duration-150 hover:opacity-75"
-              >
-                <Image
-                  src="/images/pfp.png"
-                  alt={profile.name}
-                  width={40}
-                  height={40}
-                  quality={90}
-                  className="size-10 rounded-full object-cover object-top grayscale"
-                />
-              </Link>
-
-              <span className="mx-1.5 h-6 w-px bg-line" aria-hidden />
-
               {/* The expandable tab: widens to fit its label, pill behind it. */}
               <motion.button
                 type="button"
