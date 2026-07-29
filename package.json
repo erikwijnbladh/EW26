@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "spotify:token": "node scripts/spotify-token.mjs"
+    "spotify:token": "node scripts/spotify-token.mjs",
+    "spotify:check": "node scripts/spotify-check.mjs"
   },
   "dependencies": {
     "@paper-design/shaders-react": "^0.0.76",
