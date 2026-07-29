@@ -1,6 +1,4 @@
 import type { Track } from "@/lib/data";
-import { remember } from "@/lib/history";
-import { storeReady } from "@/lib/store";
 
 /**
  * Recently played, from Spotify.
@@ -299,19 +297,20 @@ async function fetchPlaying(count: number): Promise<Playing | null> {
       getRecent(token),
     ]);
 
-    // The list is the accumulated history rather than this request's view of
-    // it, so it survives `recently-played` returning nothing. Ordering,
-    // de-duplication and the live track's place at the front are all settled
-    // in there.
-    //
-    // Nothing playing is still an answer: paused, with whatever history exists
-    // behind it. Returning null here — as this used to — made it
+    // Nothing playing is still an answer: paused, with whatever history came
+    // back behind it. Returning null here — as this used to — made it
     // indistinguishable from "Spotify didn't reply", and the widget treats
     // those opposite ways. It holds the last known list through a failure, so
     // a pause reported as a failure froze the display mid-song.
-    const tracks = await remember({ current, recent, count });
+    if (!current) {
+      return { tracks: (recent ?? []).slice(0, count), live: false };
+    }
 
-    return { tracks, live: Boolean(current) };
+    const rest = (recent ?? []).filter(
+      (t) => !(t.title === current.title && t.artist === current.artist),
+    );
+
+    return { tracks: [current, ...rest].slice(0, count), live: true };
   } catch {
     return null;
   }
@@ -332,9 +331,6 @@ export async function diagnose() {
     clientId: Boolean(process.env.SPOTIFY_CLIENT_ID),
     clientSecret: Boolean(process.env.SPOTIFY_CLIENT_SECRET),
     refreshToken: Boolean(process.env.SPOTIFY_REFRESH_TOKEN),
-    // Without this the accumulated history has nowhere to live and the list is
-    // only ever as long as what Spotify hands back in one request.
-    store: storeReady,
   };
 
   const token = await getAccessToken();
