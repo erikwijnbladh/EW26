@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { profile, nowPlaying, NOW_PLAYING_COUNT } from "@/lib/data";
+import { profile, NOW_PLAYING_COUNT, withFallback } from "@/lib/data";
 import { getContributions } from "@/lib/github";
 import { getPlaying } from "@/lib/spotify";
 import { Reveal } from "@/components/reveal";
@@ -13,16 +13,10 @@ export default async function Home() {
     getPlaying(NOW_PLAYING_COUNT),
   ]);
 
-  // Spotify unconfigured, down, or with no history to report: fall back to the
-  // hand-written list, which is history rather than a live player. Keyed on the
-  // list being empty rather than the answer being null, so a paused player with
-  // nothing behind it still gets rows. Sliced so an over-long fallback can't
-  // render more than Spotify ever would.
-  const spotify = playing?.tracks ?? [];
-  const tracks = (spotify.length ? spotify : nowPlaying).slice(
-    0,
-    NOW_PLAYING_COUNT,
-  );
+  // Whatever Spotify gave, topped up to a full list with the hand-written one.
+  // Covers all of it: nothing configured, nothing reachable, and the case that
+  // actually happens here — a live track with no history behind it.
+  const tracks = withFallback(playing?.tracks ?? []);
   const live = playing?.live ?? false;
 
   return (

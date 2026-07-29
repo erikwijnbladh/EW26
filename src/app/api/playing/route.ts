@@ -1,4 +1,4 @@
-import { NOW_PLAYING_COUNT } from "@/lib/data";
+import { NOW_PLAYING_COUNT, withFallback } from "@/lib/data";
 import { diagnose, getPlaying } from "@/lib/spotify";
 
 /**
@@ -27,7 +27,16 @@ export async function GET(request: Request) {
 
   const playing = await getPlaying(NOW_PLAYING_COUNT);
 
-  return Response.json(playing, {
+  // Topped up here rather than in the widget, so the polled answer and the
+  // server-rendered one are the same list and hydration has nothing to correct.
+  // null still means "no answer" and is passed through untouched — the widget
+  // holds its current state on that, which padding would quietly override.
+  const padded = playing && {
+    ...playing,
+    tracks: withFallback(playing.tracks),
+  };
+
+  return Response.json(padded, {
     // Belt and braces alongside `force-dynamic`: no CDN in front and no
     // browser cache either, so each poll reflects the player right now.
     headers: { "cache-control": "no-store" },
