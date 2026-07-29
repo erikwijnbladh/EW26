@@ -27,11 +27,29 @@ const API = "https://api.spotify.com/v1";
 const REVALIDATE = 60;
 
 type SpotifyArtist = { name: string };
+type SpotifyImage = { url?: string; width?: number };
 type SpotifyTrack = {
   name?: string;
   artists?: SpotifyArtist[];
+  album?: { images?: SpotifyImage[] };
   external_urls?: { spotify?: string };
 };
+
+/**
+ * Album art for a ~32px tile. Spotify serves 640/300/64 in descending order;
+ * the smallest is short of a 2x tile, so take the smallest that clears it and
+ * let the image optimiser do the rest.
+ */
+function cover(images: SpotifyImage[] | undefined): string | undefined {
+  const usable = (images ?? []).filter((i) => i.url);
+  if (!usable.length) return undefined;
+
+  const big = usable
+    .filter((i) => (i.width ?? 0) >= 128)
+    .sort((a, b) => (a.width ?? 0) - (b.width ?? 0));
+
+  return (big[0] ?? usable[0]).url;
+}
 
 function toTrack(item: SpotifyTrack | null | undefined): Track | null {
   if (!item?.name) return null;
@@ -45,6 +63,7 @@ function toTrack(item: SpotifyTrack | null | undefined): Track | null {
     title: item.name,
     artist: artist || "Unknown artist",
     url: item.external_urls?.spotify,
+    image: cover(item.album?.images),
   };
 }
 

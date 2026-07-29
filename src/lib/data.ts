@@ -33,6 +33,8 @@ export type Track = {
   artist: string;
   /** Set when the track came from Spotify. */
   url?: string;
+  /** Album art. Absent on the hand-written fallback list. */
+  image?: string;
 };
 
 /**

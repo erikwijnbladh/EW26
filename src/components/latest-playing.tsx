@@ -8,6 +8,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import Image from "next/image";
 import {
   animate,
   motion,
@@ -240,6 +241,11 @@ export function LatestPlaying({
 
   const rows = mounted ? tracks : tracks.slice(0, NOW_PLAYING_PREVIEW);
 
+  // All or nothing in practice — Spotify has art for everything, the
+  // hand-written fallback for nothing. Ten empty tiles would just read as a
+  // broken grid, so without art the list keeps its plain layout.
+  const hasArt = tracks.some((track) => track.image);
+
   return (
     <section aria-label="Latest playing" style={{ overflowAnchor: "none" }}>
       <p className="text-xs uppercase tracking-[0.08em] text-muted/70">
@@ -259,21 +265,42 @@ export function LatestPlaying({
             <li
               key={`${track.artist}-${track.title}-${i}`}
               aria-hidden={i >= NOW_PLAYING_PREVIEW && !expanded}
-              className="flex items-baseline gap-4 border-t border-line py-2.5 first:border-t-0"
+              className={`group flex items-center gap-3 border-t border-line first:border-t-0 ${
+                hasArt ? "py-2" : "py-2.5"
+              }`}
             >
-              <span className="flex min-w-0 items-baseline gap-2.5">
-                {i === 0 && (
+              {hasArt ? (
+                <span className="relative size-8 shrink-0 overflow-hidden rounded-[3px] bg-foreground/[0.06]">
+                  {track.image && (
+                    <Image
+                      src={track.image}
+                      alt=""
+                      fill
+                      sizes="64px"
+                      // Grey like the rest of the page, and colour on hover —
+                      // ten covers at full saturation would be by far the
+                      // loudest thing here.
+                      className="object-cover grayscale transition-[filter] duration-300 group-hover:grayscale-0"
+                    />
+                  )}
+                  {i === 0 && (
+                    <span className="absolute inset-0 grid place-items-center bg-foreground/45 text-background">
+                      {live ? <AudioLines /> : <PlayOff />}
+                    </span>
+                  )}
+                </span>
+              ) : (
+                i === 0 && (
                   <span
-                    className={`-my-1 translate-y-[3px] ${
-                      live ? "text-foreground/70" : "text-muted/60"
-                    }`}
+                    className={live ? "text-foreground/70" : "text-muted/60"}
                   >
                     {live ? <AudioLines /> : <PlayOff />}
                   </span>
-                )}
-                <span className="truncate text-[15px] text-foreground">
-                  {track.title}
-                </span>
+                )
+              )}
+
+              <span className="min-w-0 truncate text-[15px] text-foreground">
+                {track.title}
               </span>
               <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
                 {track.artist}
