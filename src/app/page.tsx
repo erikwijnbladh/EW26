@@ -13,11 +13,10 @@ export default async function Home() {
     getPlaying(NOW_PLAYING_COUNT),
   ]);
 
-  // Spotify unconfigured, down, or with no history to report: fall back to the
-  // hand-written list, which is history rather than a live player. Keyed on the
-  // list being empty rather than the answer being null, so a paused player with
-  // nothing behind it still gets rows. Sliced so an over-long fallback can't
-  // render more than Spotify ever would.
+  // Spotify unconfigured or unreachable: fall back to the hand-written list,
+  // which is history rather than a live player, so it never claims to be
+  // playing. Keyed on the list being empty rather than the answer being null,
+  // so a paused player with no history still gets rows.
   const spotify = playing?.tracks ?? [];
   const tracks = (spotify.length ? spotify : nowPlaying).slice(
     0,

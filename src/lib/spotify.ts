@@ -184,11 +184,6 @@ async function getAccessToken(): Promise<string | null> {
   return token.value;
 }
 
-/** The scopes the current refresh token actually carries. */
-function grantedScopes(): string[] {
-  return (token?.scope ?? "").split(" ").filter(Boolean);
-}
-
 async function call(path: string, token: string) {
   return fetch(`${API}${path}`, {
     headers: { authorization: `Bearer ${token}` },
@@ -314,83 +309,6 @@ async function fetchPlaying(count: number): Promise<Playing | null> {
   } catch {
     return null;
   }
-}
-
-/**
- * What Spotify actually says, for when the widget is wrong and the code looks
- * right. Reading the source can't distinguish a missing scope from an empty
- * history from a stale cache — only the wire can.
- *
- * Deliberately bypasses both the memo and the fetch cache, so it reports the
- * live state rather than whatever was decided ten seconds ago. Reports status
- * codes and counts only: no tokens, no response bodies, nothing that isn't
- * already inferable from the rendered page.
- */
-export async function diagnose() {
-  const env = {
-    clientId: Boolean(process.env.SPOTIFY_CLIENT_ID),
-    clientSecret: Boolean(process.env.SPOTIFY_CLIENT_SECRET),
-    refreshToken: Boolean(process.env.SPOTIFY_REFRESH_TOKEN),
-  };
-
-  const token = await getAccessToken();
-  if (!token) {
-    return { env, gotAccessToken: false as const };
-  }
-
-  // The decisive field. Spotify restates the grant on every refresh, so this
-  // is what the production token actually carries — not what was asked for,
-  // and not what the dashboard implies.
-  const granted = grantedScopes();
-  const scopes = {
-    granted,
-    missing: REQUIRED_SCOPES.filter((s) => !granted.includes(s)),
-  };
-
-  const probe = (path: string) =>
-    fetch(`${API}${path}`, {
-      headers: { authorization: `Bearer ${token}` },
-      cache: "no-store",
-    });
-
-  const [current, recent] = await Promise.all([
-    probe("/me/player/currently-playing"),
-    probe(`/me/player/recently-played?limit=${RECENT_LIMIT}`),
-  ]);
-
-  const currentBody = current.ok
-    ? ((await current.json()) as {
-        is_playing?: boolean;
-        currently_playing_type?: string;
-      })
-    : null;
-
-  const recentBody = recent.ok
-    ? ((await recent.json()) as { items?: { track?: SpotifyTrack }[] })
-    : null;
-
-  const items = recentBody?.items ?? [];
-  const parsed = items.map((i) => toTrack(i.track)).filter(Boolean) as Track[];
-  const unique = new Set(parsed.map((t) => `${t.title}::${t.artist}`));
-
-  return {
-    env,
-    gotAccessToken: true as const,
-    scopes,
-    currentlyPlaying: {
-      status: current.status,
-      // 204 is the documented "nothing playing"; 200 with is_playing false is
-      // a pause. Both land on the same screen, for different reasons.
-      isPlaying: currentBody?.is_playing ?? null,
-      type: currentBody?.currently_playing_type ?? null,
-    },
-    recentlyPlayed: {
-      status: recent.status,
-      returned: items.length,
-      parsed: parsed.length,
-      afterDeduplication: unique.size,
-    },
-  };
 }
 
 /**

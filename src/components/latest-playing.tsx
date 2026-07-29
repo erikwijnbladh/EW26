@@ -101,6 +101,26 @@ function AudioLines() {
   );
 }
 
+/** Nothing playing — the top row is the most recent thing, not a live one. */
+function PlayOff() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="size-3.5"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="m10.215 4.56 9.79 5.71a2 2 0 0 1 .003 3.458l-.393.23" />
+      <path d="m16.042 16.042-8.034 4.686A2 2 0 0 1 5 19V5" />
+      <path d="m2 2 20 20" />
+    </svg>
+  );
+}
+
 function Chevron({ up }: { up: boolean }) {
   return (
     <motion.svg
@@ -265,7 +285,7 @@ export function LatestPlaying({
       */}
       <p className="flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-muted/70">
         {live ? "Playing now" : "Latest playing"}
-        {live && <AudioLines />}
+        {live ? <AudioLines /> : <PlayOff />}
       </p>
 
       <motion.div
@@ -294,10 +314,7 @@ export function LatestPlaying({
                       alt=""
                       fill
                       sizes="64px"
-                      // Grey like the rest of the page, and colour on hover —
-                      // ten covers at full saturation would be by far the
-                      // loudest thing here.
-                      className="object-cover grayscale transition-[filter] duration-300 group-hover:grayscale-0"
+                      className="object-cover"
                     />
                   )}
                 </span>

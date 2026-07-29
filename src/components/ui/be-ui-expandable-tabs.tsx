@@ -156,7 +156,13 @@ const CONTENT_SHARPEN = 0.3;
 const BAR_H = 52;
 const TAB_W = 32;
 const BAR_X = 16;
-const BAR_GAP = 4;
+
+/**
+ * Must match the `gap-*` on the row below — the closed shell width is computed
+ * from it, so a mismatch sizes the shell to something other than its contents
+ * and `overflow-hidden` quietly trims the outermost icons.
+ */
+const BAR_GAP = 6;
 const ROOT_BORDER = 2;
 const ICON_W = 16;
 const ACTIVE_LEFT_PAD = 10;
@@ -529,12 +535,25 @@ export function ExpandableTabs({
           </motion.div>
         </div>
 
+        {/* Sized to its contents and centred with a transform, rather than
+            stretched to the shell and centred by flex.
+
+            Stretched, the row's width was the shell's width — a spring mapped
+            over the first 45% of the expansion — while the active tab widened
+            on a second spring running the whole way. Centring divides the
+            difference between them, so every icon's position was the average
+            of two curves that finish at different times, re-rounded to a whole
+            pixel each frame. That is what shakes.
+
+            At `w-max` the row is only as wide as the icons, so the one thing
+            moving them is the active tab's own width, and the centring happens
+            in a transform — composited, sub-pixel, no per-frame rounding. */}
         <div
           role="tablist"
           aria-label="Navigation tabs"
           aria-orientation="horizontal"
           className={cn(
-            "absolute bottom-0 left-0 z-20 flex w-full items-center justify-between gap-1 p-2",
+            "absolute bottom-0 left-1/2 z-20 flex w-max -translate-x-1/2 items-center gap-1.5 p-2",
             classNames?.bar,
           )}
           style={{
@@ -605,7 +624,12 @@ export function ExpandableTabs({
                 aria-selected={isActive}
                 aria-label={item.label}
                 onClick={() => setActive(isActive ? null : item.id)}
-                layout={reduce ? false : "position"}
+                // No `layout` here on purpose. This button's width is already
+                // animated below, and flex reflows its neighbours from that
+                // width every frame. Adding layout projection animated the
+                // same movement a second time, on its own curve — so the tab
+                // and the icons beside it travelled on different timings and
+                // visibly disagreed about where they were.
                 animate={{
                   width: active && isActive ? activeTabWidth : TAB_W,
                 }}
