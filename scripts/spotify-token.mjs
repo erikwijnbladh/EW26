@@ -33,6 +33,11 @@ const authUrl =
     scope: SCOPES,
     redirect_uri: REDIRECT,
     state,
+    // Force the consent screen even when the account has approved this app
+    // before. Scopes are fixed at authorisation, so a token minted under a
+    // narrower set stays narrow forever — silently re-approving is exactly
+    // how you end up re-issuing the same insufficient grant.
+    show_dialog: "true",
   });
 
 async function exchange(code) {
@@ -75,6 +80,18 @@ const server = createServer(async (req, res) => {
     res.writeHead(200, { "content-type": "text/plain" });
     res.end("Done — back to the terminal.");
     console.log(`\nSPOTIFY_REFRESH_TOKEN=${token.refresh_token}\n`);
+
+    // Spotify reports what it actually granted, which is not necessarily what
+    // was asked for. Worth printing: a token missing user-read-recently-played
+    // still fetches the current track happily, so the widget half-works and
+    // the missing scope looks like an empty listening history instead.
+    const granted = (token.scope ?? "").split(" ").filter(Boolean);
+    const missing = SCOPES.split(" ").filter((s) => !granted.includes(s));
+
+    console.log(`granted: ${granted.join(", ") || "(none)"}`);
+    if (missing.length) {
+      console.error(`MISSING: ${missing.join(", ")} — the widget needs these.`);
+    }
   } catch (e) {
     res.writeHead(500, { "content-type": "text/plain" });
     res.end(String(e));
