@@ -53,31 +53,10 @@ export function SayHiForm({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="select-text p-5 sm:p-7">
-      <div className="flex items-start justify-between gap-4">
-        <h2 className="text-[26px] font-medium leading-tight tracking-[-0.02em] text-foreground">
-          What&rsquo;s up?
-        </h2>
-        <motion.button
-          type="button"
-          onClick={onClose}
-          aria-label="Close"
-          whileHover={still ? undefined : { scale: 1.08 }}
-          whileTap={still ? undefined : { scale: 0.9 }}
-          transition={springSnappy}
-          className="-mr-1 -mt-1 grid size-8 shrink-0 place-items-center rounded-full text-muted transition-colors duration-150 hover:bg-foreground/[0.06] hover:text-foreground"
-        >
-          <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
-            <path
-              d="m6 6 12 12M18 6 6 18"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.75}
-              strokeLinecap="round"
-            />
-          </svg>
-        </motion.button>
-      </div>
+    <div className="w-[min(24rem,calc(100vw-3.5rem))] select-text p-4 sm:w-96 sm:p-5">
+      <h2 className="text-[26px] font-medium leading-tight tracking-[-0.02em] text-foreground">
+        What&rsquo;s up?
+      </h2>
 
       <p className="mt-2 text-sm font-light leading-relaxed text-muted">
         Work, an idea, a band I should be listening to — all equally welcome.

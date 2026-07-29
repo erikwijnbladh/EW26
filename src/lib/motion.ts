@@ -49,6 +49,37 @@ export const springSurface: Transition = {
   mass: 1,
 };
 
+/**
+ * Duration-and-bounce springs for the expanding shell, borrowed from the
+ * expandable-tabs pattern: the shell resizes, the active tab widens to fit its
+ * label, and the label itself opens slower than it closes.
+ */
+export const springShell: Transition = {
+  type: "spring",
+  duration: 0.58,
+  bounce: 0.06,
+};
+
+export const springTab: Transition = {
+  type: "spring",
+  duration: 0.46,
+  bounce: 0.04,
+};
+
+export const springPanel: Transition = {
+  type: "spring",
+  duration: 0.46,
+  bounce: 0.08,
+};
+
+export const labelOpen: Transition = {
+  type: "spring",
+  duration: 0.38,
+  bounce: 0.03,
+};
+
+export const labelClose: Transition = { duration: 0.16, ease };
+
 /** Enter: rise, sharpen, fade in. Exit is deliberately quicker than enter. */
 export const enter = {
   hidden: { opacity: 0, y: 12, filter: "blur(6px)" },

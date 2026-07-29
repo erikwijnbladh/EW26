@@ -1,11 +1,26 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import {
+  AnimatePresence,
+  motion,
+  useReducedMotion,
+  type Variants,
+} from "motion/react";
 import { profile, contacts } from "@/lib/data";
-import { duration, ease, springSnappy, springSoft, springSurface } from "@/lib/motion";
+import {
+  duration,
+  ease,
+  labelClose,
+  labelOpen,
+  springPanel,
+  springShell,
+  springSnappy,
+  springSoft,
+  springTab,
+} from "@/lib/motion";
 import { SayHiForm } from "@/components/say-hi";
 
 const stroke = {
@@ -77,6 +92,58 @@ function ChatIcon() {
 const contactHref = (label: string) =>
   contacts.find((c) => c.label === label)?.href ?? "";
 
+const LABEL_GAP = 7;
+/** Bar height (h-15) and the gap between the panel and the bar. */
+const BAR_H = 60;
+const PANEL_DOCK_GAP = 4;
+/** Inset between the panel and the shell edge (px-2/pt-2). */
+const PANEL_PAD = 8;
+
+/** Panel enters from just above, out of a blur, and leaves quicker than it arrives. */
+const panelVariants: Variants = {
+  open: { y: 0, scale: 1, opacity: 1, filter: "blur(0px)" },
+  closed: {
+    y: -6,
+    scale: 0.98,
+    opacity: 0,
+    filter: "blur(4px)",
+    // Leaves faster than it arrives.
+    transition: { duration: 0.1, ease },
+  },
+};
+
+const reducedPanelVariants: Variants = {
+  open: { opacity: 1 },
+  closed: { opacity: 0, transition: { duration: 0.1, ease } },
+};
+
+/**
+ * Measures a label off-screen so the active tab can animate to an exact width
+ * rather than to `auto` — width animations need a number at both ends.
+ */
+function useLabelWidth(label: string) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [width, setWidth] = useState(0);
+
+  const measure = useCallback(() => {
+    const el = ref.current;
+    if (el) setWidth(Math.ceil(el.offsetWidth));
+  }, []);
+
+  useLayoutEffect(measure, [measure, label]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    // Fonts land after first paint; re-measure when they do.
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [measure]);
+
+  return [ref, width] as const;
+}
+
 const itemClass =
   "relative grid size-10 place-items-center rounded-full text-foreground/75 transition-colors duration-150 hover:text-foreground";
 
@@ -90,12 +157,14 @@ function DockItem({
   onClick,
   href,
   external,
+  tooltip = true,
 }: {
   label: string;
   children: React.ReactNode;
   onClick?: () => void;
   href?: string;
   external?: boolean;
+  tooltip?: boolean;
 }) {
   const [active, setActive] = useState(false);
   const still = useReducedMotion();
@@ -136,7 +205,7 @@ function DockItem({
   return (
     <div className="relative">
       <AnimatePresence>
-        {active && (
+        {active && tooltip && (
           <motion.span
             role="tooltip"
             initial={{ opacity: 0, y: 4, scale: 0.9 }}
@@ -172,15 +241,53 @@ function DockItem({
 /**
  * Floating dock — the only chrome on the site.
  *
- * Opening the form doesn't mount a separate panel: this one surface grows from
- * pill to card and swaps its contents, so there's a single thing moving on
- * screen. The entrance animation lives on an outer wrapper so its transform
- * never fights the inner element's layout projection.
+ * Opening the form works like an expandable tab rather than a modal: the bar
+ * never leaves, the chat tab widens to reveal its label behind a pill, and the
+ * panel opens above the bar inside the same shell. The shell resizes to
+ * whatever the panel measures, so one surface moves and the bar stays put.
  */
 export function Dock() {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const still = useReducedMotion();
+  const shellRef = useRef<HTMLDivElement>(null);
+  const barRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [barWidth, setBarWidth] = useState(0);
+  const [panelSize, setPanelSize] = useState({ width: 0, height: 0 });
+  const [labelRef, labelWidth] = useLabelWidth("Say hi");
+
+  // The bar is absolutely positioned so it can't move while the shell resizes,
+  // which means it no longer contributes width — measure it and floor the
+  // shell with it, the way the tabs component derives its closed size.
+  useEffect(() => {
+    const el = barRef.current;
+    if (!el) return;
+    const measure = () => setBarWidth(Math.ceil(el.offsetWidth));
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  // The panel stays mounted (hidden) so its size is always known — the shell
+  // animates to a number, and a number needs measuring before the open.
+  useEffect(() => {
+    const el = panelRef.current;
+    if (!el) return;
+    const measure = () => {
+      const next = { width: el.offsetWidth, height: el.offsetHeight };
+      setPanelSize((current) =>
+        current.width === next.width && current.height === next.height
+          ? current
+          : next,
+      );
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -190,10 +297,19 @@ export function Dock() {
     setTimeout(() => setCopied(false), 1600);
   }, []);
 
+  // Pointer down anywhere outside the shell dismisses it, the way the tabs do.
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(e: PointerEvent) {
+      if (!shellRef.current?.contains(e.target as Node)) close();
+    }
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => document.removeEventListener("pointerdown", onPointerDown);
+  }, [open, close]);
+
   return (
     <>
-      {/* Plain tint, no backdrop-filter — blurring the whole viewport while a
-          surface animates over it is what makes these feel heavy. */}
       <AnimatePresence>
         {open && (
           <motion.div
@@ -201,8 +317,7 @@ export function Dock() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: duration.base, ease }}
-            onClick={close}
-            className="fixed inset-0 z-40 bg-foreground/[0.07]"
+            className="pointer-events-none fixed inset-0 z-40 bg-foreground/[0.07]"
           />
         )}
       </AnimatePresence>
@@ -212,107 +327,165 @@ export function Dock() {
           initial={still ? { opacity: 0 } : { opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ ...springSoft, delay: 0.35 }}
-          className="pointer-events-auto w-full max-w-md"
+          className="pointer-events-auto"
         >
           <motion.div
-            layout
-            animate={{ borderRadius: open ? 26 : 999 }}
-            transition={still ? { duration: 0 } : springSurface}
-            style={{ borderRadius: 999 }}
-            className={`dock mx-auto overflow-hidden ${
-              open ? "dock-open w-full" : "w-fit"
+            ref={shellRef}
+            // Numeric width/height rather than `layout`: a layout animation
+            // moves the shell with a transform, which drags the pinned bar
+            // along with it. Animating the real box leaves the bar alone.
+            initial={false}
+            animate={{
+              width: open
+                ? Math.max(barWidth, panelSize.width + PANEL_PAD * 2)
+                : barWidth || "auto",
+              height: open
+                ? panelSize.height + PANEL_PAD + PANEL_DOCK_GAP + BAR_H
+                : BAR_H,
+              borderRadius: open ? 26 : 999,
+            }}
+            transition={still ? { duration: 0 } : springShell}
+            style={{ borderRadius: 999, minWidth: barWidth || undefined }}
+            className={`dock relative overflow-hidden ${
+              open ? "dock-open" : ""
             }`}
           >
-            <AnimatePresence mode="popLayout" initial={false}>
-              {open ? (
-                <motion.div
-                  key="form"
-                  initial={still ? { opacity: 0 } : { opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 6 }}
-                  transition={{
-                    duration: duration.base * 0.6,
-                    ease,
-                    delay: still ? 0 : 0.05,
+            {/* Panel sits above the bar and stays mounted so it can be
+                measured; it's inert and unfocusable while closed. */}
+            <div
+              className="absolute left-0 top-0 w-max"
+              style={{ padding: PANEL_PAD, paddingBottom: 0 }}
+            >
+              <motion.div
+                ref={panelRef}
+                variants={still ? reducedPanelVariants : panelVariants}
+                initial={false}
+                animate={open ? "open" : "closed"}
+                transition={still ? { duration: 0.15, ease } : springPanel}
+                style={{
+                  transformOrigin: "top center",
+                  pointerEvents: open ? "auto" : "none",
+                }}
+                inert={!open}
+                aria-hidden={!open}
+                className="w-max"
+              >
+                <SayHiForm onClose={close} />
+              </motion.div>
+            </div>
+
+            {/* Pinned to the shell's bottom edge: it cannot shift while the
+                shell grows above it. */}
+            <div
+              ref={barRef}
+              className="absolute bottom-0 left-0 flex h-15 w-max items-center gap-1 px-2.5"
+            >
+              <Link
+                href="/"
+                aria-label="Home"
+                className="shrink-0 rounded-full transition-opacity duration-150 hover:opacity-75"
+              >
+                <Image
+                  src="/images/pfp.png"
+                  alt={profile.name}
+                  width={40}
+                  height={40}
+                  quality={90}
+                  className="size-10 rounded-full object-cover object-top grayscale"
+                />
+              </Link>
+
+              <span className="mx-1.5 h-6 w-px bg-line" aria-hidden />
+
+              {/* The expandable tab: widens to fit its label, pill behind it. */}
+              <motion.button
+                type="button"
+                onClick={() => setOpen((v) => !v)}
+                aria-expanded={open}
+                aria-label="Say hi"
+                animate={{
+                  width: open ? 40 + LABEL_GAP + labelWidth + 14 : 40,
+                }}
+                transition={still ? { duration: 0 } : springTab}
+                className={`relative isolate flex h-10 shrink-0 items-center overflow-hidden rounded-full text-sm ${
+                  open
+                    ? "justify-start pl-2.5 text-foreground"
+                    : "justify-center text-foreground/75 hover:text-foreground"
+                }`}
+              >
+                {open && (
+                  <motion.span
+                    layoutId="dock-tab-pill"
+                    transition={still ? { duration: 0 } : springTab}
+                    className="absolute inset-0 -z-10 rounded-full bg-foreground/[0.08]"
+                  />
+                )}
+
+                <span className="grid shrink-0 place-items-center">
+                  <ChatIcon />
+                </span>
+
+                <motion.span
+                  aria-hidden
+                  initial={false}
+                  animate={{
+                    width: open ? labelWidth : 0,
+                    opacity: open ? 1 : 0,
+                    marginLeft: open ? LABEL_GAP : 0,
+                    filter: still || open ? "blur(0px)" : "blur(3px)",
                   }}
+                  transition={
+                    still ? { duration: 0 } : open ? labelOpen : labelClose
+                  }
+                  className="inline-block overflow-hidden whitespace-nowrap"
                 >
-                  <SayHiForm onClose={close} />
-                </motion.div>
-              ) : (
-                <motion.nav
-                  key="bar"
-                  aria-label="Shortcuts"
-                  initial={still ? { opacity: 0 } : { opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  transition={{
-                    duration: duration.base * 0.5,
-                    ease,
-                    delay: still ? 0 : 0.05,
-                  }}
-                  className="flex h-15 items-center gap-1 px-2.5"
-                >
-                  <Link
-                    href="/"
-                    aria-label="Home"
-                    className="shrink-0 rounded-full transition-opacity duration-150 hover:opacity-75"
+                  Say hi
+                </motion.span>
+              </motion.button>
+
+              <DockItem
+                label={copied ? "Copied" : "Copy email"}
+                onClick={copyEmail}
+              >
+                {/* Crossfade so the tick doesn't pop in. */}
+                <AnimatePresence mode="wait" initial={false}>
+                  <motion.span
+                    key={copied ? "check" : "mail"}
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.7 }}
+                    transition={{ duration: duration.fast, ease }}
+                    className="grid place-items-center"
                   >
-                    <Image
-                      src="/images/pfp.png"
-                      alt={profile.name}
-                      width={40}
-                      height={40}
-                      quality={90}
-                      className="size-10 rounded-full object-cover object-top grayscale"
-                    />
-                  </Link>
+                    {copied ? <CheckIcon /> : <MailIcon />}
+                  </motion.span>
+                </AnimatePresence>
+              </DockItem>
 
-                  <span className="mx-1.5 h-6 w-px bg-line" aria-hidden />
+              <DockItem label="GitHub" href={contactHref("github")} external>
+                <GithubIcon />
+              </DockItem>
 
-                  <DockItem label="Say hi" onClick={() => setOpen(true)}>
-                    <ChatIcon />
-                  </DockItem>
-
-                  <DockItem
-                    label={copied ? "Copied" : "Copy email"}
-                    onClick={copyEmail}
-                  >
-                    {/* Crossfade so the tick doesn't pop in. */}
-                    <AnimatePresence mode="wait" initial={false}>
-                      <motion.span
-                        key={copied ? "check" : "mail"}
-                        initial={{ opacity: 0, scale: 0.7 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.7 }}
-                        transition={{ duration: duration.fast, ease }}
-                        className="grid place-items-center"
-                      >
-                        {copied ? <CheckIcon /> : <MailIcon />}
-                      </motion.span>
-                    </AnimatePresence>
-                  </DockItem>
-
-                  <DockItem
-                    label="GitHub"
-                    href={contactHref("github")}
-                    external
-                  >
-                    <GithubIcon />
-                  </DockItem>
-
-                  <DockItem
-                    label="LinkedIn"
-                    href={contactHref("linkedin")}
-                    external
-                  >
-                    <LinkedinIcon />
-                  </DockItem>
-                </motion.nav>
-              )}
-            </AnimatePresence>
+              <DockItem
+                label="LinkedIn"
+                href={contactHref("linkedin")}
+                external
+              >
+                <LinkedinIcon />
+              </DockItem>
+            </div>
           </motion.div>
         </motion.div>
       </div>
+
+      {/* Off-screen measurer: the tab animates to this exact width. */}
+      <span
+        aria-hidden
+        ref={labelRef}
+        className="pointer-events-none fixed left-0 top-0 -z-10 whitespace-nowrap text-sm leading-none opacity-0"
+      >
+        Say hi
+      </span>
     </>
   );
 }
