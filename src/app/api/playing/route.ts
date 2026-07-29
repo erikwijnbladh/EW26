@@ -1,3 +1,4 @@
+import { connection } from "next/server";
 import { NOW_PLAYING_COUNT } from "@/lib/data";
 import { getPlaying } from "@/lib/spotify";
 
@@ -12,10 +13,15 @@ import { getPlaying } from "@/lib/spotify";
  * Never cached: a stale answer here would defeat the entire point. Spotify is
  * still only asked once every few seconds no matter how many people are
  * polling — `getPlaying` throttles that itself.
+ *
+ * `connection()` rather than `dynamic = "force-dynamic"`, which
+ * `cacheComponents` rejects. Nothing is cached by default under that flag, so
+ * this is belt and braces — but it states the requirement in the file instead
+ * of leaving it to be inferred from what the handler happens to call.
  */
-export const dynamic = "force-dynamic";
-
 export async function GET() {
+  await connection();
+
   const playing = await getPlaying(NOW_PLAYING_COUNT);
 
   return Response.json(playing, {

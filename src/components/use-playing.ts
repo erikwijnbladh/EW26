@@ -15,9 +15,11 @@ const POLL_MS = 10_000;
 /**
  * Keeps the track list current while the page is being looked at.
  *
- * `initial` is what the server rendered, which for a static page can be
- * arbitrarily old — so the first poll goes out at hydration rather than after
- * an interval, and corrects it straight away.
+ * `initial` is what the server streamed, which is now at most `REVALIDATE`
+ * seconds old rather than as old as the last prerender — so the first poll is
+ * a re-sync, not a correction. It still goes out at hydration rather than after
+ * an interval: it's one request, it's throttled server-side alongside every
+ * other caller, and it means the interval starts from a known-good answer.
  */
 export function usePlaying(initial: Playing): Playing {
   const [playing, setPlaying] = useState(initial);
