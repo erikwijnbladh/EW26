@@ -53,7 +53,7 @@ export function SayHiForm({ onClose }: { onClose: () => void }) {
   }
 
   return (
-    <div className="w-[min(24rem,calc(100vw-3.5rem))] select-text p-4 sm:w-96 sm:p-5">
+    <div className="w-[min(22rem,calc(100vw-4rem))] select-text p-4">
       <h2 className="text-[26px] font-medium leading-tight tracking-[-0.02em] text-foreground">
         What&rsquo;s up?
       </h2>

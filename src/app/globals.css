@@ -16,6 +16,12 @@
   --color-line: var(--line);
   --color-surface: var(--surface);
   --color-accent: var(--accent);
+  /* shadcn-shaped aliases, mapped onto this site's palette, so components
+     written against those token names render correctly here. */
+  --color-border: var(--line);
+  --color-card: var(--background);
+  --color-muted-foreground: var(--muted);
+  --color-ring: var(--accent);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-instrument-serif);
