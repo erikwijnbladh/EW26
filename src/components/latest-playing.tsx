@@ -10,7 +10,7 @@ import {
 } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { nowPlaying, NOW_PLAYING_PREVIEW } from "@/lib/data";
-import { ease, springSnappy, springSurface } from "@/lib/motion";
+import { ease, easeInOut, springSnappy, springSurface } from "@/lib/motion";
 
 /**
  * How much a row dims as it goes down the list. Collapsed, the tail fades out
@@ -20,7 +20,7 @@ const dim = (i: number, expanded: boolean) =>
   expanded ? 1 : Math.max(0.18, 1 - i * 0.19);
 
 /** Gap between one row's fade and the next. */
-const STAGGER = 0.05;
+const STAGGER = 0.06;
 
 /** Rows always live in the DOM; these are the two heights the curtain moves between. */
 type Heights = { collapsed: number; full: number };
@@ -145,15 +145,27 @@ export function LatestPlaying() {
   const rows = mounted ? nowPlaying : nowPlaying.slice(0, NOW_PLAYING_PREVIEW);
   const lastIndex = nowPlaying.length - 1;
 
-  /** When a given row starts its fade. */
-  function rowDelay(i: number, extra: boolean) {
-    if (still) return 0;
+  /**
+   * Timing for one row's fade. Closing, everything is stretched to run
+   * alongside the curtain rather than finishing under it: the rows that leave
+   * go bottom-up and the rows that stay re-dim across the whole close, on an
+   * ease-in-out so the change is visible throughout instead of front-loaded.
+   */
+  function rowTransition(i: number, extra: boolean) {
+    if (still) return { duration: 0 };
+
     if (expanded) {
-      // Behind the rising curtain, top down.
-      return extra ? 0.08 + (i - NOW_PLAYING_PREVIEW) * STAGGER : 0;
+      return {
+        duration: 0.4,
+        ease,
+        // Behind the rising curtain, top down.
+        delay: extra ? 0.08 + (i - NOW_PLAYING_PREVIEW) * STAGGER : 0,
+      };
     }
-    // Bottom row first, working back up towards the ones that stay.
-    return extra ? (lastIndex - i) * STAGGER : 0.06;
+
+    return extra
+      ? { duration: 0.28, ease: easeInOut, delay: (lastIndex - i) * STAGGER }
+      : { duration: 0.44, ease: easeInOut, delay: 0.12 };
   }
 
   return (
@@ -175,12 +187,12 @@ export function LatestPlaying() {
         transition={
           still
             ? { duration: 0 }
-            : {
-                ...springSurface,
-                // Closing, let the last row start leaving before the curtain
-                // moves; opening, the curtain leads.
-                delay: expanded ? 0 : 0.12,
-              }
+            : expanded
+              ? // Opening, the curtain leads.
+                springSurface
+              : // Closing, a duration-spring so it can be timed against the
+                // rows: it starts after them and is the last thing to land.
+                { type: "spring", duration: 0.5, bounce: 0, delay: 0.14 }
         }
       >
         <ol ref={listRef}>
@@ -193,11 +205,7 @@ export function LatestPlaying() {
                 key={`${track.artist}-${track.title}`}
                 initial={false}
                 animate={{ opacity: gone ? 0 : dim(i, expanded) }}
-                transition={{
-                  duration: still ? 0 : 0.32,
-                  ease,
-                  delay: rowDelay(i, extra),
-                }}
+                transition={rowTransition(i, extra)}
                 aria-hidden={gone}
                 className="flex items-baseline gap-4 border-t border-line py-2.5 first:border-t-0"
               >
