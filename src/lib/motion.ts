@@ -81,22 +81,50 @@ export const labelOpen: Transition = {
 export const labelClose: Transition = { duration: 0.16, ease };
 
 /**
- * The song drawer. Bounce is zero on purpose: the drawer clips its contents, so
- * any overshoot would briefly reveal empty space past the last row. Closing is
- * a little quicker than opening — there's less to take in on the way out.
+ * The song drawer.
  *
- * The drawer height, the cards' tuck and their blur all run on this one pair,
- * so the stack unfolds as a single movement instead of three that nearly agree.
+ * A curve rather than a spring, which is a change of character and not just of
+ * numbers. A critically damped spring is the wrong shape for a large clipped
+ * surface: measured over this drawer's three hundred pixels it puts half the
+ * travel into the first seventh of the time and peaks at four and a half times
+ * its own average speed — around fifty pixels in a frame. So the first frame a
+ * phone misses moves the drawer, and the whole page below it, a hundred pixels
+ * in one step. That is what reads as the movement being chopped up, and it is
+ * not something cheaper frames can fix: the curve needs every one of them.
+ *
+ * This one still leaves the instant it's asked to, because a tap has to be
+ * answered — a third of the way there by a fifth of the time. But it peaks
+ * under three times its average and spends the rest of its length slowing
+ * down, so nothing ever moves fast enough for a missed frame to show as a jump.
+ *
+ * Not overshooting was the spring's one virtue here and the curve keeps it: the
+ * drawer clips its contents, so any bounce would briefly reveal empty space
+ * past the last row.
+ *
+ * Closing is a little quicker than opening — there's less to take in on the way
+ * out.
  */
-export const curtainOpen: Transition = {
-  type: "spring",
-  duration: 0.62,
-  bounce: 0,
-};
+export const drawer = [0.33, 0.1, 0.15, 1] as const;
 
-export const curtainClose: Transition = {
+export const curtainOpen: Transition = { duration: 0.6, ease: drawer };
+
+export const curtainClose: Transition = { duration: 0.52, ease: drawer };
+
+/**
+ * A card changing rank in the closed stack — a poll landed a new song on top,
+ * so everything below it is now one place deeper and wants a little more tuck,
+ * dim and blur.
+ *
+ * Separate from the curtain because it is a separate event: it happens while
+ * the drawer is sitting still, and it has to keep working if one lands in the
+ * middle of the drawer opening. Its own spring, composed with the curtain's
+ * position rather than competing with it. A spring is right here where it was
+ * wrong for the drawer — this is eighteen pixels, not three hundred, and at
+ * that distance nothing it does is fast enough to stutter.
+ */
+export const deckSettle: Transition = {
   type: "spring",
-  duration: 0.5,
+  duration: 0.55,
   bounce: 0,
 };
 

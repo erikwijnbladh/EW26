@@ -32,6 +32,15 @@ const BLUR = 3.6;
 const DIM = 0.38;
 const SHRINK = 0.03;
 
+/**
+ * Where a card sits in the deck: four numbers, not styles.
+ *
+ * Numbers because the drawer interpolates between a card's collapsed pose and
+ * its open one on every frame, and a pose that arrived pre-formatted as
+ * `blur(2.31px)` would have to be parsed back apart to do it.
+ */
+export type Pose = { y: number; scale: number; opacity: number; blur: number };
+
 /** Card depth, 0 at the top of the stack and 1 at the fold and beyond. */
 function depth(i: number, preview: number) {
   return preview > 1 ? Math.min(i, preview - 1) / (preview - 1) : 0;
@@ -49,45 +58,51 @@ function depth(i: number, preview: number) {
  * looks broken rather than behind. Past the fold the values clamp — those cards
  * are behind the deepest visible one and differ only in not being drawn.
  */
-export function stacked(i: number, preview: number) {
+export function pose(i: number, preview: number): Pose {
   const d = depth(i, preview);
+
+  // The card just past the fold is the sliver peeking out from under the
+  // stack — the reason the list reads as continuing rather than stopping.
+  const opacity = i < preview ? 1 - DIM * d : i === preview ? 0.32 : 0;
 
   return {
     y: -TUCK * Math.min(i, preview - 1),
     scale: 1 - SHRINK * d,
-    filter: `blur(${(BLUR * d ** 1.5).toFixed(2)}px)`,
-    // The card just past the fold is the sliver peeking out from under the
-    // stack — the reason the list reads as continuing rather than stopping.
-    opacity: i < preview ? 1 - DIM * d : i === preview ? 0.32 : 0,
+    opacity,
+    // A card nobody can see is still a card the phone blurs: any filter puts
+    // it on a raster layer of its own, and that layer is rebuilt on every frame
+    // the radius moves. Half the deck is behind the peeking sliver and drawn at
+    // zero — blurring those was work with no picture at the end of it.
+    blur: opacity === 0 ? 0 : BLUR * d ** 1.5,
   };
 }
 
 /** Open: no stack, no blur, every card at its own size and place. */
-export const FLAT = { y: 0, scale: 1, filter: "blur(0px)", opacity: 1 };
+export const FLAT: Pose = { y: 0, scale: 1, opacity: 1, blur: 0 };
 
 /**
- * `stacked` as plain CSS, for the skeleton — which is a server component and
- * has no motion values to hand these to.
+ * A pose as a filter string. `none` rather than `blur(0px)` for the sharp end,
+ * because the two look identical and only one of them costs a layer.
+ */
+export function blurFilter(px: number) {
+  return px < 0.02 ? "none" : `blur(${px.toFixed(2)}px)`;
+}
+
+/**
+ * `pose` as plain CSS, for the skeleton — which is a server component and has
+ * no motion values to hand these to.
  *
  * Derived rather than restated: `y` and `scale` are motion's shorthands and
  * mean nothing to the style attribute, so they're folded into a transform here
  * and the numbers still come from the one place that decides them.
  */
 export function stackedStyle(i: number, preview: number): CSSProperties {
-  const { y, scale, filter, opacity } = stacked(i, preview);
+  const { y, scale, opacity, blur } = pose(i, preview);
 
   return {
     transform: `translateY(${y}px) scale(${scale})`,
     transformOrigin: "center top",
-    filter,
+    filter: blurFilter(blur),
     opacity,
   };
 }
-
-/**
- * The mask for the first paint and the no-JS case, before anything is measured.
- * Pixels off the bottom edge rather than percentages, so it lands identically
- * whatever the rows measure — there's no visible correction when the real one
- * takes over.
- */
-export const STATIC_MASK = `linear-gradient(to bottom, #000 0px, #000 calc(100% - ${FADE}px), transparent 100%)`;

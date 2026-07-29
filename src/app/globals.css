@@ -2,6 +2,8 @@
 
 :root {
   --background: #f4f3f1;
+  /* The same colour again, as channels, so gradients can fade it out. */
+  --background-rgb: 244 243 241;
   --foreground: #15140f;
   --muted: #6b6a64;
   --line: rgba(21, 20, 15, 0.12);
@@ -102,6 +104,30 @@ summary {
     0 0 0 0.5px var(--line),
     0 1px 1px rgba(21, 20, 15, 0.04),
     0 3px 10px rgba(21, 20, 15, 0.07);
+}
+
+/* The soft bottom edge of the collapsed deck, so the peeking sliver ends
+   rather than gets cut.
+
+   Painted over the cards rather than cut out of them with `mask-image`. A mask
+   whose stops move with the drawer has to be rebuilt and re-rastered on every
+   frame of the animation, over a subtree that is already blurring — which is
+   most of what made opening the stack stutter on a phone. An overlay only ever
+   changes opacity, which is a compositor property and costs nothing to move.
+
+   Painting the page colour is the same picture as cutting a hole to it: what's
+   behind the widget is one flat background, and the grain sits above both.
+
+   Four stops rather than two: a straight alpha ramp bands visibly across 26px,
+   and the eased one reads as the list going soft rather than as a grey bar. */
+.track-fade {
+  background: linear-gradient(
+    to bottom,
+    rgb(var(--background-rgb) / 0) 0%,
+    rgb(var(--background-rgb) / 0.32) 38%,
+    rgb(var(--background-rgb) / 0.78) 70%,
+    rgb(var(--background-rgb) / 1) 100%
+  );
 }
 
 .no-scrollbar::-webkit-scrollbar {

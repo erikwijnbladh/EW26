@@ -4,7 +4,7 @@ import {
   NOW_PLAYING_COUNT,
   NOW_PLAYING_PREVIEW,
 } from "@/lib/data";
-import { GAP, PAD, PEEK, STATIC_MASK, TUCK, stackedStyle } from "@/lib/deck";
+import { FADE, GAP, PAD, PEEK, TUCK, stackedStyle } from "@/lib/deck";
 import { getPlaying } from "@/lib/spotify";
 import { LatestPlaying } from "@/components/latest-playing";
 
@@ -94,11 +94,7 @@ export function PlayingSkeleton() {
 
       {/* Bled out and padded back in, so the clip doesn't cut the card shadows
           off flat against both edges — as in `LatestPlaying`. */}
-      <div
-        className="-mx-3 mt-4 overflow-hidden px-3"
-        style={{ maskImage: STATIC_MASK, WebkitMaskImage: STATIC_MASK }}
-        aria-hidden
-      >
+      <div className="relative -mx-3 mt-4 overflow-hidden px-3" aria-hidden>
         <ol
           className="relative flex flex-col"
           style={{ gap: GAP, paddingBottom: PAD, marginBottom: settle }}
@@ -121,6 +117,13 @@ export function PlayingSkeleton() {
             </li>
           ))}
         </ol>
+
+        {/* The same soft bottom edge the real deck gets, drawn the same way:
+            an element over the cards rather than a mask cut out of them. */}
+        <span
+          className="track-fade pointer-events-none absolute inset-x-0 bottom-0 block"
+          style={{ height: FADE, zIndex: 20 }}
+        />
       </div>
 
       {/* h-4 rather than h-3: the toggle is `text-xs`, whose 1rem line box is

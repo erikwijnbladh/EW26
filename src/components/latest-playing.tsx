@@ -13,10 +13,10 @@ import {
   AnimatePresence,
   animate,
   motion,
-  useMotionTemplate,
   useMotionValue,
   useReducedMotion,
   useTransform,
+  type MotionValue,
 } from "motion/react";
 import {
   NOW_PLAYING_COUNT,
@@ -29,13 +29,15 @@ import {
   GAP,
   PAD,
   PEEK,
-  STATIC_MASK,
   TUCK,
-  stacked,
+  blurFilter,
+  pose,
+  type Pose,
 } from "@/lib/deck";
 import {
   curtainClose,
   curtainOpen,
+  deckSettle,
   instant,
   springSnappy,
   trackLeave,
@@ -50,9 +52,6 @@ import { usePlaying } from "@/components/use-playing";
  * took the whole page down.
  */
 type Metrics = { collapsed: number; full: number };
-
-/** Further down than the section can get, for a mask that must hide nothing. */
-const OPAQUE = 100_000;
 
 /**
  * Stable per-card keys, so a poll that prepends a song moves the existing cards
@@ -189,6 +188,80 @@ function Chevron({ up }: { up: boolean }) {
 }
 
 /**
+ * One card's depth in the deck.
+ *
+ * Two things move a card and they are not the same thing. The drawer opening
+ * lifts every card out of the stack at once, and a poll landing a new song on
+ * top pushes this one card a rank deeper while the drawer stays where it is.
+ * Either can happen during the other.
+ *
+ * So they are held apart and multiplied rather than fought over. `closed` is
+ * where this card sits with the drawer shut, and it springs to a new rank on
+ * its own when the list shifts under it. `shut` is how closed the drawer is,
+ * shared by the whole widget. What gets written to the element is the first
+ * scaled by the second — at `shut` 0 every card is flat and sharp whatever rank
+ * it holds, which is exactly what "open" means.
+ *
+ * Nothing here re-renders. React sets these up once and every frame after that
+ * is a motion value writing a transform, so a drawer mid-flight is untouched by
+ * a poll arriving.
+ */
+function Card({
+  track,
+  hasArt,
+  closed,
+  shut,
+  still,
+}: {
+  track: Track;
+  hasArt: boolean;
+  closed: Pose;
+  shut: MotionValue<number>;
+  still: boolean | null;
+}) {
+  const { y: ty, scale: ts, opacity: to, blur: tb } = closed;
+
+  const y0 = useMotionValue(ty);
+  const scale0 = useMotionValue(ts);
+  const opacity0 = useMotionValue(to);
+  const blur0 = useMotionValue(tb);
+
+  useEffect(() => {
+    const settle = still ? instant : deckSettle;
+
+    const controls = [
+      animate(y0, ty, settle),
+      animate(scale0, ts, settle),
+      animate(opacity0, to, settle),
+      animate(blur0, tb, settle),
+    ];
+
+    return () => controls.forEach((control) => control.stop());
+  }, [ty, ts, to, tb, still, y0, scale0, opacity0, blur0]);
+
+  // The card's own depth, faded out by how far the drawer has opened. Each of
+  // these holds its value while the drawer is at rest, and a motion value that
+  // doesn't change writes nothing — so a card whose blur is zero at both ends,
+  // which is every card behind the peeking sliver, costs nothing for the whole
+  // animation.
+  const y = useTransform(() => y0.get() * shut.get());
+  const scale = useTransform(() => 1 - (1 - scale0.get()) * shut.get());
+  const opacity = useTransform(() => 1 - (1 - opacity0.get()) * shut.get());
+  const filter = useTransform(() => blurFilter(blur0.get() * shut.get()));
+
+  return (
+    <motion.div
+      style={{ y, scale, opacity, filter, transformOrigin: "center top" }}
+      className={`track-card flex items-center gap-3 rounded-xl px-3 ${
+        hasArt ? "py-2" : "py-2.5"
+      }`}
+    >
+      <CardBody track={track} hasArt={hasArt} />
+    </motion.div>
+  );
+}
+
+/**
  * The last few tracks as a stack of cards, with the rest behind a toggle.
  *
  * Closed, the cards tuck under each other and go progressively blurred, dimmer
@@ -198,9 +271,9 @@ function Chevron({ up }: { up: boolean }) {
  * anything.
  *
  * Every card stays mounted and only the wrapper's height moves, so the document
- * shrinks gradually instead of in one frame — which is what made collapsing at
- * the bottom of a phone screen jump. Height, tuck, blur, dim and scale all run
- * off the same spring pair, so it's one movement and not five.
+ * shrinks gradually instead of in one frame. Height, tuck, blur, dim, scale and
+ * the fade at the bottom edge are all read off one curve on one number, so the
+ * whole thing is a single movement rather than fifty that agree on paper.
  *
  * The live track heads the same deck rather than sitting in a slot of its own.
  * `Playing` keeps it apart from the log because they are different facts — one
@@ -252,6 +325,7 @@ export function LatestPlaying({
     () => false,
   );
 
+  // How far open the drawer is, 0 to 1. The one animated number in the widget.
   const progress = useMotionValue(0);
 
   const height = useTransform(
@@ -259,31 +333,18 @@ export function LatestPlaying({
     [0, 1],
     [metrics?.collapsed ?? 0, metrics?.full ?? 0],
   );
-  // Closed, the fade sits on the bottom edge and eats the peeking sliver. Open,
-  // both stops are past the end — nothing is hidden, so there's nothing to hint
-  // at, and the last card keeps its shadow.
+
+  // How much of the closed deck is left, 1 down to 0. Every card's tuck, dim,
+  // shrink and blur is its own depth times this, and computing it once for the
+  // whole deck rather than once per card is ten fewer values to update a frame.
   //
-  // A list with nothing behind the fold gets both stops parked past any height
-  // the section could have, rather than the property being dropped: once motion
-  // has written a mask onto the element, handing it `undefined` leaves the last
-  // one it wrote. A poll that shortens the list below the preview — a run of
-  // one song collapsing under de-duplication — would otherwise keep fading at a
-  // stop measured for rows that are no longer there.
-  const solid = useTransform(
-    progress,
-    [0, 1],
-    expandable
-      ? [(metrics?.collapsed ?? 0) - FADE, metrics?.full ?? 0]
-      : [OPAQUE, OPAQUE],
-  );
-  const clear = useTransform(
-    progress,
-    [0, 1],
-    expandable
-      ? [metrics?.collapsed ?? 0, (metrics?.full ?? 0) + FADE]
-      : [OPAQUE, OPAQUE],
-  );
-  const mask = useMotionTemplate`linear-gradient(to bottom, #000 0px, #000 ${solid}px, transparent ${clear}px)`;
+  // The fade at the bottom edge is the same number and not a second one that
+  // happens to match: how much the deck is closed is exactly how much of it is
+  // hidden. Closed, the edge goes soft and eats the peeking sliver; open,
+  // nothing is hidden, so there's nothing to hint at and the last card keeps
+  // its shadow. Being an element rather than a mask, this is its opacity — not
+  // a gradient rebuilt sixty times a second.
+  const shut = useTransform(progress, [0, 1], [1, 0]);
 
   const measure = useCallback(() => {
     const el = listRef.current;
@@ -303,11 +364,20 @@ export function LatestPlaying({
     const last = nodes[tracks.length - 1];
     if (!fold || !last) return;
 
-    setMetrics({
-      collapsed:
-        fold.offsetTop + fold.offsetHeight - TUCK * (preview - 1) + PEEK,
-      full: last.offsetTop + last.offsetHeight + PAD,
-    });
+    const collapsed =
+      fold.offsetTop + fold.offsetHeight - TUCK * (preview - 1) + PEEK;
+    const full = last.offsetTop + last.offsetHeight + PAD;
+
+    // Only when they actually moved. The observer fires for things that don't
+    // change these — album art arriving, a re-render settling — and the drawer
+    // interpolates between exactly these two numbers, so re-stating them
+    // mid-animation re-ranges the height under a curve that is already running
+    // and steps it. Same numbers, same object, no render.
+    setMetrics((prev) =>
+      prev && prev.collapsed === collapsed && prev.full === full
+        ? prev
+        : { collapsed, full },
+    );
   }, [tracks.length, preview]);
 
   // Measured before paint, so the collapsed height is in place on the same
@@ -323,6 +393,31 @@ export function LatestPlaying({
     return () => observer.disconnect();
   }, [measure]);
 
+  const cards = mounted ? tracks : tracks.slice(0, preview);
+  const keys = keysFor(cards);
+  const drawer = expandable && metrics !== null;
+
+  /*
+    The whole animation: one number, one curve.
+
+    There is deliberately no scroll compensation here, and it is worth saying
+    why, because the obvious fix is to add some. Collapsing takes a couple of
+    hundred pixels out of the document, and read from the very end of the page
+    the browser has nowhere to put the viewport once the page is shorter than
+    the offset it is scrolled to — so it clamps, and everything slides. It looks
+    exactly like a bug the widget should be correcting.
+
+    It can't be. Correcting a clamp means scrolling further down than the
+    document now goes, which is the thing that just became impossible; the
+    browser is already at the bottom. Measured both ways, an anchoring pass on
+    every frame moved the page by zero pixels in every case where it could run
+    at all, and cost a forced layout a frame to do it.
+
+    What was actually wrong was the speed. The page has to travel that distance
+    — but travelling it in four frames is a jump and travelling it in twenty is
+    a scroll, and that is a question about the curve, which is where it's now
+    answered.
+  */
   useEffect(() => {
     if (still) {
       progress.set(expanded ? 1 : 0);
@@ -338,11 +433,6 @@ export function LatestPlaying({
     return () => controls.stop();
   }, [expanded, still, progress]);
 
-  const cards = mounted ? tracks : tracks.slice(0, preview);
-  const keys = keysFor(cards);
-  const drawer = expandable && metrics !== null;
-  const deck = expandable && !expanded;
-
   // Before the first measurement the document has the cards at their untucked
   // heights, which leaves the stack floating above a hole exactly the size of
   // the tuck it hasn't been told about. Constant, and independent of how tall a
@@ -356,6 +446,12 @@ export function LatestPlaying({
   const hasArt = tracks.some((track) => track.image);
 
   return (
+    /*
+      Off the list of things the browser may pick as its scroll anchor. The
+      cards are the worst candidate on the page — every one of them is moving,
+      under a transform, for the length of the drawer — and anchoring to
+      something that is itself in motion is how the page ends up chasing it.
+    */
     <section aria-label="Latest playing" style={{ overflowAnchor: "none" }}>
       {/*
         The live marker sits with the heading rather than on the card's album
@@ -384,13 +480,8 @@ export function LatestPlaying({
         otherwise cut the cards' shadows off flat against both edges.
       */}
       <motion.div
-        className="-mx-3 mt-4 overflow-hidden px-3"
-        style={{
-          height: drawer ? height : "auto",
-          // Nothing is hidden when the list is short, so a fade would be a lie.
-          maskImage: drawer ? mask : expandable ? STATIC_MASK : "none",
-          WebkitMaskImage: drawer ? mask : expandable ? STATIC_MASK : "none",
-        }}
+        className="relative -mx-3 mt-4 overflow-hidden px-3"
+        style={{ height: drawer ? height : "auto" }}
       >
         <ol
           ref={listRef}
@@ -417,10 +508,16 @@ export function LatestPlaying({
                 something lands above it. The inner one owns where that card
                 sits in the deck. Kept apart because both animate a transform,
                 and one element can only have the one.
+
+                `layout="position"` rather than plain `layout`: a card only ever
+                changes place, never size, and the full version additionally
+                corrects its children for a size change that never happens —
+                which on a card that is mid-blur means undoing a scale on a
+                raster layer every frame, for nothing.
               */
               <motion.li
                 key={keys[i]}
-                layout
+                layout="position"
                 // Blocked by `AnimatePresence initial={false}` for the cards
                 // that are there on the first render, so this only ever runs
                 // for a song that actually arrived. The server renders the
@@ -438,36 +535,58 @@ export function LatestPlaying({
                 style={{ position: "relative", zIndex: cards.length - i }}
                 aria-hidden={expandable && i >= preview && !expanded}
               >
-                <motion.div
-                  // The depth a card mounts at is simply the depth it has —
-                  // there's nothing to animate from, and a stack that assembled
-                  // itself on every hydration would be a party trick.
-                  initial={false}
-                  animate={deck ? stacked(i, preview) : FLAT}
-                  transition={
-                    still ? instant : expanded ? curtainOpen : curtainClose
-                  }
-                  style={{ transformOrigin: "center top" }}
-                  className={`track-card flex items-center gap-3 rounded-xl px-3 ${
-                    hasArt ? "py-2" : "py-2.5"
-                  }`}
-                >
-                  <CardBody track={track} hasArt={hasArt} />
-                </motion.div>
+                <Card
+                  track={track}
+                  hasArt={hasArt}
+                  closed={expandable ? pose(i, preview) : FLAT}
+                  shut={shut}
+                  still={still}
+                />
               </motion.li>
             ))}
           </AnimatePresence>
         </ol>
+
+        {/*
+          Mounted only while there is something under the fold. Rendering it
+          conditionally rather than animating it to nothing is what keeps a poll
+          that shortens the list — a run of one song collapsing under
+          de-duplication — from leaving a fade sitting over a list that has
+          nothing left to hide.
+        */}
+        {expandable && (
+          <motion.div
+            aria-hidden
+            className="track-fade pointer-events-none absolute inset-x-0 bottom-0"
+            style={{ height: FADE, zIndex: 20, opacity: drawer ? shut : 1 }}
+          />
+        )}
       </motion.div>
 
       {expandable && (
+        /*
+          A line of small caps is a 16px-tall target, sitting directly under a
+          drawer that is about to move a couple of hundred pixels — miss it on a
+          phone and you have flicked the page instead. So the target is grown to
+          40px with a pseudo-element rather than with padding: padding would move
+          everything below it, and this row has to stay exactly where the
+          skeleton reserved it.
+
+          `touch-action: manipulation` because the browser otherwise waits to
+          find out whether a tap was the start of a double-tap zoom, and that
+          wait is felt as the drawer answering late.
+        */
         <motion.button
           type="button"
           onClick={() => setExpanded((v) => !v)}
           aria-expanded={expanded}
           whileTap={still ? undefined : { scale: 0.97 }}
           transition={springSnappy}
-          className="mt-4 flex items-center gap-1.5 text-xs uppercase tracking-[0.08em] text-muted/70 transition-colors duration-150 hover:text-foreground"
+          style={{
+            touchAction: "manipulation",
+            WebkitTapHighlightColor: "transparent",
+          }}
+          className="relative mt-4 flex items-center gap-1.5 text-xs uppercase tracking-[0.08em] text-muted/70 transition-colors duration-150 before:absolute before:inset-x-0 before:-inset-y-3 before:content-[''] hover:text-foreground"
         >
           {expanded ? "Show less" : `View more (${tracks.length})`}
           <Chevron up={expanded} />
