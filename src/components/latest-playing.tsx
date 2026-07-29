@@ -19,6 +19,7 @@ import {
 } from "motion/react";
 import { NOW_PLAYING_PREVIEW, type Track } from "@/lib/data";
 import { curtainClose, curtainOpen, springSnappy } from "@/lib/motion";
+import { usePlaying } from "@/components/use-playing";
 
 /**
  * Only the numbers the drawer needs, resolved at measure time. Deliberately
@@ -153,15 +154,24 @@ function Chevron({ up }: { up: boolean }) {
  * hard edge at its border. A mask ramps continuously through the text, and it
  * covers the reveal too — rows emerge out of the soft edge as the drawer opens
  * instead of needing a fade of their own to be timed against it.
+ *
+ * The props are the server's answer, which for a statically rendered page is
+ * a snapshot from whenever it was last built. `usePlaying` takes over once
+ * there's a client to poll with.
  */
 export function LatestPlaying({
-  tracks,
-  live,
+  tracks: initialTracks,
+  live: initialLive,
 }: {
   tracks: Track[];
   /** Whether the first track is playing right now. */
   live: boolean;
 }) {
+  const { tracks, live } = usePlaying({
+    tracks: initialTracks,
+    live: initialLive,
+  });
+
   const [expanded, setExpanded] = useState(false);
   const still = useReducedMotion();
   const listRef = useRef<HTMLOListElement>(null);

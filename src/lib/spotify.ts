@@ -33,7 +33,7 @@ const API = "https://api.spotify.com/v1";
  * in the hundreds. The access token is held separately and outlives this by an
  * hour, so it isn't re-minted each time.
  */
-const REVALIDATE = 10;
+export const REVALIDATE = 10;
 
 type SpotifyArtist = { name: string };
 type SpotifyImage = { url?: string; width?: number };
@@ -195,11 +195,7 @@ async function getRecent(token: string, limit: number): Promise<Track[]> {
   return tracks;
 }
 
-/**
- * `count` tracks, newest first, with the live one at the front when there is
- * one. Returns null if Spotify isn't configured or doesn't answer.
- */
-export async function getPlaying(count: number): Promise<Playing | null> {
+async function fetchPlaying(count: number): Promise<Playing | null> {
   try {
     const token = await getAccessToken();
     if (!token) return null;
@@ -223,4 +219,43 @@ export async function getPlaying(count: number): Promise<Playing | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * The last answer, reused for `REVALIDATE` seconds.
+ *
+ * `next: { revalidate }` on the calls above already collapses repeats, but only
+ * for requests Next decides to cache — and the endpoint the widget polls is
+ * deliberately dynamic, so it can't rely on that. This makes the throttle
+ * unconditional: however many tabs are polling, Spotify is asked at most once
+ * per interval per instance.
+ *
+ * The in-flight promise is held rather than the resolved value, so callers that
+ * arrive together share one request instead of each starting its own.
+ */
+let pending: {
+  count: number;
+  at: number;
+  result: Promise<Playing | null>;
+} | null = null;
+
+/**
+ * `count` tracks, newest first, with the live one at the front when there is
+ * one. Returns null if Spotify isn't configured or doesn't answer.
+ *
+ * Safe to call as often as you like — see `pending` above.
+ */
+export function getPlaying(count: number): Promise<Playing | null> {
+  const fresh =
+    pending &&
+    pending.count === count &&
+    Date.now() - pending.at < REVALIDATE * 1000;
+
+  if (fresh) return pending!.result;
+
+  // `fetchPlaying` swallows its own failures, so this never holds a rejected
+  // promise — a failure is cached as null, which throttles retries too.
+  pending = { count, at: Date.now(), result: fetchPlaying(count) };
+
+  return pending.result;
 }
