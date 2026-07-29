@@ -23,8 +23,17 @@ export type Playing = {
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
 const API = "https://api.spotify.com/v1";
 
-/** How long a cached response is served before Spotify is asked again. */
-const REVALIDATE = 60;
+/**
+ * How long a cached response is served before Spotify is asked again. This is
+ * the lowest revalidate on the page, so it also sets how often `/` itself
+ * regenerates — the contributions fetch keeps its own 24h entry and is not
+ * re-fetched along with it.
+ *
+ * Two calls per regeneration, so at most 12 a minute against a limit measured
+ * in the hundreds. The access token is held separately and outlives this by an
+ * hour, so it isn't re-minted each time.
+ */
+const REVALIDATE = 10;
 
 type SpotifyArtist = { name: string };
 type SpotifyImage = { url?: string; width?: number };
