@@ -160,12 +160,38 @@ async function call(path: string, token: string) {
   });
 }
 
+/**
+ * Say so when Spotify refuses a call.
+ *
+ * Every failure path here degrades to "no tracks", which is right for the page
+ * but indistinguishable from a genuinely empty history — a 403 for a missing
+ * scope and an account that hasn't played anything look identical on screen.
+ * The status code is the one thing that tells them apart, so it goes to the
+ * server log rather than nowhere. 401 means the refresh token no longer
+ * carries the scope; 403 means it never did; 429 is rate limiting.
+ */
+async function complain(what: string, res: Response) {
+  let detail = "";
+  try {
+    detail = (await res.text()).slice(0, 200);
+  } catch {
+    // Body already consumed or not readable — the status is the useful part.
+  }
+
+  console.error(`[spotify] ${what} failed: ${res.status} ${detail}`);
+}
+
 /** The track playing right now, or null when nothing is. */
 async function getCurrent(token: string): Promise<Track | null> {
   const res = await call("/me/player/currently-playing", token);
 
   // 204 means the player is idle — a normal answer, not a failure.
-  if (res.status === 204 || !res.ok) return null;
+  if (res.status === 204) return null;
+
+  if (!res.ok) {
+    await complain("currently-playing", res);
+    return null;
+  }
 
   const json = (await res.json()) as {
     is_playing?: boolean;
@@ -184,21 +210,35 @@ async function getRecent(token: string): Promise<Track[]> {
     `/me/player/recently-played?limit=${RECENT_LIMIT}`,
     token,
   );
-  if (!res.ok) return [];
+
+  if (!res.ok) {
+    await complain("recently-played", res);
+    return [];
+  }
 
   const json = (await res.json()) as {
-    items?: { track?: SpotifyTrack }[];
+    items?: { track?: SpotifyTrack; played_at?: string }[];
   };
+
+  // Sort rather than trust the order. Each item carries `played_at`, and the
+  // list is only meaningfully "latest" if that's what it's ordered by —
+  // leaning on the order the endpoint happens to return is an assumption the
+  // reference doesn't actually make.
+  const items = [...(json.items ?? [])].sort(
+    (a, b) =>
+      Date.parse(b.played_at ?? "") - Date.parse(a.played_at ?? "") || 0,
+  );
 
   const tracks: Track[] = [];
   const seen = new Set<string>();
 
-  for (const item of json.items ?? []) {
+  for (const item of items) {
     const track = toTrack(item.track);
     if (!track) continue;
 
     // Spotify repeats a track every time it was played; the list reads as a
-    // history, so the same song three times in a row is noise.
+    // history, so the same song three times in a row is noise. Newest first
+    // after the sort, so the play that survives is the most recent one.
     const key = `${track.title}::${track.artist}`;
     if (seen.has(key)) continue;
 

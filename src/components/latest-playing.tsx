@@ -60,7 +60,8 @@ const STATIC_MASK =
 
 /**
  * Audio lines: the inner four bars breathe between two heights on loops of
- * different lengths, so they never sync up. Marks a track that's playing now.
+ * different lengths, so they never sync up. Sits beside the heading to mark
+ * that something is playing right now.
  */
 function AudioLines() {
   const still = useReducedMotion();
@@ -82,7 +83,7 @@ function AudioLines() {
   return (
     <svg
       viewBox="0 0 24 24"
-      className="size-4"
+      className="size-3.5"
       fill="none"
       stroke="currentColor"
       strokeWidth={2}
@@ -96,26 +97,6 @@ function AudioLines() {
       {bar("M14 8v7", "M14 6v11", 0.8)}
       {bar("M18 5v13", "M18 7v9", 1.5)}
       <path d="M22 10v3" />
-    </svg>
-  );
-}
-
-/** Nothing playing — the top row is just the most recent thing, not live. */
-function PlayOff() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className="size-4"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
-      <path d="m10.215 4.56 9.79 5.71a2 2 0 0 1 .003 3.458l-.393.23" />
-      <path d="m16.042 16.042-8.034 4.686A2 2 0 0 1 5 19V5" />
-      <path d="m2 2 20 20" />
     </svg>
   );
 }
@@ -275,8 +256,16 @@ export function LatestPlaying({
 
   return (
     <section aria-label="Latest playing" style={{ overflowAnchor: "none" }}>
-      <p className="text-xs uppercase tracking-[0.08em] text-muted/70">
+      {/*
+        The live marker sits with the heading rather than on the first row's
+        album art. Over the art it needed a scrim to stay legible, which meant
+        the one cover with anything happening to it was the one you could see
+        least — and it read as a play button, as though the tile were a
+        control. Up here it's just a status next to the word that states it.
+      */}
+      <p className="flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-muted/70">
         {live ? "Playing now" : "Latest playing"}
+        {live && <AudioLines />}
       </p>
 
       <motion.div
@@ -297,7 +286,7 @@ export function LatestPlaying({
                 hasArt ? "py-2" : "py-2.5"
               }`}
             >
-              {hasArt ? (
+              {hasArt && (
                 <span className="relative size-8 shrink-0 overflow-hidden rounded-[3px] bg-foreground/[0.06]">
                   {track.image && (
                     <Image
@@ -311,20 +300,7 @@ export function LatestPlaying({
                       className="object-cover grayscale transition-[filter] duration-300 group-hover:grayscale-0"
                     />
                   )}
-                  {i === 0 && (
-                    <span className="absolute inset-0 grid place-items-center bg-foreground/45 text-background">
-                      {live ? <AudioLines /> : <PlayOff />}
-                    </span>
-                  )}
                 </span>
-              ) : (
-                i === 0 && (
-                  <span
-                    className={live ? "text-foreground/70" : "text-muted/60"}
-                  >
-                    {live ? <AudioLines /> : <PlayOff />}
-                  </span>
-                )
               )}
 
               <span className="min-w-0 truncate text-[15px] text-foreground">
