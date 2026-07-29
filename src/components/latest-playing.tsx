@@ -17,6 +17,7 @@ import {
   useMotionValue,
   useReducedMotion,
   useTransform,
+  type Transition,
 } from "motion/react";
 import {
   NOW_PLAYING_COUNT,
@@ -26,12 +27,14 @@ import {
 import {
   FADE,
   FLAT,
+  FLAT_CONTENT,
   GAP,
   PAD,
   PEEK,
   STATIC_MASK,
   TUCK,
   stacked,
+  stackedContent,
 } from "@/lib/deck";
 import {
   curtainClose,
@@ -137,12 +140,42 @@ function PlayOff() {
 }
 
 /**
- * The inside of a card. Split out of the deck's markup so the shape of a row
- * is stated once, whatever ends up wrapping it.
+ * The contents of one card: art, title, artist.
+ *
+ * An anchor when Spotify gave the track a URL and the card is reachable, a plain
+ * div otherwise — the hand-written fallback has no links, and a row that looks
+ * clickable and isn't is worse than one that never claimed to be. The hover and
+ * press states are on the same element as the link for that reason: they exist
+ * only where there is something to press.
+ *
+ * Hover is gated behind `(hover: hover)` in CSS rather than here, so a tap on a
+ * touch device doesn't leave a card stuck in its hover state after the finger
+ * has gone.
  */
-function CardBody({ track, hasArt }: { track: Track; hasArt: boolean }) {
-  return (
-    <>
+function TrackRow({
+  track,
+  hasArt,
+  live,
+  interactive,
+  still,
+  content,
+  contentTransition,
+}: {
+  track: Track;
+  hasArt: boolean;
+  live: boolean;
+  interactive: boolean;
+  still: boolean;
+  content: { opacity: number };
+  contentTransition: Transition;
+}) {
+  const inner = (
+    <motion.span
+      className="flex min-w-0 flex-1 items-center gap-3"
+      initial={false}
+      animate={content}
+      transition={contentTransition}
+    >
       {hasArt && (
         <span className="relative size-8 shrink-0 overflow-hidden rounded-[3px] bg-foreground/[0.06]">
           {track.image && (
@@ -157,13 +190,50 @@ function CardBody({ track, hasArt }: { track: Track; hasArt: boolean }) {
         </span>
       )}
 
+      {/*
+        The live card trades its art tile for the equaliser. Without art there's
+        no tile to put a badge on, and "playing" is the one thing worth a glyph
+        of its own — the heading says it for the section, this says it for the
+        row, which is what makes the top card look like the current one rather
+        than merely the first.
+      */}
+      {!hasArt && live && (
+        <span className="shrink-0 text-foreground/70">
+          <AudioLines />
+        </span>
+      )}
+
       <span className="min-w-0 truncate text-[15px] text-foreground">
         {track.title}
       </span>
-      <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
+      <span className="ml-auto shrink-0 truncate pl-4 text-[15px] font-light text-muted">
         {track.artist}
       </span>
-    </>
+    </motion.span>
+  );
+
+  const className = `track-row flex items-center gap-3 rounded-xl px-3 ${
+    hasArt ? "py-2" : "py-2.5"
+  }`;
+
+  if (!track.url || !interactive) {
+    return <div className={className}>{inner}</div>;
+  }
+
+  return (
+    <motion.a
+      href={track.url}
+      target="_blank"
+      rel="noreferrer noopener"
+      // The visible text is the title and the artist, which out of context reads
+      // as neither a link nor a destination.
+      aria-label={`${track.title} by ${track.artist} — open in Spotify`}
+      whileTap={still ? undefined : { scale: 0.985 }}
+      transition={springSnappy}
+      className={`${className} outline-none focus-visible:ring-2 focus-visible:ring-foreground/30`}
+    >
+      {inner}
+    </motion.a>
   );
 }
 
@@ -448,11 +518,30 @@ export function LatestPlaying({
                     still ? instant : expanded ? curtainOpen : curtainClose
                   }
                   style={{ transformOrigin: "center top" }}
-                  className={`track-card flex items-center gap-3 rounded-xl px-3 ${
-                    hasArt ? "py-2" : "py-2.5"
-                  }`}
+                  // Clipped, so the row's hover wash takes the card's corners
+                  // rather than squaring them off.
+                  className="track-card overflow-hidden rounded-xl"
                 >
-                  <CardBody track={track} hasArt={hasArt} />
+                  <TrackRow
+                    track={track}
+                    hasArt={hasArt}
+                    // The equaliser marks the row the player is actually
+                    // advancing through. `current` heads the deck, so that is
+                    // the first card — and only while it's playing, since a
+                    // paused track is the current one but isn't moving.
+                    live={playing && !!current && i === 0}
+                    // The card behind shows an edge, not a half-clipped title.
+                    content={deck ? stackedContent(i) : FLAT_CONTENT}
+                    contentTransition={
+                      still ? instant : expanded ? curtainOpen : curtainClose
+                    }
+                    // Only the cards you can actually reach are reachable. The
+                    // ones behind the fold are `aria-hidden` and under a mask;
+                    // letting the keyboard land on one would scroll the drawer
+                    // to something the drawer is closed over.
+                    interactive={!(expandable && i >= preview && !expanded)}
+                    still={!!still}
+                  />
                 </motion.div>
               </motion.li>
             ))}
