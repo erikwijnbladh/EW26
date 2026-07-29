@@ -2,8 +2,12 @@
 
 import {
   AnimatePresence,
+  animate,
   motion,
+  useMotionTemplate,
+  useMotionValue,
   useReducedMotion,
+  useTransform,
   type Variants,
 } from "motion/react";
 import {
@@ -71,9 +75,21 @@ export function cn(...inputs: ClassValue[]) {
  * 2. The panel anchors its content bottom-centre instead of top-left. The
  *    shell grows from a centred, bottom-docked bar, so both its top and left
  *    edges move during the expansion; content pinned to those edges travels
- *    with them (measured: 429px up and 106px left over one open). Anchored to
+ *    with them (measured: 350px up and 91px left over one open). Anchored to
  *    the fixed edges instead, the content doesn't move at all — the shell just
  *    uncovers it.
+ *
+ * 3. One spring drives the expansion, and the shell's size and the panel's
+ *    reveal are both derived from it rather than animated alongside it.
+ *    Upstream runs them as separate animations, which is invisible opening but
+ *    obvious closing: the content's 80ms exit left the shell spending the
+ *    remaining ~400ms of its collapse as a large empty box deflating. Derived,
+ *    the content can only fade at the rate the shell actually swallows it.
+ *
+ *    Width is mapped over the first 45% of that spring so it leads the height.
+ *    The shell reaches full width while it's still short, which means the panel
+ *    is uncovered bottom-up at its final width — a curtain — instead of the
+ *    content being clipped side-to-side on the way out of the bar.
  */
 export type ExpandableTabsItem = {
   id: string;
@@ -118,22 +134,24 @@ const SHELL_SPRING = {
   bounce: 0.06,
 } as const;
 
-const TAB_CHANGE_SPRING = {
-  type: "spring",
-  duration: 0.46,
-  bounce: 0.04,
-} as const;
+/**
+ * The pill and its label share the shell's timing so the three land together.
+ * Only the label's opacity is quicker, and only on the way out — the text has
+ * to be gone before the pill is narrow enough to clip it.
+ */
+const TAB_CHANGE_SPRING = SHELL_SPRING;
 
-const LABEL_OPEN = {
-  type: "spring",
-  duration: 0.38,
-  bounce: 0.03,
-} as const;
-
-const LABEL_CLOSE = {
-  duration: 0.16,
+const LABEL_HIDE = {
+  duration: 0.14,
   ease: EASE_OUT,
 } as const;
+
+/** Fraction of the shell's spring over which the width finishes. */
+const WIDTH_LEAD = 0.45;
+
+/** Where the panel's fade and blur finish, as a fraction of that spring. */
+const CONTENT_FADE = 0.35;
+const CONTENT_SHARPEN = 0.3;
 
 const BAR_H = 52;
 const TAB_W = 32;
@@ -321,6 +339,17 @@ export function ExpandableTabs({
   const tabs = items.filter((item) => item.content);
   const visualActiveId = active?.id ?? null;
 
+  // The last tab to have been open stays mounted, clipped to nothing behind the
+  // bar. Unmounting it on close is what left the shell deflating around empty
+  // space; keeping it costs one hidden subtree, which the sizer already pays.
+  const [renderedId, setRenderedId] = useState<string | null>(visualActiveId);
+  const rendered =
+    tabs.find((item) => item.id === renderedId) ?? null;
+
+  useEffect(() => {
+    if (visualActiveId) setRenderedId(visualActiveId);
+  }, [visualActiveId]);
+
   const setActive = useCallback(
     (next: string | null) => {
       if (!controlled) setInternal(next);
@@ -369,7 +398,39 @@ export function ExpandableTabs({
       }
     : closedSize;
 
-  const targetSize = active ? openSize : closedSize;
+  // The one value everything else is a function of: 0 closed, 1 open.
+  const isOpen = active !== null;
+  const progress = useMotionValue(0);
+
+  useEffect(() => {
+    if (reduce) {
+      progress.set(isOpen ? 1 : 0);
+      return;
+    }
+
+    const controls = animate(progress, isOpen ? 1 : 0, SHELL_SPRING);
+
+    return () => controls.stop();
+  }, [isOpen, reduce, progress]);
+
+  const width = useTransform(
+    progress,
+    [0, WIDTH_LEAD],
+    [closedSize.width, openSize.width],
+  );
+  const height = useTransform(
+    progress,
+    [0, 1],
+    [closedSize.height, openSize.height],
+  );
+
+  const contentOpacity = useTransform(progress, [0, CONTENT_FADE], [0, 1]);
+  const contentBlurPx = useTransform(
+    progress,
+    [0, CONTENT_SHARPEN],
+    [reduce ? 0 : 4, 0],
+  );
+  const contentFilter = useMotionTemplate`blur(${contentBlurPx}px)`;
 
   const getActiveTabWidth = useCallback(
     (item: ExpandableTabsItem) =>
@@ -388,19 +449,7 @@ export function ExpandableTabs({
     <>
       <motion.div
         ref={rootRef}
-        initial={false}
-        animate={
-          targetSize
-            ? {
-                width: targetSize.width,
-                height: targetSize.height,
-              }
-            : undefined
-        }
-        transition={reduce ? { duration: 0 } : SHELL_SPRING}
-        style={{
-          transformOrigin: "bottom center",
-        }}
+        style={{ width, height }}
         className={cn(
           "relative overflow-hidden rounded-[26px] border border-border bg-card",
           className,
@@ -438,34 +487,46 @@ export function ExpandableTabs({
               than this box for most of the expansion, and an overflowing flex
               item falls back to start alignment, which puts it back on the
               moving edge. */}
-          <div className="absolute inset-x-0 bottom-0 flex justify-center px-2">
-          <AnimatePresence mode="popLayout" initial={false}>
-            {active ? (
-              <motion.div
-                key={active.id}
-                variants={reduce ? REDUCED_CONTENT_VARIANTS : CONTENT_VARIANTS}
-                initial="enter"
-                animate="center"
-                exit="exit"
-                transition={
-                  reduce
-                    ? {
-                        duration: 0.15,
-                        ease: EASE_OUT,
-                      }
-                    : CONTENT_SPRING
-                }
-                className="w-max"
-                style={{
-                  transformOrigin: "top center",
-                  willChange: "transform, opacity, filter",
-                }}
-              >
-                {active.content}
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-          </div>
+          <motion.div
+            inert={!isOpen}
+            style={{
+              opacity: contentOpacity,
+              filter: contentFilter,
+              willChange: "opacity, filter",
+            }}
+            className={cn(
+              "absolute inset-x-0 bottom-0 flex justify-center px-2",
+              !isOpen && "pointer-events-none",
+            )}
+          >
+            {/* Only fires when swapping between two open tabs — opening and
+                closing are the shell's job, not a mount/unmount. */}
+            <AnimatePresence mode="popLayout" initial={false}>
+              {rendered ? (
+                <motion.div
+                  key={rendered.id}
+                  variants={
+                    reduce ? REDUCED_CONTENT_VARIANTS : CONTENT_VARIANTS
+                  }
+                  initial={false}
+                  animate="center"
+                  exit="exit"
+                  transition={
+                    reduce
+                      ? {
+                          duration: 0.15,
+                          ease: EASE_OUT,
+                        }
+                      : CONTENT_SPRING
+                  }
+                  className="w-max"
+                  style={{ transformOrigin: "bottom center" }}
+                >
+                  {rendered.content}
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </motion.div>
         </div>
 
         <div
@@ -598,12 +659,12 @@ export function ExpandableTabs({
                   }
                   transition={
                     reduce
-                      ? {
-                          duration: 0,
+                      ? { duration: 0 }
+                      : {
+                          ...TAB_CHANGE_SPRING,
+                          // Out before the pill is narrow enough to clip it.
+                          ...(isActive ? null : { opacity: LABEL_HIDE }),
                         }
-                      : isActive
-                        ? LABEL_OPEN
-                        : LABEL_CLOSE
                   }
                   className={cn(
                     "inline-block overflow-hidden whitespace-nowrap",

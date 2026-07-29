@@ -80,6 +80,23 @@ export const labelOpen: Transition = {
 
 export const labelClose: Transition = { duration: 0.16, ease };
 
+/**
+ * The song drawer. Bounce is zero on purpose: the drawer clips its contents, so
+ * any overshoot would briefly reveal empty space past the last row. Closing is
+ * a little quicker than opening — there's less to take in on the way out.
+ */
+export const curtainOpen: Transition = {
+  type: "spring",
+  duration: 0.62,
+  bounce: 0,
+};
+
+export const curtainClose: Transition = {
+  type: "spring",
+  duration: 0.5,
+  bounce: 0,
+};
+
 /** Enter: rise, sharpen, fade in. Exit is deliberately quicker than enter. */
 export const enter = {
   hidden: { opacity: 0, y: 12, filter: "blur(6px)" },
