@@ -36,11 +36,21 @@ type SpotifyTrack = {
 };
 
 /**
+ * Hosts `next/image` is configured to load. This has to be a *subset* of
+ * next.config's remotePatterns, never a superset: an unconfigured hostname
+ * makes next/image throw during render, which fails the prerender of `/` and
+ * so the whole build. Dropping the art instead costs a thumbnail.
+ */
+const ART_HOSTS = /(^|\.)scdn\.co$|(^|\.)spotifycdn\.com$/;
+
+/**
  * Album art for a ~32px tile. Spotify serves 640/300/64 in descending order;
  * the smallest is short of a 2x tile, so take the smallest that clears it and
  * let the image optimiser do the rest.
+ *
+ * Exported for the host-allowlist tests.
  */
-function cover(images: SpotifyImage[] | undefined): string | undefined {
+export function cover(images: SpotifyImage[] | undefined): string | undefined {
   const usable = (images ?? []).filter((i) => i.url);
   if (!usable.length) return undefined;
 
@@ -48,7 +58,17 @@ function cover(images: SpotifyImage[] | undefined): string | undefined {
     .filter((i) => (i.width ?? 0) >= 128)
     .sort((a, b) => (a.width ?? 0) - (b.width ?? 0));
 
-  return (big[0] ?? usable[0]).url;
+  const url = (big[0] ?? usable[0]).url;
+  if (!url) return undefined;
+
+  try {
+    const { protocol, hostname } = new URL(url);
+    if (protocol !== "https:" || !ART_HOSTS.test(hostname)) return undefined;
+  } catch {
+    return undefined;
+  }
+
+  return url;
 }
 
 function toTrack(item: SpotifyTrack | null | undefined): Track | null {
@@ -67,12 +87,21 @@ function toTrack(item: SpotifyTrack | null | undefined): Track | null {
   };
 }
 
+/**
+ * Access tokens live an hour. Next won't cache a POST, and marking it
+ * no-store opts the whole page out of static rendering — which would mean a
+ * token request plus two API calls on every single view. Held per instance
+ * instead, so it's fetched about once an hour.
+ */
+let token: { value: string; expires: number } | null = null;
+
 async function getAccessToken(): Promise<string | null> {
   const id = process.env.SPOTIFY_CLIENT_ID;
   const secret = process.env.SPOTIFY_CLIENT_SECRET;
   const refresh = process.env.SPOTIFY_REFRESH_TOKEN;
 
   if (!id || !secret || !refresh) return null;
+  if (token && Date.now() < token.expires) return token.value;
 
   const res = await fetch(TOKEN_URL, {
     method: "POST",
@@ -84,16 +113,24 @@ async function getAccessToken(): Promise<string | null> {
       grant_type: "refresh_token",
       refresh_token: refresh,
     }),
-    // Not cacheable — Next doesn't cache POSTs. It doesn't need to be: the
-    // calls below set the route's revalidate window, so a render only happens
-    // once a minute and this runs at most that often.
-    cache: "no-store",
   });
 
   if (!res.ok) return null;
 
-  const json = (await res.json()) as { access_token?: string };
-  return json.access_token ?? null;
+  const json = (await res.json()) as {
+    access_token?: string;
+    expires_in?: number;
+  };
+
+  if (!json.access_token) return null;
+
+  // A minute of headroom, so a token can't expire mid-render.
+  token = {
+    value: json.access_token,
+    expires: Date.now() + ((json.expires_in ?? 3600) - 60) * 1000,
+  };
+
+  return token.value;
 }
 
 async function call(path: string, token: string) {
