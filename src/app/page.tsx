@@ -1,16 +1,19 @@
 import Image from "next/image";
 import { profile } from "@/lib/data";
+import { getContributions } from "@/lib/github";
 import { Reveal } from "@/components/reveal";
 import { LatestPlaying } from "@/components/latest-playing";
+import { Contributions } from "@/components/contributions";
+import { BuiltWith } from "@/components/built-with";
 
-export default function Home() {
+export default async function Home() {
+  const contributions = await getContributions("erikwijnbladh");
+
   return (
     <div className="mx-auto w-full max-w-md px-5 pb-40 pt-4 sm:pb-44">
       <section>
         <Reveal onMount>
-          {/* 4:3 rather than 7:6 so a full-width photo doesn't grow the page
-              and push the track list under the dock. */}
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-ring">
+          <div className="relative aspect-[7/6] w-full overflow-hidden rounded-2xl shadow-ring">
             <Image
               src="/images/pfp.png"
               alt={profile.name}
@@ -34,6 +37,20 @@ export default function Home() {
         <Reveal onMount delay={0.12}>
           <div className="mt-12">
             <LatestPlaying />
+          </div>
+        </Reveal>
+
+        {contributions && (
+          <Reveal onMount delay={0.18}>
+            <div className="mt-12">
+              <Contributions data={contributions} />
+            </div>
+          </Reveal>
+        )}
+
+        <Reveal onMount delay={0.24}>
+          <div className="mt-14">
+            <BuiltWith />
           </div>
         </Reveal>
       </div>

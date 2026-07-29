@@ -25,31 +25,45 @@ const STAGGER = 0.05;
 /** Rows always live in the DOM; these are the two heights the curtain moves between. */
 type Heights = { collapsed: number; full: number };
 
-/** Three little bars, pulsing. Marks the most recent track. */
-function Equalizer() {
+/**
+ * Audio lines: the inner four bars breathe between two heights on loops of
+ * different lengths, so they never sync up. Marks the most recent track.
+ */
+function AudioLines() {
   const still = useReducedMotion();
 
+  const bar = (rest: string, peak: string, duration: number) => (
+    <motion.path
+      key={rest}
+      d={rest}
+      initial={{ d: rest }}
+      animate={still ? { d: rest } : { d: [rest, peak, rest] }}
+      transition={
+        still
+          ? { duration: 0 }
+          : { duration, repeat: Infinity, ease: "easeInOut" }
+      }
+    />
+  );
+
   return (
-    <span className="flex h-3 w-3 items-end gap-[2px]" aria-hidden>
-      {[0, 1, 2].map((i) => (
-        <motion.span
-          key={i}
-          className="h-full w-[2px] origin-bottom rounded-full bg-foreground"
-          initial={{ scaleY: 0.35 }}
-          animate={still ? { scaleY: 0.55 } : { scaleY: [0.3, 1, 0.3] }}
-          transition={
-            still
-              ? { duration: 0 }
-              : {
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: i * 0.16,
-                }
-          }
-        />
-      ))}
-    </span>
+    <svg
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M2 10v3" />
+      {bar("M6 6v11", "M6 10v3", 1.5)}
+      {bar("M10 3v18", "M10 9v5", 1)}
+      {bar("M14 8v7", "M14 6v11", 0.8)}
+      {bar("M18 5v13", "M18 7v9", 1.5)}
+      <path d="M22 10v3" />
+    </svg>
   );
 }
 
@@ -189,8 +203,8 @@ export function LatestPlaying() {
               >
                 <span className="flex min-w-0 items-baseline gap-2.5">
                   {i === 0 && (
-                    <span className="translate-y-[1px]">
-                      <Equalizer />
+                    <span className="-my-1 translate-y-[3px] text-foreground/70">
+                      <AudioLines />
                     </span>
                   )}
                   <span className="truncate text-[15px] text-foreground">

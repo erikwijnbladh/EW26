@@ -61,11 +61,22 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/**
+ * LOCAL MODIFICATION (diverges from upstream):
+ * an item without `content` is an action, not a tab — it renders with the same
+ * styling, hover and press feedback, but never expands the shell or reveals a
+ * label. Lets one bar mix a single expanding tab with plain icon buttons.
+ */
 export type ExpandableTabsItem = {
   id: string;
   label: string;
   icon: ReactNode;
-  content: ReactNode;
+  /** Omit to make this a plain clickable icon instead of an expanding tab. */
+  content?: ReactNode;
+  /** Actions only. */
+  href?: string;
+  external?: boolean;
+  onClick?: () => void;
 };
 
 export type ExpandableTabsClassNames = {
@@ -297,7 +308,9 @@ export function ExpandableTabs({
   const controlled = value !== undefined;
   const [internal, setInternal] = useState<string | null>(defaultValue);
   const activeId = controlled ? value : internal;
-  const active = items.find((item) => item.id === activeId) ?? null;
+  const active =
+    items.find((item) => item.id === activeId && item.content) ?? null;
+  const tabs = items.filter((item) => item.content);
   const visualActiveId = active?.id ?? null;
 
   const setActive = useCallback(
@@ -397,7 +410,7 @@ export function ExpandableTabs({
             paddingBottom: BAR_H + PANEL_DOCK_GAP,
           }}
         >
-          {items.map((item) => (
+          {tabs.map((item) => (
             <div key={item.id} className="col-start-1 row-start-1 w-max">
               {item.content}
             </div>
@@ -457,6 +470,57 @@ export function ExpandableTabs({
             const isActive = item.id === visualActiveId;
             const activeTabWidth = getActiveTabWidth(item);
             const labelWidth = labelWidths[item.id] ?? 0;
+
+            const baseClass = cn(
+              "relative isolate flex h-9 min-w-8 shrink-0 items-center justify-center overflow-hidden rounded-[18px] px-2 text-sm font-medium outline-none",
+              "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+              "text-muted-foreground hover:text-foreground",
+              classNames?.tab,
+            );
+
+            // Action: same chrome, no expansion, no label.
+            if (!item.content) {
+              const inner = (
+                <span
+                  className={cn(
+                    "grid shrink-0 place-items-center",
+                    classNames?.icon,
+                  )}
+                >
+                  {item.icon}
+                </span>
+              );
+
+              const shared = {
+                className: baseClass,
+                "aria-label": item.label,
+                style: { width: TAB_W },
+                whileTap: reduce ? undefined : { scale: 0.92 },
+                transition: reduce ? { duration: 0 } : SPRING_PRESS,
+              };
+
+              return item.href ? (
+                <motion.a
+                  key={item.id}
+                  {...shared}
+                  href={item.href}
+                  {...(item.external
+                    ? { target: "_blank", rel: "noopener noreferrer" }
+                    : null)}
+                >
+                  {inner}
+                </motion.a>
+              ) : (
+                <motion.button
+                  key={item.id}
+                  {...shared}
+                  type="button"
+                  onClick={item.onClick}
+                >
+                  {inner}
+                </motion.button>
+              );
+            }
 
             return (
               <motion.button
