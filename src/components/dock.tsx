@@ -138,6 +138,7 @@ export function Dock() {
             onValueChange={setActive}
             classNames={{
               root: `dock border-transparent ${active ? "dock-open" : ""}`,
+              bar: "justify-center gap-1.5",
               pill: "bg-foreground/[0.08]",
             }}
             items={[

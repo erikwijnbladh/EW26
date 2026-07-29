@@ -39,28 +39,30 @@ const linkClass =
 /** Fine print. Marks sit grey until you hover them, then come back to brand. */
 export function BuiltWith() {
   return (
-    <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs text-muted/70">
+    <div className="flex flex-col items-center gap-2.5 text-xs text-muted/70">
       <span>Built with</span>
 
-      <a
-        href="https://claude.com/claude-code"
-        target="_blank"
-        rel="noopener noreferrer"
-        className={linkClass}
-      >
-        <ClaudeMark />
-        Claude
-      </a>
+      <div className="flex items-center gap-5">
+        <a
+          href="https://claude.com/claude-code"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={linkClass}
+        >
+          <ClaudeMark />
+          Claude
+        </a>
 
-      <a
-        href="https://paper.design"
-        target="_blank"
-        rel="noopener noreferrer"
-        className={linkClass}
-      >
-        <PaperMark />
-        Paper
-      </a>
-    </p>
+        <a
+          href="https://paper.design"
+          target="_blank"
+          rel="noopener noreferrer"
+          className={linkClass}
+        >
+          <PaperMark />
+          Paper
+        </a>
+      </div>
+    </div>
   );
 }
