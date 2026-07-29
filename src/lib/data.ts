@@ -5,7 +5,7 @@ export const profile = {
   email: "hello@erikwijnbladh.com",
   tagline: "I design and build web products. Living in the blend of tech and design.",
   intro:
-    "I work in the blend of tech and design — owning frontends, shaping products, sweating the details that most people never notice. Away from the screen I listen to heavy music, ski, play games and skateboard.",
+    "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy. Away from the screen I listen to heavy music, ski, play games and skateboard.",
   bio: [
     "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
     "Prior I've spent my time owning the frontend of an AI ad-bidding platform at BrightBid, then went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human.",
