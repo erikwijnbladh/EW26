@@ -30,16 +30,14 @@ export async function PlayingSection() {
   const playing = await getPlaying(NOW_PLAYING_COUNT);
 
   // Spotify unconfigured or unreachable: fall back to the hand-written list,
-  // which is history rather than a live player, so it never claims to be
-  // playing. Keyed on the list being empty rather than the answer being null,
-  // so a paused player with no history still gets rows.
-  const spotify = playing?.tracks ?? [];
-  const tracks = (spotify.length ? spotify : nowPlaying).slice(
-    0,
-    NOW_PLAYING_COUNT,
-  );
+  // which stands in for the log only. It is history rather than a live player,
+  // so `current` stays null and the widget never claims to be playing
+  // something it made up. Keyed on the log being empty rather than the answer
+  // being null, so an idle player with no finished plays still gets cards.
+  const log = playing?.history ?? [];
+  const history = (log.length ? log : nowPlaying).slice(0, NOW_PLAYING_COUNT);
 
-  return <LatestPlaying tracks={tracks} live={playing?.live ?? false} />;
+  return <LatestPlaying current={playing?.current ?? null} history={history} />;
 }
 
 /**
@@ -54,9 +52,14 @@ export async function PlayingSection() {
  * mode of guessing is the page jumping when the tracks land, which is the
  * exact thing streaming the strip was meant to stop.
  *
- * The heading says "Latest playing" because that is the honest thing to say
- * before knowing — it's the one wording that stays true whether or not
- * something turns out to be playing, so the swap never reads as a correction.
+ * It reserves the log and not the live slot, because it cannot know yet whether
+ * anything is playing and the log is the part that is always there. When a song
+ * turns out to be playing its card drops in above, which pushes the page down
+ * once — the right way round: a card arriving reads as an arrival, whereas a
+ * placeholder that resolved to nothing would read as something being taken away.
+ *
+ * The heading says "Recently played" for the same reason. It's what the deck
+ * underneath it actually is, true whether or not a live card lands above it.
  */
 export function PlayingSkeleton() {
   const bar = "rounded-full bg-foreground/[0.06]";
@@ -77,9 +80,9 @@ export function PlayingSkeleton() {
   const settle = PEEK - PAD - TUCK * (NOW_PLAYING_PREVIEW - 1);
 
   return (
-    <section aria-label="Latest playing" aria-busy>
+    <section aria-label="Music" aria-busy>
       <p className="flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-muted/70">
-        Latest playing
+        Recently played
         {/* Holds the status icon's place, so the heading doesn't jog. */}
         <span className="size-3.5" aria-hidden />
       </p>

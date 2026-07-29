@@ -20,6 +20,12 @@ const POLL_MS = 10_000;
  * a re-sync, not a correction. It still goes out at hydration rather than after
  * an interval: it's one request, it's throttled server-side alongside every
  * other caller, and it means the interval starts from a known-good answer.
+ *
+ * Each answer replaces the last rather than being merged into it. An earlier
+ * version stitched consecutive polls together to keep a skipped song in the
+ * list, which meant showing a play Spotify had decided didn't happen — the
+ * widget disagreeing with its own source. `current` changing with the log
+ * untouched is the truth about what a skip is.
  */
 export function usePlaying(initial: Playing): Playing {
   const [playing, setPlaying] = useState(initial);
@@ -42,17 +48,17 @@ export function usePlaying(initial: Playing): Playing {
         const next = res.ok ? ((await res.json()) as Playing | null) : null;
 
         // null means Spotify is unconfigured or didn't answer — keep whatever
-        // is on screen, since a list a minute old reads better than dropping
+        // is on screen, since a log a minute old reads better than dropping
         // back to the hand-written fallback under someone's eyes.
         //
-        // An answer with no tracks is not that. It's "paused, and there's no
-        // history to show instead", and `live` has to be allowed through or
-        // the heading keeps claiming something is playing after you stop it.
-        // Only the list is held over; the status is always the current one.
+        // An answer with an empty log is not that. It's "nothing has finished
+        // playing", and `current` is always taken as given or the heading keeps
+        // claiming something is playing after you stop it. Only the log is held
+        // over, and only while it would otherwise go empty.
         if (!stopped && next) {
           setPlaying((prev) => ({
-            tracks: next.tracks.length ? next.tracks : prev.tracks,
-            live: next.live,
+            current: next.current,
+            history: next.history.length ? next.history : prev.history,
           }));
         }
       } catch {

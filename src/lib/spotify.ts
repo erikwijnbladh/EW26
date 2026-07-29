@@ -13,11 +13,27 @@ import type { Track } from "@/lib/data";
  * list. A music widget must never be the reason the site doesn't render.
  */
 
+/**
+ * The two things Spotify will actually tell you, kept apart.
+ *
+ * They used to be merged into one list with the live track at the front, which
+ * read as "newest first" and wasn't. `recently-played` is a log of *finished*
+ * plays: it never contains what is playing right now, and it only records a
+ * track once it has been played far enough in — skip after eight seconds and
+ * Spotify has decided you didn't play it, so it never appears at all.
+ *
+ * Merged, that produced the complaint this shape exists to fix. The live track
+ * sat in slot 1 of what looked like a history, and skipping silently replaced
+ * it: a song that appeared to be the newest entry in a list vanished out of
+ * that list without ever moving down into it. Nothing was lost — it was never
+ * in the log and was never going to be — but the presentation had promised
+ * otherwise.
+ */
 export type Playing = {
-  /** Newest first. The first entry is the live one when `live` is true. */
-  tracks: Track[];
-  /** Whether something is playing right now, as opposed to merely last. */
-  live: boolean;
+  /** Playing right this second, or null when the player is idle. */
+  current: Track | null;
+  /** Finished plays, newest first. Never contains `current`. */
+  history: Track[];
 };
 
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
@@ -297,20 +313,23 @@ async function fetchPlaying(count: number): Promise<Playing | null> {
       getRecent(token),
     ]);
 
-    // Nothing playing is still an answer: paused, with whatever history came
-    // back behind it. Returning null here — as this used to — made it
-    // indistinguishable from "Spotify didn't reply", and the widget treats
-    // those opposite ways. It holds the last known list through a failure, so
-    // a pause reported as a failure froze the display mid-song.
-    if (!current) {
-      return { tracks: (recent ?? []).slice(0, count), live: false };
-    }
+    // Nothing playing is still an answer: idle, with whatever log came back.
+    // Returning null here — as this once did — made it indistinguishable from
+    // "Spotify didn't reply", and the widget treats those opposite ways. It
+    // holds the last known state through a failure, so a pause reported as a
+    // failure froze the display mid-song.
+    //
+    // The log is filtered against the live track only because the same song
+    // can genuinely appear in both: play it, finish it, then play it again.
+    // Left in, it would show twice — once as playing and once as played.
+    const history = (recent ?? [])
+      .filter(
+        (t) =>
+          !current || !(t.title === current.title && t.artist === current.artist),
+      )
+      .slice(0, count);
 
-    const rest = (recent ?? []).filter(
-      (t) => !(t.title === current.title && t.artist === current.artist),
-    );
-
-    return { tracks: [current, ...rest].slice(0, count), live: true };
+    return { current, history };
   } catch {
     return null;
   }
