@@ -1,13 +1,22 @@
 import Image from "next/image";
-import { profile } from "@/lib/data";
+import { profile, nowPlaying } from "@/lib/data";
 import { getContributions } from "@/lib/github";
+import { getPlaying } from "@/lib/spotify";
 import { Reveal } from "@/components/reveal";
 import { LatestPlaying } from "@/components/latest-playing";
 import { Contributions } from "@/components/contributions";
 import { BuiltWith } from "@/components/built-with";
 
 export default async function Home() {
-  const contributions = await getContributions("erikwijnbladh");
+  const [contributions, playing] = await Promise.all([
+    getContributions("erikwijnbladh"),
+    getPlaying(nowPlaying.length),
+  ]);
+
+  // Spotify unconfigured or down: fall back to the hand-written list, which is
+  // history rather than a live player, so it never claims to be playing.
+  const tracks = playing?.tracks ?? nowPlaying;
+  const live = playing?.live ?? false;
 
   return (
     <div className="mx-auto w-full max-w-md px-5 pb-40 pt-4 sm:pb-44">
@@ -36,7 +45,7 @@ export default async function Home() {
 
         <Reveal onMount delay={0.12}>
           <div className="mt-12">
-            <LatestPlaying />
+            <LatestPlaying tracks={tracks} live={live} />
           </div>
         </Reveal>
 

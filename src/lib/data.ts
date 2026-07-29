@@ -31,6 +31,8 @@ export const contacts = [
 export type Track = {
   title: string;
   artist: string;
+  /** Set when the track came from Spotify. */
+  url?: string;
 };
 
 /**

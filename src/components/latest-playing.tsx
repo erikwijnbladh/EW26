@@ -11,40 +11,49 @@ import {
 import {
   animate,
   motion,
+  useMotionTemplate,
   useMotionValue,
   useReducedMotion,
   useTransform,
-  type MotionValue,
 } from "motion/react";
-import { nowPlaying, NOW_PLAYING_PREVIEW } from "@/lib/data";
+import { NOW_PLAYING_PREVIEW, type Track } from "@/lib/data";
 import { curtainClose, curtainOpen, springSnappy } from "@/lib/motion";
-
-/**
- * How much a row dims as it goes down the list. Collapsed, the tail fades out
- * to hint there's more; expanded, everything reads at full strength.
- */
-const dim = (i: number) => Math.max(0.18, 1 - i * 0.19);
 
 /** A row's box, measured relative to the top of the list. */
 type Row = { top: number; height: number };
 type Metrics = { collapsed: number; full: number; rows: Row[] };
 
 /**
- * The window, in curtain-edge pixels, over which one row brightens. It opens a
- * third of the way down the row and trails the edge by about a row, so a couple
- * of rows just behind the edge are always still coming up. Clamped to the
- * drawer's full height, so the last row can't be left half-lit once the curtain
- * has landed.
+ * Where the fade sits, in list pixels: opaque down to `solid`, gone by `clear`.
+ *
+ * Collapsed, it starts under the first row and is still around a fifth lit at
+ * the fold, so the list reads as continuing rather than stopping. Open, both
+ * stops are pushed past the end — nothing is hidden, so there is nothing left
+ * to hint at.
  */
-function revealRange(row: Row, full: number): [number, number] {
-  const start = row.top + row.height * 0.35;
-  const end = Math.min(row.top + row.height * 1.6, full);
-  return [start, Math.max(end, start + 1)];
+function fadeStops(m: Metrics) {
+  const first = m.rows[0];
+  const fold = m.rows[NOW_PLAYING_PREVIEW - 1];
+
+  return {
+    solidClosed: first.top + first.height,
+    clearClosed: m.collapsed + fold.height * 1.15,
+    solidOpen: m.full,
+    clearOpen: m.full + fold.height,
+  };
 }
 
 /**
+ * Same ramp in percentages, for the first paint and the no-JS case. The rows
+ * are equal height, so this lands within a pixel or two of the measured
+ * version and there's no visible correction once measurement arrives.
+ */
+const STATIC_MASK =
+  "linear-gradient(to bottom, #000 0px, #000 20%, transparent 118%)";
+
+/**
  * Audio lines: the inner four bars breathe between two heights on loops of
- * different lengths, so they never sync up. Marks the most recent track.
+ * different lengths, so they never sync up. Marks a track that's playing now.
  */
 function AudioLines() {
   const still = useReducedMotion();
@@ -84,6 +93,26 @@ function AudioLines() {
   );
 }
 
+/** Nothing playing — the top row is just the most recent thing, not live. */
+function PlayOff() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="m10.215 4.56 9.79 5.71a2 2 0 0 1 .003 3.458l-.393.23" />
+      <path d="m16.042 16.042-8.034 4.686A2 2 0 0 1 5 19V5" />
+      <path d="m2 2 20 20" />
+    </svg>
+  );
+}
+
 function Chevron({ up }: { up: boolean }) {
   return (
     <motion.svg
@@ -105,95 +134,28 @@ function Chevron({ up }: { up: boolean }) {
   );
 }
 
-type TrackRowProps = {
-  title: string;
-  artist: string;
-  index: number;
-  /** The drawer's progress, 0 closed to 1 open. */
-  progress: MotionValue<number>;
-  metrics: Metrics | null;
-  extra: boolean;
-  hidden: boolean;
-};
-
 /**
- * One track. Its opacity is a *function of the curtain*, never a sibling
- * animation timed against it — so a row physically cannot finish before or
- * after the edge that reveals it, in either direction.
- */
-function TrackRow({
-  title,
-  artist,
-  index,
-  progress,
-  metrics,
-  extra,
-  hidden,
-}: TrackRowProps) {
-  const row = metrics?.rows[index];
-  const base = dim(index);
-
-  // Every row comes up out of the dim ramp as the drawer opens.
-  const settle = useTransform(progress, [0, 1], [base, 1]);
-
-  // Rows behind the curtain are additionally gated by the edge travelling over
-  // them. Gating rather than replacing matters: on its own, a just-revealed row
-  // would hit full strength while the rows above it were still mid-ramp, and
-  // the list would briefly get *brighter* towards the bottom.
-  //
-  // Derived from `progress` in one step rather than chained off `edge`. Every
-  // motion value in a chain updates in the same pre-render flush, and a value
-  // three links deep can be computed before the link above it has caught up —
-  // which left the last row resting at 0.9915 instead of 1, one frame stale
-  // forever, because nothing changed afterwards to correct it.
-  const revealed = useTransform(progress, (p: number) => {
-    if (!row || !metrics) return 0;
-
-    const at = metrics.collapsed + (metrics.full - metrics.collapsed) * p;
-    const [start, end] = revealRange(row, metrics.full);
-    const uncovered = Math.min(1, Math.max(0, (at - start) / (end - start)));
-
-    return (base + (1 - base) * p) * uncovered;
-  });
-
-  return (
-    <motion.li
-      // Before the first measurement there's nothing to derive from, so the
-      // hidden rows stay flatly transparent rather than guessing.
-      style={{ opacity: extra ? (row ? revealed : 0) : settle }}
-      aria-hidden={hidden}
-      className="flex items-baseline gap-4 border-t border-line py-2.5 first:border-t-0"
-    >
-      <span className="flex min-w-0 items-baseline gap-2.5">
-        {index === 0 && (
-          <span className="-my-1 translate-y-[3px] text-foreground/70">
-            <AudioLines />
-          </span>
-        )}
-        <span className="truncate text-[15px] text-foreground">{title}</span>
-      </span>
-      <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
-        {artist}
-      </span>
-    </motion.li>
-  );
-}
-
-/**
- * The last few tracks, with the rest of the ten behind a toggle.
+ * The last few tracks, with the rest behind a toggle.
  *
  * Every row stays mounted and only the wrapper's height moves, so the document
  * shrinks gradually instead of in one frame — which is what made collapsing at
  * the bottom of a phone screen jump.
  *
- * One spring drives the whole thing. The curtain's height *is* that spring, and
- * every row's opacity is derived from where the edge currently sits relative to
- * that row's own box. Nothing is timed against anything else, so the stagger
- * falls out of the geometry for free and is automatically right in both
- * directions — and because a spring is fast in the middle and slow at the ends,
- * the rows inherit that pacing instead of fighting it.
+ * One spring drives it, and both the height and the fade are derived from that
+ * one value. The fade is a gradient mask rather than per-row opacity: stepping
+ * opacity row by row banded the list, because each row was a flat block with a
+ * hard edge at its border. A mask ramps continuously through the text, and it
+ * covers the reveal too — rows emerge out of the soft edge as the drawer opens
+ * instead of needing a fade of their own to be timed against it.
  */
-export function LatestPlaying() {
+export function LatestPlaying({
+  tracks,
+  live,
+}: {
+  tracks: Track[];
+  /** Whether the first track is playing right now. */
+  live: boolean;
+}) {
   const [expanded, setExpanded] = useState(false);
   const still = useReducedMotion();
   const listRef = useRef<HTMLOListElement>(null);
@@ -208,18 +170,31 @@ export function LatestPlaying() {
   );
 
   const progress = useMotionValue(0);
-  const edge = useTransform(
+  const stops = metrics ? fadeStops(metrics) : null;
+
+  const height = useTransform(
     progress,
     [0, 1],
     [metrics?.collapsed ?? 0, metrics?.full ?? 0],
   );
+  const solid = useTransform(
+    progress,
+    [0, 1],
+    [stops?.solidClosed ?? 0, stops?.solidOpen ?? 0],
+  );
+  const clear = useTransform(
+    progress,
+    [0, 1],
+    [stops?.clearClosed ?? 0, stops?.clearOpen ?? 0],
+  );
+  const mask = useMotionTemplate`linear-gradient(to bottom, #000 0px, #000 ${solid}px, transparent ${clear}px)`;
 
   const measure = useCallback(() => {
     const el = listRef.current;
     if (!el) return;
 
     const children = Array.from(el.children) as HTMLElement[];
-    if (children.length < nowPlaying.length) return;
+    if (children.length < tracks.length) return;
 
     const listTop = el.getBoundingClientRect().top;
     const rows = children.map((child) => {
@@ -233,7 +208,7 @@ export function LatestPlaying() {
       full: el.getBoundingClientRect().height,
       rows,
     });
-  }, []);
+  }, [tracks.length]);
 
   // Measured before paint, so the collapsed height is in place on the same
   // frame the extra rows mount.
@@ -263,35 +238,48 @@ export function LatestPlaying() {
     return () => controls.stop();
   }, [expanded, still, progress]);
 
-  const rows = mounted ? nowPlaying : nowPlaying.slice(0, NOW_PLAYING_PREVIEW);
+  const rows = mounted ? tracks : tracks.slice(0, NOW_PLAYING_PREVIEW);
 
   return (
     <section aria-label="Latest playing" style={{ overflowAnchor: "none" }}>
       <p className="text-xs uppercase tracking-[0.08em] text-muted/70">
-        Latest playing
+        {live ? "Playing now" : "Latest playing"}
       </p>
 
       <motion.div
         className="mt-4 overflow-hidden"
-        style={{ height: metrics ? edge : "auto" }}
+        style={{
+          height: metrics ? height : "auto",
+          maskImage: metrics ? mask : STATIC_MASK,
+          WebkitMaskImage: metrics ? mask : STATIC_MASK,
+        }}
       >
         <ol ref={listRef}>
-          {rows.map((track, i) => {
-            const extra = i >= NOW_PLAYING_PREVIEW;
-
-            return (
-              <TrackRow
-                key={`${track.artist}-${track.title}`}
-                title={track.title}
-                artist={track.artist}
-                index={i}
-                progress={progress}
-                metrics={metrics}
-                extra={extra}
-                hidden={extra && !expanded}
-              />
-            );
-          })}
+          {rows.map((track, i) => (
+            <li
+              key={`${track.artist}-${track.title}-${i}`}
+              aria-hidden={i >= NOW_PLAYING_PREVIEW && !expanded}
+              className="flex items-baseline gap-4 border-t border-line py-2.5 first:border-t-0"
+            >
+              <span className="flex min-w-0 items-baseline gap-2.5">
+                {i === 0 && (
+                  <span
+                    className={`-my-1 translate-y-[3px] ${
+                      live ? "text-foreground/70" : "text-muted/60"
+                    }`}
+                  >
+                    {live ? <AudioLines /> : <PlayOff />}
+                  </span>
+                )}
+                <span className="truncate text-[15px] text-foreground">
+                  {track.title}
+                </span>
+              </span>
+              <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
+                {track.artist}
+              </span>
+            </li>
+          ))}
         </ol>
       </motion.div>
 
@@ -303,7 +291,7 @@ export function LatestPlaying() {
         transition={springSnappy}
         className="mt-4 flex items-center gap-1.5 text-xs uppercase tracking-[0.08em] text-muted/70 transition-colors duration-150 hover:text-foreground"
       >
-        {expanded ? "Show less" : `View more (${nowPlaying.length})`}
+        {expanded ? "Show less" : `View more (${tracks.length})`}
         <Chevron up={expanded} />
       </motion.button>
     </section>

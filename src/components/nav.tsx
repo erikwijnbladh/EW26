@@ -9,7 +9,9 @@ export function Nav() {
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 border-b border-line bg-background/80 backdrop-blur-md">
-      <div className="mx-auto max-w-3xl px-5 sm:px-8">
+      {/* Same container as the page body, so the name lines up with the
+          column rather than sitting against a wider one. */}
+      <div className="mx-auto w-full max-w-md px-5">
         <div className="flex h-16 items-center gap-2">
           {/* Resting indicator — a real child of the (fixed) nav so it stays
               glued to the name during iOS overscroll. Hidden while the
