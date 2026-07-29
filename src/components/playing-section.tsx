@@ -1,7 +1,12 @@
 import { connection } from "next/server";
-import { nowPlaying, NOW_PLAYING_COUNT } from "@/lib/data";
+import {
+  nowPlaying,
+  NOW_PLAYING_COUNT,
+  NOW_PLAYING_PREVIEW,
+} from "@/lib/data";
+import { GAP, PAD, PEEK, STATIC_MASK, TUCK, stackedStyle } from "@/lib/deck";
 import { getPlaying } from "@/lib/spotify";
-import { LatestPlaying, STATIC_MASK } from "@/components/latest-playing";
+import { LatestPlaying } from "@/components/latest-playing";
 
 /**
  * The track strip, resolved per request rather than baked into the page.
@@ -40,9 +45,14 @@ export async function PlayingSection() {
 /**
  * What the static shell holds until the real strip streams in.
  *
- * Shaped to the collapsed list rather than sized by guesswork: the same row
- * padding, the same 32px art tile setting the row height, the same fade and a
- * placeholder for the toggle. Nothing below it moves when the tracks land.
+ * A copy of the deck in its settled, unmeasured state — the same thing
+ * `LatestPlaying` renders on the server before the client has measured
+ * anything. Same card markup, same gap and padding, same tuck and blur off
+ * `stackedStyle`, same fade. Only the text is replaced with placeholder bars.
+ *
+ * Built out of the real constants rather than eyeballed, because the failure
+ * mode of guessing is the page jumping when the tracks land, which is the
+ * exact thing streaming the strip was meant to stop.
  *
  * The heading says "Latest playing" because that is the honest thing to say
  * before knowing — it's the one wording that stays true whether or not
@@ -50,6 +60,21 @@ export async function PlayingSection() {
  */
 export function PlayingSkeleton() {
   const bar = "rounded-full bg-foreground/[0.06]";
+
+  // Widths alternate so the placeholder reads as a list of songs rather than
+  // as a table with two ruled columns.
+  const rows = [
+    ["w-32", "w-20"],
+    ["w-40", "w-16"],
+    ["w-28", "w-24"],
+    ["w-36", "w-20"],
+    ["w-24", "w-16"],
+  ];
+
+  // The same correction `LatestPlaying` applies before its first measurement:
+  // the document lays the cards out untucked, leaving the stack floating above
+  // a hole the size of the tuck it hasn't been told about.
+  const settle = PEEK - PAD - TUCK * (NOW_PLAYING_PREVIEW - 1);
 
   return (
     <section aria-label="Latest playing" aria-busy>
@@ -59,28 +84,32 @@ export function PlayingSkeleton() {
         <span className="size-3.5" aria-hidden />
       </p>
 
+      {/* Bled out and padded back in, so the clip doesn't cut the card shadows
+          off flat against both edges — as in `LatestPlaying`. */}
       <div
-        className="mt-4 overflow-hidden"
+        className="-mx-3 mt-4 overflow-hidden px-3"
         style={{ maskImage: STATIC_MASK, WebkitMaskImage: STATIC_MASK }}
         aria-hidden
       >
-        <ol>
-          {/* Widths alternate so the placeholder reads as a list of songs
-              rather than as a table with two ruled columns. */}
-          {[
-            ["w-32", "w-20"],
-            ["w-40", "w-16"],
-            ["w-28", "w-24"],
-            ["w-36", "w-20"],
-            ["w-24", "w-16"],
-          ].map(([title, artist], i) => (
+        <ol
+          className="relative flex flex-col"
+          style={{ gap: GAP, paddingBottom: PAD, marginBottom: settle }}
+        >
+          {rows.map(([title, artist], i) => (
             <li
               key={i}
-              className="flex items-center gap-3 border-t border-line py-2 first:border-t-0"
+              // Front of the deck paints over the back of it, as in the real
+              // stack — document order would tuck each card the wrong way.
+              style={{ position: "relative", zIndex: rows.length - i }}
             >
-              <span className="size-8 shrink-0 rounded-[3px] bg-foreground/[0.06]" />
-              <span className={`h-3 ${title} ${bar}`} />
-              <span className={`ml-auto h-3 ${artist} ${bar}`} />
+              <div
+                style={stackedStyle(i, NOW_PLAYING_PREVIEW)}
+                className="track-card flex items-center gap-3 rounded-xl px-3 py-2"
+              >
+                <span className="size-8 shrink-0 rounded-[3px] bg-foreground/[0.06]" />
+                <span className={`h-3 ${title} ${bar}`} />
+                <span className={`ml-auto h-3 ${artist} ${bar}`} />
+              </div>
             </li>
           ))}
         </ol>

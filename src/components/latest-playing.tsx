@@ -20,6 +20,16 @@ import {
 } from "motion/react";
 import { NOW_PLAYING_PREVIEW, type Track } from "@/lib/data";
 import {
+  FADE,
+  FLAT,
+  GAP,
+  PAD,
+  PEEK,
+  STATIC_MASK,
+  TUCK,
+  stacked,
+} from "@/lib/deck";
+import {
   curtainClose,
   curtainOpen,
   instant,
@@ -30,72 +40,11 @@ import {
 import { usePlaying } from "@/components/use-playing";
 
 /**
- * The collapsed stack, in numbers.
- *
- * `TUCK` is the only one that changes the layout arithmetic: each card is
- * pulled up under the one above it by that much, so the fold sits
- * `TUCK * (preview - 1)` higher than where the document put it.
- */
-const GAP = 8;
-const PAD = 12;
-const TUCK = 18;
-/** How much of the first hidden card is left showing under the stack. */
-const PEEK = 20;
-/** The soft bottom edge, so the peeking sliver ends rather than gets cut. */
-const FADE = 26;
-
-/** The deepest card's blur, dimming and shrink, collapsed. */
-const BLUR = 3.6;
-const DIM = 0.38;
-const SHRINK = 0.03;
-
-/**
  * Only the two numbers the drawer needs, resolved at measure time. Deliberately
  * not the card array: indexing it later is how a list shorter than the preview
  * took the whole page down.
  */
 type Metrics = { collapsed: number; full: number };
-
-/** Card depth, 0 at the top of the stack and 1 at the fold and beyond. */
-function depth(i: number, preview: number) {
-  return preview > 1 ? Math.min(i, preview - 1) / (preview - 1) : 0;
-}
-
-/**
- * Where card `i` sits when the stack is closed.
- *
- * Everything here is transform and filter — nothing that costs a layout — so
- * the whole stack can unfold on the compositor while the drawer's height is the
- * one thing the document has to re-flow.
- *
- * Blur ramps faster than linearly (`d ** 1.5`) because the first step away from
- * sharp is the one the eye notices: spread evenly, the second card already
- * looks broken rather than behind. Past the fold the values clamp — those cards
- * are behind the deepest visible one and differ only in not being drawn.
- */
-function stacked(i: number, preview: number) {
-  const d = depth(i, preview);
-
-  return {
-    y: -TUCK * Math.min(i, preview - 1),
-    scale: 1 - SHRINK * d,
-    filter: `blur(${(BLUR * d ** 1.5).toFixed(2)}px)`,
-    // The card just past the fold is the sliver peeking out from under the
-    // stack — the reason the list reads as continuing rather than stopping.
-    opacity: i < preview ? 1 - DIM * d : i === preview ? 0.32 : 0,
-  };
-}
-
-/** Open: no stack, no blur, every card at its own size and place. */
-const FLAT = { y: 0, scale: 1, filter: "blur(0px)", opacity: 1 };
-
-/**
- * The mask for the first paint and the no-JS case, before anything is measured.
- * Pixels off the bottom edge rather than percentages, so it lands identically
- * whatever the rows measure — there's no visible correction when the real one
- * takes over.
- */
-const STATIC_MASK = `linear-gradient(to bottom, #000 0px, #000 calc(100% - ${FADE}px), transparent 100%)`;
 
 /** Further down than the section can get, for a mask that must hide nothing. */
 const OPAQUE = 100_000;
