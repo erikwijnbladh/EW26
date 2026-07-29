@@ -10,6 +10,7 @@ import {
 } from "react";
 import Image from "next/image";
 import {
+  AnimatePresence,
   animate,
   motion,
   useMotionTemplate,
@@ -18,48 +19,54 @@ import {
   useTransform,
 } from "motion/react";
 import { NOW_PLAYING_PREVIEW, type Track } from "@/lib/data";
-import { curtainClose, curtainOpen, springSnappy } from "@/lib/motion";
+import {
+  FADE,
+  FLAT,
+  GAP,
+  PAD,
+  PEEK,
+  STATIC_MASK,
+  TUCK,
+  stacked,
+} from "@/lib/deck";
+import {
+  curtainClose,
+  curtainOpen,
+  instant,
+  springSnappy,
+  trackLeave,
+  trackShift,
+} from "@/lib/motion";
 import { usePlaying } from "@/components/use-playing";
 
 /**
- * Only the numbers the drawer needs, resolved at measure time. Deliberately
- * not the row array: indexing it later is how a list shorter than the preview
+ * Only the two numbers the drawer needs, resolved at measure time. Deliberately
+ * not the card array: indexing it later is how a list shorter than the preview
  * took the whole page down.
  */
-type Metrics = {
-  collapsed: number;
-  full: number;
-  firstHeight: number;
-  foldHeight: number;
-};
+type Metrics = { collapsed: number; full: number };
+
+/** Further down than the section can get, for a mask that must hide nothing. */
+const OPAQUE = 100_000;
 
 /**
- * Where the fade sits, in list pixels: opaque down to `solid`, gone by `clear`.
+ * Stable per-card keys, so a poll that prepends a song moves the existing cards
+ * rather than re-mounting all of them one place down.
  *
- * Collapsed, it starts under the first row and is still around a fifth lit at
- * the fold, so the list reads as continuing rather than stopping. Open, both
- * stops are pushed past the end — nothing is hidden, so there is nothing left
- * to hint at.
+ * The server de-duplicates by title and artist, so the pair is already an
+ * identity. Repeats still get a suffix: a hand-written fallback or a change
+ * upstream must not be able to collide two cards onto one key.
  */
-function fadeStops(m: Metrics) {
-  return {
-    solidClosed: m.firstHeight,
-    clearClosed: m.collapsed + m.foldHeight * 1.15,
-    solidOpen: m.full,
-    clearOpen: m.full + m.foldHeight,
-  };
+function keysFor(tracks: Track[]) {
+  const seen = new Map<string, number>();
+
+  return tracks.map((track) => {
+    const base = `${track.title}::${track.artist}`;
+    const n = seen.get(base) ?? 0;
+    seen.set(base, n + 1);
+    return n ? `${base}::${n}` : base;
+  });
 }
-
-/**
- * Same ramp in percentages, for the first paint and the no-JS case. The rows
- * are equal height, so this lands within a pixel or two of the measured
- * version and there's no visible correction once measurement arrives.
- *
- * Exported for the loading skeleton, which has to fade on exactly the same
- * ramp — two hand-tuned gradients would drift and make the swap visible.
- */
-export const STATIC_MASK =
-  "linear-gradient(to bottom, #000 0px, #000 20%, transparent 118%)";
 
 /**
  * Audio lines: the inner four bars breathe between two heights on loops of
@@ -104,7 +111,7 @@ function AudioLines() {
   );
 }
 
-/** Nothing playing — the top row is the most recent thing, not a live one. */
+/** Nothing playing — the top card is the most recent thing, not a live one. */
 function PlayOff() {
   return (
     <svg
@@ -146,23 +153,24 @@ function Chevron({ up }: { up: boolean }) {
 }
 
 /**
- * The last few tracks, with the rest behind a toggle.
+ * The last few tracks as a stack of cards, with the rest behind a toggle.
  *
- * Every row stays mounted and only the wrapper's height moves, so the document
+ * Closed, the cards tuck under each other and go progressively blurred, dimmer
+ * and slightly smaller, so the list reads as a deck seen from the front rather
+ * than a table that stops. Open, every card is sharp, level and full size —
+ * blur is how depth is drawn, so there is none left once nothing is behind
+ * anything.
+ *
+ * Every card stays mounted and only the wrapper's height moves, so the document
  * shrinks gradually instead of in one frame — which is what made collapsing at
- * the bottom of a phone screen jump.
+ * the bottom of a phone screen jump. Height, tuck, blur, dim and scale all run
+ * off the same spring pair, so it's one movement and not five.
  *
- * One spring drives it, and both the height and the fade are derived from that
- * one value. The fade is a gradient mask rather than per-row opacity: stepping
- * opacity row by row banded the list, because each row was a flat block with a
- * hard edge at its border. A mask ramps continuously through the text, and it
- * covers the reveal too — rows emerge out of the soft edge as the drawer opens
- * instead of needing a fade of their own to be timed against it.
- *
- * The props are the server's answer, streamed in at request time by
- * `PlayingSection` rather than baked into the prerender, so they're current on
- * arrival — including with JavaScript off. `usePlaying` takes over from there
- * and keeps them current while the tab is open.
+ * The props are the server's answer, which for a statically rendered page is
+ * a snapshot from whenever it was last built. `usePlaying` takes over once
+ * there's a client to poll with, and a poll that finds a new song prepends it:
+ * the card fades in out of a blur at the top while the deck slides down a place
+ * under it and the last one drops off the bottom.
  */
 export function LatestPlaying({
   tracks: initialTracks,
@@ -184,13 +192,13 @@ export function LatestPlaying({
 
   // Spotify can hand back fewer tracks than the preview wants — a short
   // history, or a run of the same song collapsing under de-duplication. Then
-  // there's nothing behind the fold, so there's no drawer, no fade and no
-  // toggle: the list is simply the list.
+  // there's nothing behind the fold, so there's no drawer, no stack and no
+  // toggle: the list is simply the list, flat and sharp.
   const preview = Math.min(NOW_PLAYING_PREVIEW, tracks.length);
   const expandable = tracks.length > preview;
 
   // Render the preview only until hydrated, so no-JS and the first paint show
-  // five rows rather than flashing all ten before we can measure them.
+  // five cards rather than flashing all ten before we can measure them.
   const mounted = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -198,22 +206,35 @@ export function LatestPlaying({
   );
 
   const progress = useMotionValue(0);
-  const stops = metrics ? fadeStops(metrics) : null;
 
   const height = useTransform(
     progress,
     [0, 1],
     [metrics?.collapsed ?? 0, metrics?.full ?? 0],
   );
+  // Closed, the fade sits on the bottom edge and eats the peeking sliver. Open,
+  // both stops are past the end — nothing is hidden, so there's nothing to hint
+  // at, and the last card keeps its shadow.
+  //
+  // A list with nothing behind the fold gets both stops parked past any height
+  // the section could have, rather than the property being dropped: once motion
+  // has written a mask onto the element, handing it `undefined` leaves the last
+  // one it wrote. A poll that shortens the list below the preview — a run of
+  // one song collapsing under de-duplication — would otherwise keep fading at a
+  // stop measured for rows that are no longer there.
   const solid = useTransform(
     progress,
     [0, 1],
-    [stops?.solidClosed ?? 0, stops?.solidOpen ?? 0],
+    expandable
+      ? [(metrics?.collapsed ?? 0) - FADE, metrics?.full ?? 0]
+      : [OPAQUE, OPAQUE],
   );
   const clear = useTransform(
     progress,
     [0, 1],
-    [stops?.clearClosed ?? 0, stops?.clearOpen ?? 0],
+    expandable
+      ? [metrics?.collapsed ?? 0, (metrics?.full ?? 0) + FADE]
+      : [OPAQUE, OPAQUE],
   );
   const mask = useMotionTemplate`linear-gradient(to bottom, #000 0px, #000 ${solid}px, transparent ${clear}px)`;
 
@@ -221,35 +242,35 @@ export function LatestPlaying({
     const el = listRef.current;
     if (!el) return;
 
-    const children = Array.from(el.children) as HTMLElement[];
-    if (children.length < tracks.length) return;
+    // A card on its way out is still a child, pinned where it was — so the
+    // list is measured from the ones that are actually holding a place in it.
+    const nodes = (Array.from(el.children) as HTMLElement[]).filter(
+      (node) => getComputedStyle(node).position !== "absolute",
+    );
+    if (nodes.length < tracks.length) return;
 
-    const listTop = el.getBoundingClientRect().top;
-    const box = (i: number) => {
-      const rect = children[i]?.getBoundingClientRect();
-      return rect ? { top: rect.top - listTop, height: rect.height } : null;
-    };
-
-    const first = box(0);
-    const fold = box(preview - 1);
-    if (!first || !fold) return;
+    // `offsetTop`/`offsetHeight` rather than bounding boxes: the cards carry a
+    // transform at rest, and a measured box would fold the tuck and the shrink
+    // back into the numbers the tuck is computed from.
+    const fold = nodes[preview - 1];
+    const last = nodes[tracks.length - 1];
+    if (!fold || !last) return;
 
     setMetrics({
-      collapsed: fold.top + fold.height,
-      full: el.getBoundingClientRect().height,
-      firstHeight: first.height,
-      foldHeight: fold.height,
+      collapsed:
+        fold.offsetTop + fold.offsetHeight - TUCK * (preview - 1) + PEEK,
+      full: last.offsetTop + last.offsetHeight + PAD,
     });
   }, [tracks.length, preview]);
 
   // Measured before paint, so the collapsed height is in place on the same
-  // frame the extra rows mount.
+  // frame the extra cards mount.
   useLayoutEffect(measure, [mounted, measure]);
 
   useEffect(() => {
     const el = listRef.current;
     if (!el) return;
-    // Re-measure when the rows rewrap at a new width.
+    // Re-measure when the cards rewrap at a new width.
     const observer = new ResizeObserver(measure);
     observer.observe(el);
     return () => observer.disconnect();
@@ -270,18 +291,27 @@ export function LatestPlaying({
     return () => controls.stop();
   }, [expanded, still, progress]);
 
-  const rows = mounted ? tracks : tracks.slice(0, preview);
+  const cards = mounted ? tracks : tracks.slice(0, preview);
+  const keys = keysFor(cards);
   const drawer = expandable && metrics !== null;
+  const deck = expandable && !expanded;
+
+  // Before the first measurement the document has the cards at their untucked
+  // heights, which leaves the stack floating above a hole exactly the size of
+  // the tuck it hasn't been told about. Constant, and independent of how tall a
+  // card turns out to be, so the unmeasured state lands where the measured one
+  // will and hydration doesn't shift the page.
+  const settle = PEEK - PAD - TUCK * (preview - 1);
 
   // All or nothing in practice — Spotify has art for everything, the
   // hand-written fallback for nothing. Ten empty tiles would just read as a
-  // broken grid, so without art the list keeps its plain layout.
+  // broken grid, so without art the cards keep their plain layout.
   const hasArt = tracks.some((track) => track.image);
 
   return (
     <section aria-label="Latest playing" style={{ overflowAnchor: "none" }}>
       {/*
-        The live marker sits with the heading rather than on the first row's
+        The live marker sits with the heading rather than on the first card's
         album art. Over the art it needed a scrim to stay legible, which meant
         the one cover with anything happening to it was the one you could see
         least — and it read as a play button, as though the tile were a
@@ -292,46 +322,103 @@ export function LatestPlaying({
         {live ? <AudioLines /> : <PlayOff />}
       </p>
 
+      {/*
+        Bled out sideways and padded back in: the clip that hides the deck would
+        otherwise cut the cards' shadows off flat against both edges.
+      */}
       <motion.div
-        className="mt-4 overflow-hidden"
+        className="-mx-3 mt-4 overflow-hidden px-3"
         style={{
           height: drawer ? height : "auto",
           // Nothing is hidden when the list is short, so a fade would be a lie.
-          maskImage: expandable ? (drawer ? mask : STATIC_MASK) : undefined,
-          WebkitMaskImage: expandable ? (drawer ? mask : STATIC_MASK) : undefined,
+          maskImage: drawer ? mask : expandable ? STATIC_MASK : "none",
+          WebkitMaskImage: drawer ? mask : expandable ? STATIC_MASK : "none",
         }}
       >
-        <ol ref={listRef}>
-          {rows.map((track, i) => (
-            <li
-              key={`${track.artist}-${track.title}-${i}`}
-              aria-hidden={expandable && i >= preview && !expanded}
-              className={`group flex items-center gap-3 border-t border-line first:border-t-0 ${
-                hasArt ? "py-2" : "py-2.5"
-              }`}
-            >
-              {hasArt && (
-                <span className="relative size-8 shrink-0 overflow-hidden rounded-[3px] bg-foreground/[0.06]">
-                  {track.image && (
-                    <Image
-                      src={track.image}
-                      alt=""
-                      fill
-                      sizes="64px"
-                      className="object-cover"
-                    />
+        <ol
+          ref={listRef}
+          className="relative flex flex-col"
+          style={{
+            gap: GAP,
+            paddingBottom: PAD,
+            marginBottom: drawer || !expandable ? 0 : settle,
+          }}
+        >
+          {/*
+            `popLayout` takes the card falling off the end out of the flow the
+            moment it starts leaving, rather than letting it hold its slot for
+            the length of its fade. Held, it pushes the last real card past the
+            end of the drawer, which then has to slide back up from under the
+            clip once the fade finishes — the whole list settles and then the
+            bottom of it moves again.
+          */}
+          <AnimatePresence initial={false} mode="popLayout">
+            {cards.map((track, i) => (
+              /*
+                Two elements per card on purpose. The outer one owns the card's
+                place in the list — arriving, leaving, and sliding down when
+                something lands above it. The inner one owns where that card
+                sits in the deck. Kept apart because both animate a transform,
+                and one element can only have the one.
+              */
+              <motion.li
+                key={keys[i]}
+                layout
+                // Blocked by `AnimatePresence initial={false}` for the cards
+                // that are there on the first render, so this only ever runs
+                // for a song that actually arrived. The server renders the
+                // settled state either way.
+                initial={{ opacity: 0, filter: "blur(10px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                exit={{
+                  opacity: 0,
+                  transition: still ? instant : trackLeave,
+                }}
+                transition={still ? instant : trackShift}
+                // Front of the deck paints over the back of it. Without this,
+                // document order does the opposite and each card is tucked
+                // *over* the one it should be sliding under.
+                style={{ position: "relative", zIndex: cards.length - i }}
+                aria-hidden={expandable && i >= preview && !expanded}
+              >
+                <motion.div
+                  // The depth a card mounts at is simply the depth it has —
+                  // there's nothing to animate from, and a stack that assembled
+                  // itself on every hydration would be a party trick.
+                  initial={false}
+                  animate={deck ? stacked(i, preview) : FLAT}
+                  transition={
+                    still ? instant : expanded ? curtainOpen : curtainClose
+                  }
+                  style={{ transformOrigin: "center top" }}
+                  className={`track-card flex items-center gap-3 rounded-xl px-3 ${
+                    hasArt ? "py-2" : "py-2.5"
+                  }`}
+                >
+                  {hasArt && (
+                    <span className="relative size-8 shrink-0 overflow-hidden rounded-[3px] bg-foreground/[0.06]">
+                      {track.image && (
+                        <Image
+                          src={track.image}
+                          alt=""
+                          fill
+                          sizes="64px"
+                          className="object-cover"
+                        />
+                      )}
+                    </span>
                   )}
-                </span>
-              )}
 
-              <span className="min-w-0 truncate text-[15px] text-foreground">
-                {track.title}
-              </span>
-              <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
-                {track.artist}
-              </span>
-            </li>
-          ))}
+                  <span className="min-w-0 truncate text-[15px] text-foreground">
+                    {track.title}
+                  </span>
+                  <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
+                    {track.artist}
+                  </span>
+                </motion.div>
+              </motion.li>
+            ))}
+          </AnimatePresence>
         </ol>
       </motion.div>
 
