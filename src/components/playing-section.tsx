@@ -4,7 +4,15 @@ import {
   NOW_PLAYING_COUNT,
   NOW_PLAYING_PREVIEW,
 } from "@/lib/data";
-import { GAP, PAD, PEEK, STATIC_MASK, TUCK, stackedStyle } from "@/lib/deck";
+import {
+  GAP,
+  PAD,
+  PEEK,
+  STATIC_MASK,
+  TUCK,
+  stackedContent,
+  stackedStyle,
+} from "@/lib/deck";
 import { getPlaying } from "@/lib/spotify";
 import { LatestPlaying } from "@/components/latest-playing";
 
@@ -104,11 +112,19 @@ export function PlayingSkeleton() {
             >
               <div
                 style={stackedStyle(i, NOW_PLAYING_PREVIEW)}
-                className="track-card flex items-center gap-3 rounded-xl px-3 py-2"
+                className="track-card overflow-hidden rounded-xl"
               >
-                <span className="size-8 shrink-0 rounded-[3px] bg-foreground/[0.06]" />
-                <span className={`h-3 ${title} ${bar}`} />
-                <span className={`ml-auto h-3 ${artist} ${bar}`} />
+                {/* Contents faded with depth exactly as in the real deck — the
+                    cards behind stack as surfaces, not as clipped placeholder
+                    bars. */}
+                <div
+                  className="flex items-center gap-3 px-3 py-2"
+                  style={stackedContent(i)}
+                >
+                  <span className="size-8 shrink-0 rounded-[3px] bg-foreground/[0.06]" />
+                  <span className={`h-3 ${title} ${bar}`} />
+                  <span className={`ml-auto h-3 ${artist} ${bar}`} />
+                </div>
               </div>
             </li>
           ))}
