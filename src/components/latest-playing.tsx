@@ -218,7 +218,7 @@ export function LatestPlaying({
   playing: initialPlaying,
   history: initialHistory,
 }: Playing) {
-  const { current, playing, history } = usePlaying({
+  const { current, playing, held, history } = usePlaying({
     current: initialCurrent,
     playing: initialPlaying,
     history: initialHistory,
@@ -368,9 +368,14 @@ export function LatestPlaying({
         Three states, not two. A paused player still has a track loaded, and
         saying "Playing now" over it would be wrong while dropping it entirely
         is how pausing used to make the song disappear.
+
+        "Paused" is only claimed while Spotify is still reporting the track. A
+        held one — the session went idle and took the answer with it — falls
+        back to the neutral wording, because by then we know what was last on
+        but nothing about the player.
       */}
       <p className="flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-muted/70">
-        {playing ? "Playing now" : current ? "Paused" : "Latest playing"}
+        {playing ? "Playing now" : current && !held ? "Paused" : "Latest playing"}
         {playing ? <AudioLines /> : <PlayOff />}
       </p>
 
