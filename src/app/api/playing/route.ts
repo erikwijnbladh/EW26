@@ -1,5 +1,5 @@
 import { NOW_PLAYING_COUNT } from "@/lib/data";
-import { getPlaying } from "@/lib/spotify";
+import { diagnose, getPlaying } from "@/lib/spotify";
 
 /**
  * What the music widget polls.
@@ -15,7 +15,16 @@ import { getPlaying } from "@/lib/spotify";
  */
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(request: Request) {
+  // `?debug=1` reports what Spotify replied rather than what the widget made
+  // of it — status codes and counts, no secrets. The widget failing quietly is
+  // the correct behaviour for visitors and useless for working out why.
+  if (new URL(request.url).searchParams.has("debug")) {
+    return Response.json(await diagnose(), {
+      headers: { "cache-control": "no-store" },
+    });
+  }
+
   const playing = await getPlaying(NOW_PLAYING_COUNT);
 
   return Response.json(playing, {
