@@ -53,27 +53,6 @@ export const NOW_PLAYING_PREVIEW = 5;
  * The fallback list, newest first. Edit by hand. Shown only when Spotify is
  * unconfigured or unreachable, so keep it at least `NOW_PLAYING_COUNT` long.
  */
-/**
- * Tops a short Spotify answer up to a full list with hand-written entries.
- *
- * Spotify can return a single track — the live one, with no history behind it.
- * A one-row list looks broken in a way a partly hand-written one doesn't, and
- * it's worse than what the page shows before it loads: ten rows collapsing to
- * one on the first poll reads as the widget breaking in front of you.
- *
- * The filler is the same list this falls back to when Spotify is unreachable,
- * so nothing here is invented — it's the real answer first, then the standing
- * one, and no track appears twice.
- */
-export function withFallback(tracks: Track[]): Track[] {
-  const seen = new Set(tracks.map((t) => `${t.title}::${t.artist}`));
-
-  return [
-    ...tracks,
-    ...nowPlaying.filter((t) => !seen.has(`${t.title}::${t.artist}`)),
-  ].slice(0, NOW_PLAYING_COUNT);
-}
-
 export const nowPlaying: Track[] = [
   { title: "Don't Reach For Me", artist: "Knocked Loose" },
   { title: "Cellar Door", artist: "Spiritbox" },

@@ -155,7 +155,8 @@ export function Dock() {
             onValueChange={setActive}
             classNames={{
               root: `dock border-transparent ${active ? "dock-open" : ""}`,
-              bar: "justify-center gap-1.5",
+              // The gap lives in the component now: it's baked into the closed
+              // shell's width, so overriding it here made the two disagree.
               pill: "bg-foreground/[0.08]",
             }}
             items={[

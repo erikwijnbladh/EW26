@@ -1,5 +1,5 @@
-import { NOW_PLAYING_COUNT, withFallback } from "@/lib/data";
-import { diagnose, getPlaying } from "@/lib/spotify";
+import { NOW_PLAYING_COUNT } from "@/lib/data";
+import { getPlaying } from "@/lib/spotify";
 
 /**
  * What the music widget polls.
@@ -15,28 +15,10 @@ import { diagnose, getPlaying } from "@/lib/spotify";
  */
 export const dynamic = "force-dynamic";
 
-export async function GET(request: Request) {
-  // `?debug=1` reports what Spotify replied rather than what the widget made
-  // of it — status codes and counts, no secrets. The widget failing quietly is
-  // the correct behaviour for visitors and useless for working out why.
-  if (new URL(request.url).searchParams.has("debug")) {
-    return Response.json(await diagnose(), {
-      headers: { "cache-control": "no-store" },
-    });
-  }
-
+export async function GET() {
   const playing = await getPlaying(NOW_PLAYING_COUNT);
 
-  // Topped up here rather than in the widget, so the polled answer and the
-  // server-rendered one are the same list and hydration has nothing to correct.
-  // null still means "no answer" and is passed through untouched — the widget
-  // holds its current state on that, which padding would quietly override.
-  const padded = playing && {
-    ...playing,
-    tracks: withFallback(playing.tracks),
-  };
-
-  return Response.json(padded, {
+  return Response.json(playing, {
     // Belt and braces alongside `force-dynamic`: no CDN in front and no
     // browser cache either, so each poll reflects the player right now.
     headers: { "cache-control": "no-store" },
