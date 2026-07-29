@@ -30,16 +30,20 @@ export async function PlayingSection() {
   const playing = await getPlaying(NOW_PLAYING_COUNT);
 
   // Spotify unconfigured or unreachable: fall back to the hand-written list,
-  // which is history rather than a live player, so it never claims to be
-  // playing. Keyed on the list being empty rather than the answer being null,
-  // so a paused player with no history still gets rows.
-  const spotify = playing?.tracks ?? [];
-  const tracks = (spotify.length ? spotify : nowPlaying).slice(
-    0,
-    NOW_PLAYING_COUNT,
-  );
+  // which stands in for the log only. It is history rather than a live player,
+  // so `current` stays null and the widget never claims to be playing
+  // something it made up. Keyed on the log being empty rather than the answer
+  // being null, so an idle player with no finished plays still gets cards.
+  const log = playing?.history ?? [];
+  const history = (log.length ? log : nowPlaying).slice(0, NOW_PLAYING_COUNT);
 
-  return <LatestPlaying tracks={tracks} live={playing?.live ?? false} />;
+  return (
+    <LatestPlaying
+      current={playing?.current ?? null}
+      playing={playing?.playing ?? false}
+      history={history}
+    />
+  );
 }
 
 /**
@@ -54,9 +58,13 @@ export async function PlayingSection() {
  * mode of guessing is the page jumping when the tracks land, which is the
  * exact thing streaming the strip was meant to stop.
  *
+ * Five cards regardless of what arrives, because the deck is one list either
+ * way — a live track just heads it — so the collapsed height doesn't depend on
+ * whether anything turns out to be playing.
+ *
  * The heading says "Latest playing" because that is the honest thing to say
- * before knowing — it's the one wording that stays true whether or not
- * something turns out to be playing, so the swap never reads as a correction.
+ * before knowing. It's the one wording that stays true whether the answer comes
+ * back playing, paused or idle, so the swap never reads as a correction.
  */
 export function PlayingSkeleton() {
   const bar = "rounded-full bg-foreground/[0.06]";

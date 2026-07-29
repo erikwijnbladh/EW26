@@ -18,7 +18,11 @@ import {
   useReducedMotion,
   useTransform,
 } from "motion/react";
-import { NOW_PLAYING_PREVIEW, type Track } from "@/lib/data";
+import {
+  NOW_PLAYING_COUNT,
+  NOW_PLAYING_PREVIEW,
+  type Track,
+} from "@/lib/data";
 import {
   FADE,
   FLAT,
@@ -37,6 +41,7 @@ import {
   trackLeave,
   trackShift,
 } from "@/lib/motion";
+import type { Playing } from "@/lib/spotify";
 import { usePlaying } from "@/components/use-playing";
 
 /**
@@ -111,7 +116,7 @@ function AudioLines() {
   );
 }
 
-/** Nothing playing — the top card is the most recent thing, not a live one. */
+/** Not advancing — the player is paused, or there's nothing loaded at all. */
 function PlayOff() {
   return (
     <svg
@@ -128,6 +133,37 @@ function PlayOff() {
       <path d="m16.042 16.042-8.034 4.686A2 2 0 0 1 5 19V5" />
       <path d="m2 2 20 20" />
     </svg>
+  );
+}
+
+/**
+ * The inside of a card. Split out of the deck's markup so the shape of a row
+ * is stated once, whatever ends up wrapping it.
+ */
+function CardBody({ track, hasArt }: { track: Track; hasArt: boolean }) {
+  return (
+    <>
+      {hasArt && (
+        <span className="relative size-8 shrink-0 overflow-hidden rounded-[3px] bg-foreground/[0.06]">
+          {track.image && (
+            <Image
+              src={track.image}
+              alt=""
+              fill
+              sizes="64px"
+              className="object-cover"
+            />
+          )}
+        </span>
+      )}
+
+      <span className="min-w-0 truncate text-[15px] text-foreground">
+        {track.title}
+      </span>
+      <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
+        {track.artist}
+      </span>
+    </>
   );
 }
 
@@ -166,23 +202,26 @@ function Chevron({ up }: { up: boolean }) {
  * the bottom of a phone screen jump. Height, tuck, blur, dim and scale all run
  * off the same spring pair, so it's one movement and not five.
  *
- * The props are the server's answer, which for a statically rendered page is
- * a snapshot from whenever it was last built. `usePlaying` takes over once
- * there's a client to poll with, and a poll that finds a new song prepends it:
- * the card fades in out of a blur at the top while the deck slides down a place
- * under it and the last one drops off the bottom.
+ * The live track heads the same deck rather than sitting in a slot of its own.
+ * `Playing` keeps it apart from the log because they are different facts — one
+ * is the player's state, the other is what Spotify has logged as played — but
+ * that is a distinction about where the data comes from, not one the deck has
+ * to draw. They stack.
+ *
+ * The props are the server's answer, streamed in at request time. `usePlaying`
+ * takes over once there's a client to poll with, and a new song lands on top:
+ * the card fades in out of a blur while the rest slide down a place under it
+ * and the last one drops off the bottom.
  */
 export function LatestPlaying({
-  tracks: initialTracks,
-  live: initialLive,
-}: {
-  tracks: Track[];
-  /** Whether the first track is playing right now. */
-  live: boolean;
-}) {
-  const { tracks, live } = usePlaying({
-    tracks: initialTracks,
-    live: initialLive,
+  current: initialCurrent,
+  playing: initialPlaying,
+  history: initialHistory,
+}: Playing) {
+  const { current, playing, held, history } = usePlaying({
+    current: initialCurrent,
+    playing: initialPlaying,
+    history: initialHistory,
   });
 
   const [expanded, setExpanded] = useState(false);
@@ -190,10 +229,18 @@ export function LatestPlaying({
   const listRef = useRef<HTMLOListElement>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
 
-  // Spotify can hand back fewer tracks than the preview wants — a short
-  // history, or a run of the same song collapsing under de-duplication. Then
-  // there's nothing behind the fold, so there's no drawer, no stack and no
-  // toggle: the list is simply the list, flat and sharp.
+  // One deck: whatever the player is on, then the log behind it. Re-trimmed
+  // because `current` and `history` are counted separately by the server, so
+  // together they run one past what the list shows.
+  const tracks = (current ? [current, ...history] : history).slice(
+    0,
+    NOW_PLAYING_COUNT,
+  );
+
+  // Spotify can hand back fewer plays than the preview wants — a short log, or
+  // a run of the same song collapsing under de-duplication. Then there's
+  // nothing behind the fold, so there's no drawer, no stack and no toggle: the
+  // list is simply the list, flat and sharp.
   const preview = Math.min(NOW_PLAYING_PREVIEW, tracks.length);
   const expandable = tracks.length > preview;
 
@@ -311,15 +358,25 @@ export function LatestPlaying({
   return (
     <section aria-label="Latest playing" style={{ overflowAnchor: "none" }}>
       {/*
-        The live marker sits with the heading rather than on the first card's
-        album art. Over the art it needed a scrim to stay legible, which meant
-        the one cover with anything happening to it was the one you could see
+        The live marker sits with the heading rather than on the card's album
+        art. Over the art it needed a scrim to stay legible, which meant the
+        one cover with anything happening to it was the one you could see
         least — and it read as a play button, as though the tile were a
         control. Up here it's just a status next to the word that states it.
       */}
+      {/*
+        Three states, not two. A paused player still has a track loaded, and
+        saying "Playing now" over it would be wrong while dropping it entirely
+        is how pausing used to make the song disappear.
+
+        "Paused" is only claimed while Spotify is still reporting the track. A
+        held one — the session went idle and took the answer with it — falls
+        back to the neutral wording, because by then we know what was last on
+        but nothing about the player.
+      */}
       <p className="flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-muted/70">
-        {live ? "Playing now" : "Latest playing"}
-        {live ? <AudioLines /> : <PlayOff />}
+        {playing ? "Playing now" : current && !held ? "Paused" : "Latest playing"}
+        {playing ? <AudioLines /> : <PlayOff />}
       </p>
 
       {/*
@@ -395,26 +452,7 @@ export function LatestPlaying({
                     hasArt ? "py-2" : "py-2.5"
                   }`}
                 >
-                  {hasArt && (
-                    <span className="relative size-8 shrink-0 overflow-hidden rounded-[3px] bg-foreground/[0.06]">
-                      {track.image && (
-                        <Image
-                          src={track.image}
-                          alt=""
-                          fill
-                          sizes="64px"
-                          className="object-cover"
-                        />
-                      )}
-                    </span>
-                  )}
-
-                  <span className="min-w-0 truncate text-[15px] text-foreground">
-                    {track.title}
-                  </span>
-                  <span className="ml-auto shrink-0 text-[15px] font-light text-muted">
-                    {track.artist}
-                  </span>
+                  <CardBody track={track} hasArt={hasArt} />
                 </motion.div>
               </motion.li>
             ))}
