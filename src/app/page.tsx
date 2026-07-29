@@ -5,15 +5,17 @@ import { LatestPlaying } from "@/components/latest-playing";
 
 export default function Home() {
   return (
-    <div className="mx-auto w-full max-w-3xl px-5 pb-40 sm:px-8 sm:pb-44">
-      <section className="pt-4 sm:pl-5">
-        <Reveal>
-          <div className="relative aspect-[7/6] w-full max-w-sm overflow-hidden rounded-2xl shadow-ring">
+    <div className="mx-auto w-full max-w-md px-5 pb-40 pt-4 sm:pb-44">
+      <section>
+        <Reveal onMount>
+          {/* 4:3 rather than 7:6 so a full-width photo doesn't grow the page
+              and push the track list under the dock. */}
+          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl shadow-ring">
             <Image
               src="/images/pfp.png"
               alt={profile.name}
               fill
-              sizes="(max-width: 640px) 90vw, 384px"
+              sizes="(max-width: 640px) 90vw, 448px"
               quality={90}
               className="object-cover object-top grayscale"
               priority
@@ -22,15 +24,15 @@ export default function Home() {
         </Reveal>
       </section>
 
-      <div className="sm:pl-5">
-        <Reveal delay={0.06}>
-          <p className="mt-8 max-w-md text-base leading-relaxed text-muted">
+      <div>
+        <Reveal onMount delay={0.06}>
+          <p className="mt-8 text-base leading-relaxed text-muted">
             {profile.intro}
           </p>
         </Reveal>
 
-        <Reveal delay={0.12}>
-          <div className="mt-12 max-w-sm">
+        <Reveal onMount delay={0.12}>
+          <div className="mt-12">
             <LatestPlaying />
           </div>
         </Reveal>
