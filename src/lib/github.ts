@@ -2,6 +2,8 @@ export type ContributionDay = {
   date: string;
   /** GitHub's own 0–4 bucketing. */
   level: number;
+  /** Contributions that day. */
+  count: number;
 };
 
 export type Contributions = {
@@ -16,6 +18,18 @@ export type Contributions = {
  * stable across GitHub's markup changes.
  */
 export function parseContributions(html: string): Contributions | null {
+  // Counts live in separate <tool-tip for="cell-id"> elements, not on the cell.
+  const counts = new Map<string, number>();
+  for (const match of html.matchAll(
+    /<tool-tip\b[^>]*\bfor="([^"]+)"[^>]*>([^<]*)<\/tool-tip>/g,
+  )) {
+    const text = match[2].trim();
+    counts.set(
+      match[1],
+      Number(/^([\d,]+)\s+contribution/.exec(text)?.[1]?.replace(/,/g, "") ?? 0),
+    );
+  }
+
   const days: ContributionDay[] = [];
 
   for (const match of html.matchAll(/<td\b[^>]*>/g)) {
@@ -23,9 +37,11 @@ export function parseContributions(html: string): Contributions | null {
     const date = /data-date="(\d{4}-\d{2}-\d{2})"/.exec(tag)?.[1];
     if (!date) continue;
 
+    const id = /\bid="([^"]+)"/.exec(tag)?.[1];
     days.push({
       date,
       level: Number(/data-level="(\d+)"/.exec(tag)?.[1] ?? 0),
+      count: (id && counts.get(id)) || 0,
     });
   }
 
@@ -38,12 +54,9 @@ export function parseContributions(html: string): Contributions | null {
   );
   let total = headline ? Number(headline[1].replace(/,/g, "")) : 0;
 
-  // Fall back to summing the per-day tooltips if the headline moved.
+  // Fall back to summing the per-day counts if the headline moved.
   if (!total) {
-    for (const match of html.matchAll(/<tool-tip\b[^>]*>([^<]*)<\/tool-tip>/g)) {
-      total += Number(/^([\d,]+)\s+contribution/.exec(match[1].trim())?.[1]
-        ?.replace(/,/g, "") ?? 0);
-    }
+    total = days.reduce((sum, day) => sum + day.count, 0);
   }
 
   // Pad the first column so weekday rows line up.
@@ -51,7 +64,7 @@ export function parseContributions(html: string): Contributions | null {
   let column: ContributionDay[] = [];
   const firstWeekday = new Date(`${days[0].date}T00:00:00Z`).getUTCDay();
   for (let i = 0; i < firstWeekday; i++) {
-    column.push({ date: "", level: -1 });
+    column.push({ date: "", level: -1, count: 0 });
   }
 
   for (const day of days) {
