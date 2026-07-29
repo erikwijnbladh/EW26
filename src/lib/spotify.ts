@@ -24,6 +24,17 @@ const TOKEN_URL = "https://accounts.spotify.com/api/token";
 const API = "https://api.spotify.com/v1";
 
 /**
+ * How many plays to pull from the history endpoint, which caps at 50.
+ *
+ * Always the maximum, rather than a multiple of the number of rows wanted: it
+ * is one request either way, and de-duplication makes the yield impossible to
+ * predict from the row count. An album on repeat collapses fifty plays into a
+ * handful of distinct tracks, and asking for thirty would just mean a short
+ * list and no "view more" — so take the widest window on offer.
+ */
+const RECENT_LIMIT = 50;
+
+/**
  * How long a cached response is served before Spotify is asked again. This is
  * the lowest revalidate on the page, so it also sets how often `/` itself
  * regenerates — the contributions fetch keeps its own 24h entry and is not
@@ -168,8 +179,11 @@ async function getCurrent(token: string): Promise<Track | null> {
   return toTrack(json.item);
 }
 
-async function getRecent(token: string, limit: number): Promise<Track[]> {
-  const res = await call(`/me/player/recently-played?limit=${limit}`, token);
+async function getRecent(token: string): Promise<Track[]> {
+  const res = await call(
+    `/me/player/recently-played?limit=${RECENT_LIMIT}`,
+    token,
+  );
   if (!res.ok) return [];
 
   const json = (await res.json()) as {
@@ -200,11 +214,9 @@ async function fetchPlaying(count: number): Promise<Playing | null> {
     const token = await getAccessToken();
     if (!token) return null;
 
-    // Ask for extra: de-duplication and dropping the live track both shorten
-    // the history, and Spotify caps this endpoint at 50.
     const [current, recent] = await Promise.all([
       getCurrent(token),
-      getRecent(token, Math.min(50, count * 3)),
+      getRecent(token),
     ]);
 
     if (!current) {
