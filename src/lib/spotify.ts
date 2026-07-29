@@ -205,15 +205,17 @@ async function getCurrent(token: string): Promise<Track | null> {
   return toTrack(json.item);
 }
 
-async function getRecent(token: string): Promise<Track[]> {
+async function getRecent(token: string): Promise<Track[] | null> {
   const res = await call(
     `/me/player/recently-played?limit=${RECENT_LIMIT}`,
     token,
   );
 
+  // null, not []: a refused call and a genuinely empty history are different
+  // facts, and only one of them should ever reach the page as "no history".
   if (!res.ok) {
     await complain("recently-played", res);
-    return [];
+    return null;
   }
 
   const json = (await res.json()) as {
@@ -259,11 +261,17 @@ async function fetchPlaying(count: number): Promise<Playing | null> {
       getRecent(token),
     ]);
 
+    // Nothing playing *and* no history to fall back on is still an answer:
+    // paused, with an empty or unreadable history. Returning null here — as
+    // this used to — made it indistinguishable from "Spotify didn't reply",
+    // and the widget treats those opposite ways. It holds the last known list
+    // through a failure, so a pause reported as a failure froze the display
+    // and "Playing now" stayed up with the music stopped.
     if (!current) {
-      return recent.length ? { tracks: recent.slice(0, count), live: false } : null;
+      return { tracks: (recent ?? []).slice(0, count), live: false };
     }
 
-    const rest = recent.filter(
+    const rest = (recent ?? []).filter(
       (t) => !(t.title === current.title && t.artist === current.artist),
     );
 
@@ -271,6 +279,73 @@ async function fetchPlaying(count: number): Promise<Playing | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * What Spotify actually says, for when the widget is wrong and the code looks
+ * right. Reading the source can't distinguish a missing scope from an empty
+ * history from a stale cache — only the wire can.
+ *
+ * Deliberately bypasses both the memo and the fetch cache, so it reports the
+ * live state rather than whatever was decided ten seconds ago. Reports status
+ * codes and counts only: no tokens, no response bodies, nothing that isn't
+ * already inferable from the rendered page.
+ */
+export async function diagnose() {
+  const env = {
+    clientId: Boolean(process.env.SPOTIFY_CLIENT_ID),
+    clientSecret: Boolean(process.env.SPOTIFY_CLIENT_SECRET),
+    refreshToken: Boolean(process.env.SPOTIFY_REFRESH_TOKEN),
+  };
+
+  const token = await getAccessToken();
+  if (!token) {
+    return { env, gotAccessToken: false as const };
+  }
+
+  const probe = (path: string) =>
+    fetch(`${API}${path}`, {
+      headers: { authorization: `Bearer ${token}` },
+      cache: "no-store",
+    });
+
+  const [current, recent] = await Promise.all([
+    probe("/me/player/currently-playing"),
+    probe(`/me/player/recently-played?limit=${RECENT_LIMIT}`),
+  ]);
+
+  const currentBody = current.ok
+    ? ((await current.json()) as {
+        is_playing?: boolean;
+        currently_playing_type?: string;
+      })
+    : null;
+
+  const recentBody = recent.ok
+    ? ((await recent.json()) as { items?: { track?: SpotifyTrack }[] })
+    : null;
+
+  const items = recentBody?.items ?? [];
+  const parsed = items.map((i) => toTrack(i.track)).filter(Boolean) as Track[];
+  const unique = new Set(parsed.map((t) => `${t.title}::${t.artist}`));
+
+  return {
+    env,
+    gotAccessToken: true as const,
+    currentlyPlaying: {
+      status: current.status,
+      // 204 is the documented "nothing playing"; 200 with is_playing false is
+      // a pause. Both land on the same screen, for different reasons.
+      isPlaying: currentBody?.is_playing ?? null,
+      type: currentBody?.currently_playing_type ?? null,
+    },
+    recentlyPlayed: {
+      status: recent.status,
+      returned: items.length,
+      parsed: parsed.length,
+      afterDeduplication: unique.size,
+    },
+  };
 }
 
 /**
