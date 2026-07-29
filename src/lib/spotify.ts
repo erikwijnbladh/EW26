@@ -115,7 +115,20 @@ function toTrack(item: SpotifyTrack | null | undefined): Track | null {
  * token request plus two API calls on every single view. Held per instance
  * instead, so it's fetched about once an hour.
  */
-let token: { value: string; expires: number } | null = null;
+let token: { value: string; expires: number; scope: string } | null = null;
+
+/**
+ * What the widget needs granted, and what a token missing each one looks like.
+ *
+ * Nothing declares these anywhere except the authorisation request that minted
+ * the refresh token — there is no scope setting in the developer dashboard, so
+ * a correct-looking app there rules nothing out. The grant is frozen at consent
+ * and the only record of it comes back on every refresh, below.
+ */
+const REQUIRED_SCOPES = [
+  "user-read-currently-playing",
+  "user-read-recently-played",
+] as const;
 
 async function getAccessToken(): Promise<string | null> {
   const id = process.env.SPOTIFY_CLIENT_ID;
@@ -137,11 +150,15 @@ async function getAccessToken(): Promise<string | null> {
     }),
   });
 
-  if (!res.ok) return null;
+  if (!res.ok) {
+    await complain("token refresh", res);
+    return null;
+  }
 
   const json = (await res.json()) as {
     access_token?: string;
     expires_in?: number;
+    scope?: string;
   };
 
   if (!json.access_token) return null;
@@ -150,9 +167,28 @@ async function getAccessToken(): Promise<string | null> {
   token = {
     value: json.access_token,
     expires: Date.now() + ((json.expires_in ?? 3600) - 60) * 1000,
+    // Every refresh restates what the grant covers. Kept, because a token
+    // short a scope fails one endpoint and serves the other perfectly, which
+    // reads as a quirk of the data rather than a broken credential.
+    scope: json.scope ?? "",
   };
 
+  const granted = token.scope.split(" ").filter(Boolean);
+  const missing = REQUIRED_SCOPES.filter((s) => !granted.includes(s));
+
+  if (missing.length) {
+    console.error(
+      `[spotify] refresh token is missing ${missing.join(", ")} — ` +
+        `re-run \`npm run spotify:token\` and replace SPOTIFY_REFRESH_TOKEN.`,
+    );
+  }
+
   return token.value;
+}
+
+/** The scopes the current refresh token actually carries. */
+function grantedScopes(): string[] {
+  return (token?.scope ?? "").split(" ").filter(Boolean);
 }
 
 async function call(path: string, token: string) {
@@ -306,6 +342,15 @@ export async function diagnose() {
     return { env, gotAccessToken: false as const };
   }
 
+  // The decisive field. Spotify restates the grant on every refresh, so this
+  // is what the production token actually carries — not what was asked for,
+  // and not what the dashboard implies.
+  const granted = grantedScopes();
+  const scopes = {
+    granted,
+    missing: REQUIRED_SCOPES.filter((s) => !granted.includes(s)),
+  };
+
   const probe = (path: string) =>
     fetch(`${API}${path}`, {
       headers: { authorization: `Bearer ${token}` },
@@ -335,6 +380,7 @@ export async function diagnose() {
   return {
     env,
     gotAccessToken: true as const,
+    scopes,
     currentlyPlaying: {
       status: current.status,
       // 204 is the documented "nothing playing"; 200 with is_playing false is
