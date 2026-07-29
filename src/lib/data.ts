@@ -4,6 +4,8 @@ export const profile = {
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
   tagline: "I design and build web products. Living in the blend of tech and design.",
+  intro:
+    "I work in the blend of tech and design — owning frontends, shaping products, sweating the details that most people never notice. Away from the screen I listen to heavy music, ski, play games and skateboard.",
   bio: [
     "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
     "Prior I've spent my time owning the frontend of an AI ad-bidding platform at BrightBid, then went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human.",
@@ -24,6 +26,34 @@ export const contacts = [
     href: "https://github.com/erikwijnbladh",
     external: true,
   },
+];
+
+export type Track = {
+  title: string;
+  artist: string;
+  /** Set when the track came from Spotify. */
+  url?: string;
+  /** Album art. Absent on the hand-written fallback list. */
+  image?: string;
+};
+
+/**
+ * Latest playing — a static list, newest first. Edit by hand. The first
+ * `NOW_PLAYING_PREVIEW` show by default; the rest are behind "view more".
+ */
+export const NOW_PLAYING_PREVIEW = 5;
+
+export const nowPlaying: Track[] = [
+  { title: "Don't Reach For Me", artist: "Knocked Loose" },
+  { title: "Cellar Door", artist: "Spiritbox" },
+  { title: "Two-Way Mirror", artist: "Loathe" },
+  { title: "Silvera", artist: "Gojira" },
+  { title: "Bleed", artist: "Meshuggah" },
+  { title: "The Summoning", artist: "Sleep Token" },
+  { title: "Animals", artist: "Architects" },
+  { title: "My Own Summer", artist: "Deftones" },
+  { title: "To the Hellfire", artist: "Lorna Shore" },
+  { title: "Jane Doe", artist: "Converge" },
 ];
 
 export type Experience = {
