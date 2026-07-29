@@ -20,9 +20,17 @@ import {
 import { NOW_PLAYING_PREVIEW, type Track } from "@/lib/data";
 import { curtainClose, curtainOpen, springSnappy } from "@/lib/motion";
 
-/** A row's box, measured relative to the top of the list. */
-type Row = { top: number; height: number };
-type Metrics = { collapsed: number; full: number; rows: Row[] };
+/**
+ * Only the numbers the drawer needs, resolved at measure time. Deliberately
+ * not the row array: indexing it later is how a list shorter than the preview
+ * took the whole page down.
+ */
+type Metrics = {
+  collapsed: number;
+  full: number;
+  firstHeight: number;
+  foldHeight: number;
+};
 
 /**
  * Where the fade sits, in list pixels: opaque down to `solid`, gone by `clear`.
@@ -33,14 +41,11 @@ type Metrics = { collapsed: number; full: number; rows: Row[] };
  * to hint at.
  */
 function fadeStops(m: Metrics) {
-  const first = m.rows[0];
-  const fold = m.rows[NOW_PLAYING_PREVIEW - 1];
-
   return {
-    solidClosed: first.top + first.height,
-    clearClosed: m.collapsed + fold.height * 1.15,
+    solidClosed: m.firstHeight,
+    clearClosed: m.collapsed + m.foldHeight * 1.15,
     solidOpen: m.full,
-    clearOpen: m.full + fold.height,
+    clearOpen: m.full + m.foldHeight,
   };
 }
 
@@ -162,6 +167,13 @@ export function LatestPlaying({
   const listRef = useRef<HTMLOListElement>(null);
   const [metrics, setMetrics] = useState<Metrics | null>(null);
 
+  // Spotify can hand back fewer tracks than the preview wants — a short
+  // history, or a run of the same song collapsing under de-duplication. Then
+  // there's nothing behind the fold, so there's no drawer, no fade and no
+  // toggle: the list is simply the list.
+  const preview = Math.min(NOW_PLAYING_PREVIEW, tracks.length);
+  const expandable = tracks.length > preview;
+
   // Render the preview only until hydrated, so no-JS and the first paint show
   // five rows rather than flashing all ten before we can measure them.
   const mounted = useSyncExternalStore(
@@ -198,18 +210,22 @@ export function LatestPlaying({
     if (children.length < tracks.length) return;
 
     const listTop = el.getBoundingClientRect().top;
-    const rows = children.map((child) => {
-      const rect = child.getBoundingClientRect();
-      return { top: rect.top - listTop, height: rect.height };
-    });
+    const box = (i: number) => {
+      const rect = children[i]?.getBoundingClientRect();
+      return rect ? { top: rect.top - listTop, height: rect.height } : null;
+    };
 
-    const lastPreview = rows[NOW_PLAYING_PREVIEW - 1];
+    const first = box(0);
+    const fold = box(preview - 1);
+    if (!first || !fold) return;
+
     setMetrics({
-      collapsed: lastPreview.top + lastPreview.height,
+      collapsed: fold.top + fold.height,
       full: el.getBoundingClientRect().height,
-      rows,
+      firstHeight: first.height,
+      foldHeight: fold.height,
     });
-  }, [tracks.length]);
+  }, [tracks.length, preview]);
 
   // Measured before paint, so the collapsed height is in place on the same
   // frame the extra rows mount.
@@ -239,7 +255,8 @@ export function LatestPlaying({
     return () => controls.stop();
   }, [expanded, still, progress]);
 
-  const rows = mounted ? tracks : tracks.slice(0, NOW_PLAYING_PREVIEW);
+  const rows = mounted ? tracks : tracks.slice(0, preview);
+  const drawer = expandable && metrics !== null;
 
   // All or nothing in practice — Spotify has art for everything, the
   // hand-written fallback for nothing. Ten empty tiles would just read as a
@@ -255,16 +272,17 @@ export function LatestPlaying({
       <motion.div
         className="mt-4 overflow-hidden"
         style={{
-          height: metrics ? height : "auto",
-          maskImage: metrics ? mask : STATIC_MASK,
-          WebkitMaskImage: metrics ? mask : STATIC_MASK,
+          height: drawer ? height : "auto",
+          // Nothing is hidden when the list is short, so a fade would be a lie.
+          maskImage: expandable ? (drawer ? mask : STATIC_MASK) : undefined,
+          WebkitMaskImage: expandable ? (drawer ? mask : STATIC_MASK) : undefined,
         }}
       >
         <ol ref={listRef}>
           {rows.map((track, i) => (
             <li
               key={`${track.artist}-${track.title}-${i}`}
-              aria-hidden={i >= NOW_PLAYING_PREVIEW && !expanded}
+              aria-hidden={expandable && i >= preview && !expanded}
               className={`group flex items-center gap-3 border-t border-line first:border-t-0 ${
                 hasArt ? "py-2" : "py-2.5"
               }`}
@@ -310,17 +328,19 @@ export function LatestPlaying({
         </ol>
       </motion.div>
 
-      <motion.button
-        type="button"
-        onClick={() => setExpanded((v) => !v)}
-        aria-expanded={expanded}
-        whileTap={still ? undefined : { scale: 0.97 }}
-        transition={springSnappy}
-        className="mt-4 flex items-center gap-1.5 text-xs uppercase tracking-[0.08em] text-muted/70 transition-colors duration-150 hover:text-foreground"
-      >
-        {expanded ? "Show less" : `View more (${tracks.length})`}
-        <Chevron up={expanded} />
-      </motion.button>
+      {expandable && (
+        <motion.button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          aria-expanded={expanded}
+          whileTap={still ? undefined : { scale: 0.97 }}
+          transition={springSnappy}
+          className="mt-4 flex items-center gap-1.5 text-xs uppercase tracking-[0.08em] text-muted/70 transition-colors duration-150 hover:text-foreground"
+        >
+          {expanded ? "Show less" : `View more (${tracks.length})`}
+          <Chevron up={expanded} />
+        </motion.button>
+      )}
     </section>
   );
 }
