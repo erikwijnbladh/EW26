@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useSwoop, DotSpacer } from "@/components/use-swoop";
 import { previewLogos } from "@/components/logos";
@@ -11,22 +11,46 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
   const { containerRef, dot, rowProps, release, hovered, top } = useSwoop();
 
   const active = hovered ? items.find((item) => item.id === hovered) : null;
-  const ActiveLogo = active ? previewLogos[active.id] : undefined;
 
-  // The preview panel parks at the last hovered row and only fades out — it
-  // must NOT follow the blob back up to its origin (which would make the
-  // fading rectangle swoop away with the dot). So we freeze its position
-  // whenever nothing is hovered.
-  const panelTop = useRef(0);
-  if (active) panelTop.current = top;
-  const center = panelTop.current;
+  /**
+   * What the panel last showed, and where.
+   *
+   * The panel parks at the last hovered row and only fades out — it must NOT
+   * follow the dot back up to its origin, which would make the fading
+   * rectangle swoop away with it. And it must not blank its contents the
+   * moment the pointer leaves, or the art disappears a beat before the box
+   * has finished fading. Both are the same requirement: hold the last hovered
+   * state until something replaces it.
+   *
+   * Adjusted during render rather than parked in a ref, which is the pattern
+   * React documents for deriving state from a changing input. React re-runs
+   * the component before painting, so the panel never shows the intermediate
+   * value, and unlike a ref it doesn't read mutable state mid-render.
+   */
+  const [parked, setParked] = useState<{ id: string; top: number } | null>(null);
+
+  if (active && (parked?.id !== active.id || parked?.top !== top)) {
+    setParked({ id: active.id, top });
+  }
+
+  const center = parked?.top ?? 0;
+  const shown = active ?? items.find((item) => item.id === parked?.id) ?? null;
+
+  const ShownLogo = shown ? previewLogos[shown.id] : undefined;
+
+  // Driven by `active`, not `shown` — the held contents must not also hold the
+  // panel open.
+  const visible = Boolean(
+    active &&
+      (active.video || active.shader || active.preview || previewLogos[active.id]),
+  );
 
   return (
     <div ref={containerRef} className="relative">
       {dot}
 
       <ul
-        className="flex flex-col sm:w-1/2"
+        className="flex flex-col"
         onPointerLeave={(e) => {
           if (e.pointerType === "mouse") release();
         }}
@@ -73,25 +97,40 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
         })}
       </ul>
 
+      {/* Parked in the margin beside the column rather than inside it: the page
+          is a 448px measure with a lot of empty page either side, and a 16:9
+          panel doesn't fit next to a half-width list at that measure. Shown
+          from xl up, which is the first breakpoint with room for the panel
+          plus its gutter — below that the list stands on its own. */}
       <div
-        className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out sm:flex ${
-          active?.preview || active?.shader || ActiveLogo
-            ? "opacity-100"
-            : "opacity-0"
+        className={`pointer-events-none absolute left-full ml-8 hidden aspect-video w-80 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out xl:flex ${
+          visible ? "opacity-100" : "opacity-0"
         }`}
         style={{
           top: center,
           backgroundImage:
-            ActiveLogo || hasPostShader(active?.shader)
+            shown?.video || ShownLogo || hasPostShader(shown?.shader)
               ? undefined
-              : active?.preview,
-          backgroundColor: ActiveLogo ? "#000000" : undefined,
+              : shown?.preview,
+          backgroundColor: shown?.video || ShownLogo ? "#000000" : undefined,
         }}
       >
-        {ActiveLogo ? (
-          <ActiveLogo className="h-1/3 w-auto" />
+        {shown?.video ? (
+          // Keyed on the source so switching rows mounts a fresh element and
+          // restarts the clip, rather than resuming the previous one mid-way.
+          <video
+            key={shown.video}
+            src={shown.video}
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="h-full w-full object-cover"
+          />
+        ) : ShownLogo ? (
+          <ShownLogo className="h-1/3 w-auto" />
         ) : (
-          <PostShader name={active?.shader} className="h-full w-full" />
+          <PostShader name={shown?.shader} className="h-full w-full" />
         )}
       </div>
     </div>

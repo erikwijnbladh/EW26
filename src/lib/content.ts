@@ -11,6 +11,14 @@ export type PostMeta = {
   preview: string;
   /** Named PostShader scene. When set, it replaces the `preview` gradient. */
   shader?: string;
+  /**
+   * Demo clip for the home page hover preview, as a path under `public/`.
+   * Outranks `shader` and `preview` when present. Optional on purpose: a post
+   * with nothing to demo (an essay) is correctly served by its shader, so this
+   * is only ever set on the posts where a recording says something a still
+   * can't.
+   */
+  video?: string;
   date: string;
   /** External URL. When set, the post opens this link and has no detail page. */
   link?: string;
@@ -27,6 +35,7 @@ function readPost(slug: string): Post {
     subtitle: data.subtitle,
     preview: data.preview,
     shader: data.shader,
+    video: data.video,
     date: data.date instanceof Date ? data.date.toISOString() : String(data.date),
     link: data.link,
     body: content,

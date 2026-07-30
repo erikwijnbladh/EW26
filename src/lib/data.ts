@@ -129,6 +129,12 @@ export type HomeListItem = {
   preview?: string;
   /** Named PostShader scene; takes precedence over `preview`. */
   shader?: string;
+  /**
+   * Demo clip under `public/`; outranks every other preview. Set only where a
+   * recording carries something a still image can't — an essay has nothing to
+   * demo and is better served by its shader.
+   */
+  video?: string;
   href?: string;
   external?: boolean;
   /** Adds a divider/spacing above this row in the list. */
