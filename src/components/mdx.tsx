@@ -1,5 +1,55 @@
 import NextImage from "next/image";
 import type { MDXComponents } from "mdx/types";
+import { PostArt } from "@/components/post-shader";
+
+/**
+ * A 16:9 slot in the body of a post, for showing the thing working.
+ *
+ * `src` is optional, and that is the whole point: a post can reserve the slot
+ * and fill it with the same shader art the rest of the site uses until a
+ * recording exists. The frame, the radius and the ring are identical either
+ * way, so landing the clip later changes what's inside the box and nothing
+ * around it — no reflow, no "coming soon", no gap where a demo should be.
+ *
+ * Captions are written to read as statements about the idea rather than
+ * descriptions of footage, so they hold up before the video lands.
+ */
+function Demo({
+  src,
+  poster,
+  shader,
+  preview,
+  caption,
+}: {
+  src?: string;
+  poster?: string;
+  shader?: string;
+  preview?: string;
+  caption?: string;
+}) {
+  return (
+    <figure className="my-8">
+      <div className="aspect-video w-full overflow-hidden rounded-2xl shadow-ring">
+        {src ? (
+          <video
+            src={src}
+            poster={poster}
+            controls
+            playsInline
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <PostArt shader={shader} preview={preview} className="h-full w-full" />
+        )}
+      </div>
+      {caption && (
+        <figcaption className="mt-3 max-w-xl text-sm leading-relaxed text-muted">
+          {caption}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
 
 function Video({ src, poster }: { src: string; poster?: string }) {
   return (
@@ -58,6 +108,7 @@ function Gallery({ images }: { images: string[] }) {
 
 /** Components available to every MDX post, plus prose styling for raw markdown. */
 export const mdxComponents: MDXComponents = {
+  Demo,
   Video,
   ButtonLink,
   Image,
@@ -90,5 +141,13 @@ export const mdxComponents: MDXComponents = {
     <code className="rounded bg-surface px-1.5 py-0.5 font-mono text-[0.85em]">
       {children}
     </code>
+  ),
+  // Fenced blocks. The inline `code` above is styled as a chip, which is wrong
+  // inside a block — it would paint a second background on every line — so the
+  // block owns the surface and clears the chip off its child.
+  pre: ({ children }) => (
+    <pre className="my-6 max-w-xl overflow-x-auto rounded-xl bg-surface p-4 font-mono text-[0.8rem] leading-relaxed [&>code]:bg-transparent [&>code]:p-0">
+      {children}
+    </pre>
   ),
 };

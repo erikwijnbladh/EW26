@@ -57,6 +57,24 @@ const scenes: Record<string, (props: SceneProps) => React.ReactNode> = {
       className={className}
     />
   ),
+  /**
+   * A dark, dormant screen, in the site's own inks — the standing fill for an
+   * in-body `Demo` slot before its recording exists.
+   *
+   * Deliberately not tied to a post, and deliberately not vivid: reusing a
+   * post's hero scene here reads as the same image printed twice rather than
+   * as a frame waiting to be filled.
+   */
+  slot: ({ className }) => (
+    <MeshGradient
+      speed={0}
+      frame={17000}
+      colors={["#15140f", "#2a2823", "#4a4740", "#6b6a64"]}
+      distortion={0.7}
+      swirl={0.4}
+      className={className}
+    />
+  ),
   /** Campfire embers — d&d campaign generator. */
   ember: ({ className }) => (
     <GrainGradient

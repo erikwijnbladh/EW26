@@ -1,16 +1,67 @@
 ---
 title: Pane
-subtitle: an infinite canvas for building react components
+subtitle: isolated component previews lie
 preview: "linear-gradient(160deg, #1a1a2e 0%, #4338ca 50%, #a5b4fc 100%)"
 shader: prism
 date: 2026-02-10
 ---
 
-An infinite canvas for developing React components visually, while keeping each
-component a real `.tsx` file on disk.
+Every tool I've used for building components shows me one component at a time.
+I open the button, I look at the button, the button looks fine. Then I ship the
+change and find out what it did to everything else.
 
-The workflow is built around spatial organization, live previews, Vite HMR, and
-CodeMirror editing — everything stays local-first. It's an exploration of how
-design systems and component development can become more visual and iterative.
+That's the part that bugs me. A component preview shows you the thing in the
+one context where it was always going to look right — alone, centred, on a
+blank background, at the size you picked. The question I actually have is never
+"does this button look good." It's "what did I just break."
+
+So I built an infinite canvas where the components sit next to each other and
+update together.
+
+<Demo
+  shader="slot"
+  caption="One root button, and five real usages of it, updating at the same time."
+/>
+
+## How it works
+
+`Button.tsx` exports `ButtonRoot`, and every shared decision lives in one
+string at the top of that file:
+
+```
+const base =
+  'inline-flex items-center justify-center gap-1.5 rounded-md border ...'
+```
+
+`Toolbar.tsx` next to it uses `ButtonRoot` five different ways on purpose —
+icon-only toggles, a disabled button, one in a loading state, a danger button,
+a primary with an icon and a label. Not five copies for the screenshot. Five
+cases that break differently.
+
+Change `gap-1.5` to `gap-2` and both panes move while you're still typing. If
+that padding change ruins the icon-only toggles, you find out in the same
+second you make it, in a layout that looks like the real thing, instead of
+three steps later.
+
+Each pane is an iframe pointing at a local Vite server, so the update path is
+just HMR. The components are plain `.tsx` files on disk — git works, imports
+work, and an agent editing the files gets the same live loop I do.
+
+## The hosted version works differently, and worse
+
+The local version leans entirely on a dev server, and there isn't one on
+Vercel. So the deployed demo does something else: the editor posts the files
+into each iframe, which transpiles them in the browser with Sucrase and
+re-renders, with Tailwind's browser JIT covering any class you type that didn't
+exist yet.
+
+It's a real fallback, not the same thing. Edits live in memory, so a refresh
+throws them away. I'd rather say that than let someone find out by losing work.
+
+## What it isn't
+
+It's small — about 1,200 lines, and the "design system" in it is a button and a
+toolbar. It's a demo of one idea, not a product, and I haven't touched it in
+months. The idea is the part I'd defend: **stop previewing components alone.**
 
 <ButtonLink href="https://github.com/erikwijnbladh/pane">View on GitHub →</ButtonLink>
