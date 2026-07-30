@@ -1,67 +1,83 @@
 ---
 title: Pane
-subtitle: isolated component previews lie
+subtitle: your figma board, but the components are real
 preview: "linear-gradient(160deg, #1a1a2e 0%, #4338ca 50%, #a5b4fc 100%)"
 shader: prism
 date: 2026-02-10
 ---
 
-Every tool I've used for building components shows me one component at a time.
-I open the button, I look at the button, the button looks fine. Then I ship the
-change and find out what it did to everything else.
+Every design system I've worked in exists twice. There's the Figma file, where
+it's laid out on a board — grouped, labelled, everything visible at once, easy
+to reason about as a system. And there's the code, where the same system is a
+folder of files you open one at a time.
 
-That's the part that bugs me. A component preview shows you the thing in the
-one context where it was always going to look right — alone, centred, on a
-blank background, at the size you picked. The question I actually have is never
-"does this button look good." It's "what did I just break."
+The two drift apart immediately. They have to: they're separate artifacts kept
+in sync by hand, and the moment either side moves, the other is wrong. What I
+want is the board, with the code as the source of it. Not a picture of the
+system — the system.
 
-So I built an infinite canvas where the components sit next to each other and
-update together.
+That's what Pane is going toward. An infinite canvas where every frame is a
+real `.tsx` file on disk, arranged spatially the way you'd arrange it in Figma,
+live.
 
 <Demo
   shader="slot"
-  caption="One root button, and five real usages of it, updating at the same time."
+  caption="The board: components grouped on a canvas, each one a real file, all live at once."
 />
 
-## How it works
+## The canvas is organised like a design system
 
-`Button.tsx` exports `ButtonRoot`, and every shared decision lives in one
-string at the top of that file:
+Not like a file tree. You group frames and name the groups, drag and resize
+them, and they sit behind the components the way sections do in Figma. There's
+a tokens file you open from the toolbar, and a light/dark switch for the whole
+workspace, because a system has to hold up in both.
+
+The components underneath are plain files. Git works, imports work, and an
+agent editing them gets the same live board I'm looking at.
+
+## The part that had to work first
+
+A board of components is only worth having if changing the system changes the
+board. So that's the mechanic I built to prove out.
+
+`Button.tsx` exports `ButtonRoot`, and every shared decision lives in one string
+at the top of it:
 
 ```
 const base =
   'inline-flex items-center justify-center gap-1.5 rounded-md border ...'
 ```
 
-`Toolbar.tsx` next to it uses `ButtonRoot` five different ways on purpose —
-icon-only toggles, a disabled button, one in a loading state, a danger button,
-a primary with an icon and a label. Not five copies for the screenshot. Five
-cases that break differently.
+`Toolbar.tsx` uses `ButtonRoot` five different ways on purpose — icon-only
+toggles, disabled, loading, danger, a primary with icon and label. Five cases
+that break differently.
 
-Change `gap-1.5` to `gap-2` and both panes move while you're still typing. If
-that padding change ruins the icon-only toggles, you find out in the same
-second you make it, in a layout that looks like the real thing, instead of
-three steps later.
+Change `gap-1.5` to `gap-2` and both frames move while you're still typing. If
+it ruins the icon-only toggles, you find out in the same second, on the board,
+next to everything else it touched — not three steps later in an app.
 
-Each pane is an iframe pointing at a local Vite server, so the update path is
-just HMR. The components are plain `.tsx` files on disk — git works, imports
-work, and an agent editing the files gets the same live loop I do.
+Two components is a small proof. It's the smallest one that actually
+demonstrates propagation, which is why the demo workspace is that and not
+thirty.
 
-## The hosted version works differently, and worse
+## What it costs to host
 
-The local version leans entirely on a dev server, and there isn't one on
-Vercel. So the deployed demo does something else: the editor posts the files
-into each iframe, which transpiles them in the browser with Sucrase and
-re-renders, with Tailwind's browser JIT covering any class you type that didn't
+Locally this leans entirely on a Vite dev server and HMR. There isn't one on
+Vercel, so the deployed demo does something else: the editor posts the files
+into each frame, which transpiles them in the browser with Sucrase and
+re-renders, with Tailwind's browser JIT covering classes you type that didn't
 exist yet.
 
 It's a real fallback, not the same thing. Edits live in memory, so a refresh
-throws them away. I'd rather say that than let someone find out by losing work.
+throws them away. I'd rather say that here than let someone find out by losing
+work.
 
-## What it isn't
+## Where it is
 
-It's small — about 1,200 lines, and the "design system" in it is a button and a
-toolbar. It's a demo of one idea, not a product, and I haven't touched it in
-months. The idea is the part I'd defend: **stop previewing components alone.**
+The canvas primitives are in — groups, tokens, themes, scaffolding new
+components — and the propagation loop works. What's in the repo is a seed of
+the board, not a board. That's the distance left, and it's the interesting
+part: the idea only pays off at the scale of a whole system, and I've proved
+it at the scale of a button.
 
 <ButtonLink href="https://github.com/erikwijnbladh/pane">View on GitHub →</ButtonLink>
