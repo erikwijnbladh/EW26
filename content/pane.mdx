@@ -1,83 +1,74 @@
 ---
 title: Pane
-subtitle: your figma board, but the components are real
+subtitle: how do you iterate on a whole component system?
 preview: "linear-gradient(160deg, #1a1a2e 0%, #4338ca 50%, #a5b4fc 100%)"
 shader: prism
 date: 2026-02-10
 ---
 
-Every design system I've worked in exists twice. There's the Figma file, where
-it's laid out on a board — grouped, labelled, everything visible at once, easy
-to reason about as a system. And there's the code, where the same system is a
-folder of files you open one at a time.
+Something that's bugged me for a while: a design system exists twice. There's
+the Figma file, where it's laid out on a board — grouped, labelled, all of it
+visible at once. And there's the code, where the same system is a folder you
+open one file at a time.
 
-The two drift apart immediately. They have to: they're separate artifacts kept
-in sync by hand, and the moment either side moves, the other is wrong. What I
-want is the board, with the code as the source of it. Not a picture of the
-system — the system.
+Working in either one, I'm never really looking at the system. I'm looking at a
+component, guessing at the rest. And the two drift, because they're separate
+things kept in sync by hand.
 
-That's what Pane is going toward. An infinite canvas where every frame is a
-real `.tsx` file on disk, arranged spatially the way you'd arrange it in Figma,
-live.
+So I wanted to try the obvious thing and see what happened: what if the board
+*was* the code? Every frame a real `.tsx` file on disk, arranged spatially,
+live. Does iterating on a system get better, or does it just look nicer?
 
 <Demo
   shader="slot"
-  caption="The board: components grouped on a canvas, each one a real file, all live at once."
+  caption="Components grouped on a canvas, each frame a real file on disk."
 />
 
-## The canvas is organised like a design system
+## What I tried
 
-Not like a file tree. You group frames and name the groups, drag and resize
-them, and they sit behind the components the way sections do in Figma. There's
-a tokens file you open from the toolbar, and a light/dark switch for the whole
-workspace, because a system has to hold up in both.
+I built the canvas so it's organised the way a design system is, not the way a
+file tree is — you group frames and name the groups, drag and resize them, and
+they sit behind the components like sections do in Figma. There's a tokens file
+you open from the toolbar and a light/dark switch for the whole workspace.
 
-The components underneath are plain files. Git works, imports work, and an
+Underneath, the components are plain files. Git works, imports work, and an
 agent editing them gets the same live board I'm looking at.
 
-## The part that had to work first
+## What I found
 
-A board of components is only worth having if changing the system changes the
-board. So that's the mechanic I built to prove out.
+The part that actually changed how it felt was propagation.
 
-`Button.tsx` exports `ButtonRoot`, and every shared decision lives in one string
-at the top of it:
+`Button.tsx` exports `ButtonRoot`, with every shared decision in one string at
+the top of it. `Toolbar.tsx` next to it uses `ButtonRoot` five ways — icon-only
+toggles, disabled, loading, danger, a primary with icon and label. Change the
+gap or the padding in that one string and both frames move while you're still
+typing.
 
-```
-const base =
-  'inline-flex items-center justify-center gap-1.5 rounded-md border ...'
-```
+That's a small thing on paper and it didn't feel small. Seeing a change land
+across real usages at the same moment I made it is a different activity from
+opening a preview and deciding it looks fine. I stopped guessing at the rest.
 
-`Toolbar.tsx` uses `ButtonRoot` five different ways on purpose — icon-only
-toggles, disabled, loading, danger, a primary with icon and label. Five cases
-that break differently.
+What I'm less sure about is whether it holds at scale. Two components prove the
+mechanic; a real system is thirty, and I don't know yet whether a board that
+size stays useful or just becomes another thing to pan around.
 
-Change `gap-1.5` to `gap-2` and both frames move while you're still typing. If
-it ruins the icon-only toggles, you find out in the same second, on the board,
-next to everything else it touched — not three steps later in an app.
-
-Two components is a small proof. It's the smallest one that actually
-demonstrates propagation, which is why the demo workspace is that and not
-thirty.
-
-## What it costs to host
+## Where it broke down
 
 Locally this leans entirely on a Vite dev server and HMR. There isn't one on
-Vercel, so the deployed demo does something else: the editor posts the files
-into each frame, which transpiles them in the browser with Sucrase and
-re-renders, with Tailwind's browser JIT covering classes you type that didn't
-exist yet.
+Vercel, so the hosted demo does something else — the editor posts files into
+each frame, which transpiles them in the browser with Sucrase and re-renders,
+with Tailwind's browser JIT covering classes that didn't exist yet.
 
-It's a real fallback, not the same thing. Edits live in memory, so a refresh
-throws them away. I'd rather say that here than let someone find out by losing
-work.
+It works, but it isn't the same thing: edits live in memory, so a refresh
+throws them away. Worth saying plainly rather than letting someone find out by
+losing work.
 
-## Where it is
+## Still open
 
-The canvas primitives are in — groups, tokens, themes, scaffolding new
-components — and the propagation loop works. What's in the repo is a seed of
-the board, not a board. That's the distance left, and it's the interesting
-part: the idea only pays off at the scale of a whole system, and I've proved
-it at the scale of a button.
+Whether spatial arrangement earns its keep past a certain number of components.
+Whether tokens are the right seam to iterate from, or just the easiest one.
+Whether any of this beats a good Storybook once the novelty wears off.
+
+I don't know. That's roughly where I left it.
 
 <ButtonLink href="https://github.com/erikwijnbladh/pane">View on GitHub →</ButtonLink>
