@@ -56,6 +56,19 @@ export function getPagePosts(): Post[] {
   return getAllPosts().filter((p) => !p.link);
 }
 
+/**
+ * Whole minutes at 200wpm, floored to 1.
+ *
+ * Counted off the raw body, JSX and all, which slightly over-counts a post
+ * carrying an interactive demo. That's the right direction to be wrong in: the
+ * number is there to set expectations before someone commits, and promising
+ * four and delivering three is the harmless way round.
+ */
+export function readingTime(body: string): number {
+  const words = body.trim().split(/\s+/).filter(Boolean).length;
+  return Math.max(1, Math.round(words / 200));
+}
+
 export function getPost(slug: string): Post | undefined {
   try {
     return readPost(slug);

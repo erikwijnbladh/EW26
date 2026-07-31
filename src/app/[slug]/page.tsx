@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { MDXRemote } from "next-mdx-remote/rsc";
-import { getPagePosts, getPost } from "@/lib/content";
+import rehypeShiki from "@shikijs/rehype";
+import { getPagePosts, getPost, readingTime } from "@/lib/content";
 import { mdxComponents } from "@/components/mdx";
 import { PostArt } from "@/components/post-shader";
 import { Reveal } from "@/components/reveal";
@@ -25,6 +26,42 @@ export async function generateMetadata({
     title: `${post.title.toLowerCase()} — erik wijnbladh`,
     description: post.subtitle,
   };
+}
+
+/**
+ * The compiled body, cached.
+ *
+ * Shiki reads the clock while it highlights, and under `cacheComponents` an
+ * uncached server render isn't allowed to — the current time would be baked
+ * into a prerender that outlives it. The output here doesn't depend on the
+ * clock at all: it's a pure function of an `.mdx` file that only changes on
+ * deploy. Saying so with `use cache` satisfies the rule and means the grammars
+ * are loaded and the highlighting is done once for a post rather than once per
+ * render.
+ */
+async function PostBody({ source }: { source: string }) {
+  "use cache";
+
+  return (
+    <MDXRemote
+      source={source}
+      components={mdxComponents}
+      options={{
+        mdxOptions: {
+          rehypePlugins: [
+            [
+              // Warm light theme, to sit on paper rather than fight it. Shiki
+              // paints the theme's own background onto the block; the `pre`
+              // component drops it so code sits on the site's surface instead
+              // of a second, colder one.
+              rehypeShiki,
+              { theme: "vitesse-light" },
+            ],
+          ],
+        },
+      }}
+    />
+  );
 }
 
 function formatDate(date: string) {
@@ -78,14 +115,16 @@ export default async function Post({
           <h1 className="text-3xl lowercase tracking-tight sm:text-4xl">
             {post.title}
           </h1>
-          <p className="mt-3 font-mono text-xs text-muted">
-            {formatDate(post.date)}
-          </p>
+          <div className="mt-3 flex items-center gap-2 font-mono text-xs text-muted">
+            <time dateTime={post.date}>{formatDate(post.date)}</time>
+            <span aria-hidden>·</span>
+            <span>{readingTime(post.body)} min read</span>
+          </div>
         </header>
       </Reveal>
 
       <div className="mt-6">
-        <MDXRemote source={post.body} components={mdxComponents} />
+        <PostBody source={post.body} />
       </div>
 
       {next && next.slug !== slug && (

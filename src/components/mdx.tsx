@@ -1,6 +1,7 @@
 import NextImage from "next/image";
 import type { MDXComponents } from "mdx/types";
 import { PostArt } from "@/components/post-shader";
+import { SignalsDemo } from "@/components/demos/signals-demo";
 
 /**
  * A 16:9 slot in the body of a post, for showing the thing working.
@@ -109,6 +110,7 @@ function Gallery({ images }: { images: string[] }) {
 /** Components available to every MDX post, plus prose styling for raw markdown. */
 export const mdxComponents: MDXComponents = {
   Demo,
+  SignalsDemo,
   Video,
   ButtonLink,
   Image,
@@ -142,11 +144,24 @@ export const mdxComponents: MDXComponents = {
       {children}
     </code>
   ),
-  // Fenced blocks. The inline `code` above is styled as a chip, which is wrong
-  // inside a block — it would paint a second background on every line — so the
-  // block owns the surface and clears the chip off its child.
-  pre: ({ children }) => (
-    <pre className="my-6 max-w-xl overflow-x-auto rounded-xl bg-surface p-4 font-mono text-[0.8rem] leading-relaxed [&>code]:bg-transparent [&>code]:p-0">
+  /**
+   * Fenced blocks, after Shiki has been through them.
+   *
+   * Shiki colours the tokens with inline styles on the inner spans and paints
+   * the theme's own background onto this element. The spans are the whole
+   * point and are left alone; the background is dropped, because the theme's
+   * near-white is a colder paper than the site's and reads as a panel that
+   * wandered in from another design. The surface token replaces it.
+   *
+   * The chip styling on inline `code` is also cleared off the child here — it
+   * would otherwise paint a second background behind every line.
+   */
+  pre: ({ children, style, ...props }) => (
+    <pre
+      {...props}
+      style={{ ...style, backgroundColor: undefined }}
+      className="my-6 max-w-xl overflow-x-auto rounded-xl bg-surface p-4 font-mono text-[0.8rem] leading-relaxed [&>code]:bg-transparent [&>code]:p-0"
+    >
       {children}
     </pre>
   ),

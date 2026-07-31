@@ -7,49 +7,80 @@ shader: signal
 ---
 
 Software is mostly handoffs. One part of a system produces something, another
-part has to work out what to do with it, and at every one of those boundaries
+has to work out what to do with it, and at every one of those boundaries
 there's the same choice: the producer says what it means, or the consumer
 guesses.
 
 Guessing is cheaper to build. Look at the shape of the thing, infer the intent,
-branch on it. No agreement to negotiate, no vocabulary to keep, no meeting.
+branch on it.
+
+```ts
+// The consumer decides what this is by looking at it.
+if (Array.isArray(row.campaigns) && row.campaigns.length > 0) {
+  return <ExpandableRow row={row} />
+}
+return <PlainRow row={row} />
+```
+
+That is a guess. It's a good guess, it passes review, and it's right about
+every row it was written against. It also can't tell you when it stops being
+right, because a wrong inference produces output shaped exactly like a correct
+one.
 
 ## what guessing costs
 
 - **every new case moves downstream.** the producer adds a variant, the
   consumer needs a release.
-- **the rule lives nowhere.** it's distributed across conditionals, and no
-  single place says what anything means.
-- **correct and lucky are indistinguishable.** a wrong inference produces
-  output shaped exactly like a right one.
-
-The third is the real cost. Because a bad guess looks like a good one from the
-inside, the system can't tell you it's guessing badly. It just quietly is,
-until something downstream is wrong for reasons nobody can locate.
+- **the rule lives nowhere.** it's spread across conditionals, and no single
+  place says what anything means.
+- **failure is silent.** nothing throws. you get a plausible result.
 
 ## the alternative is old and boring
 
-Discriminated unions, MIME types, status codes. The producer declares, and the
-consumer renders the declaration rather than reconstructing it.
+Let the producer declare, and render the declaration.
+
+```ts
+// The producer already knows. It says so.
+return row.has_nested_rows ? <ExpandableRow row={row} /> : <PlainRow row={row} />
+```
+
+The consumer never opens the payload. It has no opinion about which key the
+children arrived under, how many there are, or whether this row type existed
+last week.
 
 I built an audit tool once where the backend's response shape varied per
-account. Instead of the frontend inspecting payloads to decide what to draw,
-the backend put classifiers on the object headers — `has_nested_rows` and
-friends — and the frontend never read the data at all. Absence declared
-something too.
+account — different accounts have different problems at different depths, all
+landing in one table. Rather than the frontend inspecting payloads to decide
+what to draw, the backend put classifiers on the object headers.
+`has_nested_rows` and friends. Absence declared something too: nothing on the
+header meant render the following items normally.
 
-It isn't free. A missing classifier meant a row silently didn't render, and the
-vocabulary was an agreement rather than a type, so it only held while both
-sides kept it.
+Here are both consumers, against the same payload. They agree, until the
+producer ships something neither was written for.
+
+<SignalsDemo />
+
+The inferring one doesn't break. That's the part worth sitting with. It returns
+a clean table with four rows quietly missing from it, and there is nothing in
+the output that would tell you.
+
+## what it costs the other way
+
+It isn't free. A missing classifier meant a row silently didn't render — no
+inference means no recovery either. And the vocabulary was an agreement rather
+than a type, so it held exactly as long as both sides kept it.
 
 But the shape of the trade is general: **whoever knows the answer should say
 it.** Leaving it to be reconstructed doesn't remove the work. It moves it to
 whoever is worst placed to do it, and hides it from whoever decides what things
 cost.
 
+## the same problem, unsolved
+
 Which is where I keep landing on model output. You read it and infer your way
 through — what's solid, what's invented, what needs checking before you use it.
-A confident wrong sentence is shaped exactly like a confident right one.
+Shape inspection, on prose. A confident wrong sentence is shaped exactly like a
+confident right one.
 
 We solved this for machines decades ago by making producers declare. Nothing
 here declares anything, and most of the effort is going into better output —
