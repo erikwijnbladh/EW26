@@ -16,6 +16,14 @@ group things, edit one in the built-in editor, and everything using it updates
 while you're still typing. Git still works. Imports still work. An agent editing
 the files gets the same board you're looking at.
 
+<Image
+  src="/images/pane-canvas.png"
+  alt="The pane canvas: a code editor on the left with tokens.ts open, and two frames on the canvas — a Button showing its variants and states, and a Toolbar built out of the same button."
+/>
+
+That's `tokens.ts` open on the left. Both frames on the right are using it, so
+editing a value there moves the Button and the Toolbar at the same time.
+
 The propagation is the part that actually felt different — changing a shared
 value and watching five usages move at the same moment, rather than opening a
 preview afterwards and deciding it looks fine.
