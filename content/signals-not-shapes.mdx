@@ -1,0 +1,89 @@
+---
+title: Signals, not shapes
+subtitle: inference is a cost someone always pays
+date: 2026-07-31
+preview: "linear-gradient(160deg, #0a1018 0%, #1e4f6b 55%, #dfe9ee 100%)"
+shader: signal
+---
+
+Most frontends work by inference. Something arrives, you look at the shape of
+it, and you guess what it means. Is there a `campaigns` array? Is it non-empty?
+Then draw an expander.
+
+That works. It keeps working right up until it doesn't, and the reason it's a
+bad deal isn't that it breaks — it's that a wrong guess and a right one look
+identical from the inside. Nothing tells you which one you're doing.
+
+## what inference actually costs
+
+- **every new case is your problem.** the producer adds a variant, and the
+  consumer needs a release to understand it.
+- **the rule lives nowhere.** it's spread across conditionals, and no single
+  place says what the data means.
+- **you can't verify it.** correct output and lucky output are the same output.
+
+## the alternative is boring
+
+Let the producer say what it means, and render the declaration.
+
+At BrightBid I built Audit, which pulls issues out of a Google Ads account and
+puts them in one table. The trouble is that accounts aren't alike: different
+accounts have different problems at different depths, so what the backend can
+say about one is structurally unlike what it can say about another. Some rows
+need to expand into campaigns underneath them. Some are just a row.
+
+So the backend didn't hand over data for us to interpret. It attached
+classifiers to the object headers, and the frontend rendered off those.
+`has_nested_rows` and friends — ugly names, doing real work. The absence of one
+was a signal too: nothing on the header meant render the following items
+normally.
+
+The frontend never looked at the payload to decide anything. It looked at what
+the payload said about itself.
+
+The formal name for this is a discriminated union, and it's older than I am.
+The part worth restating is who does the work: **whoever knows the answer
+should say it, rather than leaving it to be reconstructed by someone who
+doesn't.**
+
+## what it bought, and what it cost
+
+Backend could ship an entire new issue type and the frontend rendered it
+without a change. That held as long as both sides kept to the vocabulary, which
+is the whole catch — the contract isn't in the type system, it's in the
+agreement.
+
+And when a classifier was missing, the row didn't render. Not an error, not a
+fallback. It just wasn't there. That's the bill for refusing to guess: no
+inference means no recovery either, and silence is a bad failure mode.
+
+The fight wasn't with the backend engineers, who got it immediately. It was
+upward, where the reasonable-sounding question is *why is it hard for frontend
+to just do X for A, B and C sometimes.* From outside, "just handle it" is free.
+The cost is invisible, deferred, and paid by whoever is holding the conditionals
+next year.
+
+For the record: the product had no users. I'm not claiming an outcome I don't
+have. What I'm claiming is narrower — that when the producer changed, nothing
+downstream had to.
+
+## the same problem, unsolved
+
+I keep running into the un-fixed version of this in model output.
+
+A language model hands you a wall of text and you infer your way through it.
+Which parts are solid. Which are invented. Which need checking before you paste
+them anywhere. You're doing shape inspection on prose, and it has the same
+property that made it a bad deal in a table: **a confident wrong sentence is
+shaped exactly like a confident right one.**
+
+We fixed this for APIs by making producers declare. Nothing in these interfaces
+declares anything. There's no `has_nested_rows` for "this part I actually know"
+versus "this part I assembled because it fit."
+
+I don't think that's unsolvable. I think it's unbuilt, and I notice that almost
+all the effort is going into making the output better rather than making it
+legible. Better output raises the cost of the guess. It doesn't remove it.
+
+Someone always pays for inference. Usually it's whoever is furthest from
+knowing the answer.

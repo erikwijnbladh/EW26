@@ -57,6 +57,22 @@ const scenes: Record<string, (props: SceneProps) => React.ReactNode> = {
       className={className}
     />
   ),
+  /** Cold structured light — signals, not shapes. */
+  signal: ({ className }) => (
+    <Warp
+      speed={0}
+      frame={44000}
+      colors={["#0a1018", "#1e4f6b", "#5fd0c8", "#dfe9ee"]}
+      proportion={0.38}
+      softness={0.65}
+      distortion={0.1}
+      swirl={0.35}
+      swirlIterations={6}
+      shape="stripes"
+      shapeScale={0.14}
+      className={className}
+    />
+  ),
   /**
    * A dark, dormant screen, in the site's own inks — the standing fill for an
    * in-body `Demo` slot before its recording exists.
