@@ -96,6 +96,44 @@ function Image({ src, alt }: { src: string; alt: string }) {
   );
 }
 
+/**
+ * A phone screenshot, at phone size.
+ *
+ * `Image` is built for 16:9 and stretches its source to the full measure —
+ * fine for a canvas, absurd for a 1179×2556 portrait capture, which arrives as
+ * a column of screenshot several times the height of the paragraph above it.
+ * This caps the width instead and lets the height follow, so a phone reads as
+ * a phone rather than as a wall.
+ */
+function Phone({
+  src,
+  alt,
+  caption,
+}: {
+  src: string;
+  alt: string;
+  caption?: string;
+}) {
+  return (
+    <figure className="my-8 flex flex-col items-center">
+      <div className="w-[240px] overflow-hidden rounded-[2rem] shadow-ring">
+        <NextImage
+          src={src}
+          alt={alt}
+          width={1179}
+          height={2556}
+          className="h-auto w-full"
+        />
+      </div>
+      {caption && (
+        <figcaption className="mt-3 max-w-sm text-center text-sm leading-relaxed text-muted">
+          {caption}
+        </figcaption>
+      )}
+    </figure>
+  );
+}
+
 function Gallery({ images }: { images: string[] }) {
   return (
     <span className="my-8 grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -112,6 +150,7 @@ export const mdxComponents: MDXComponents = {
   Video,
   ButtonLink,
   Image,
+  Phone,
   Gallery,
   p: ({ children }) => (
     <p className="my-5 max-w-xl text-base leading-relaxed text-muted">

@@ -1,13 +1,19 @@
 ---
 title: Kvitt
 subtitle: splitting bills without the spreadsheet
-date: 2026-07-15
+date: 2026-07-22
 preview: "linear-gradient(160deg, #0f1a17 0%, #4f9c86 55%, #dceee7 100%)"
 shader: settle
 ---
 
 "Kvitt" is what you say in Swedish when nobody owes anybody anything any more.
 That's the whole app, really.
+
+<Phone
+  src="/images/kvitt-login.png"
+  alt="Kvitt's first screen on a phone: the wordmark under a grainy green-to-pink circle, a line of Swedish explaining it handles shared expenses, two example rows — Storhandling at +1 240 kr in green and Filmkväll at −595 kr in pink — and a continue-with-Google button."
+  caption="The first screen shows you the two rows the whole app is made of: one you're owed, one you owe."
+/>
 
 You make a group, throw expenses into it, and it works out who owes what — then
 reduces that to the smallest set of payments that gets everyone square, so four
@@ -42,6 +48,7 @@ gets a straight answer instead of recursing. Every table then leans on that one
 function.
 
 Built with Lovable to start, then picked apart and rewritten by hand where it
-mattered. There are tests, which surprised me too.
+mattered. There are tests, which surprised me too. It's wrapped in Capacitor
+now, so it's an actual app on an actual phone rather than a tab.
 
 Nine people use it. I know all nine.
