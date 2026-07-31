@@ -9,10 +9,27 @@ shader: dusk
 You type something like "driving home at 2am, a bit sad but fine about it", and
 it builds you a real Spotify playlist.
 
-The prompt goes to a model that comes back with a name, a description, some
-seed artists and genres, and target numbers for energy, valence, danceability
-and tempo. Those go to Spotify's search and recommendation endpoints, and what
-comes back becomes a playlist in your account.
+The prompt goes to a model, and what comes back is this:
+
+```ts
+interface PlaylistAnalysis {
+  playlistName: string;
+  description: string;
+  seedArtists: string[];
+  seedGenres: string[];
+  targetEnergy: number;
+  targetValence: number;
+  targetDanceability: number;
+  targetAcousticness: number;
+  targetTempo: number;
+  supplementalSearches: string[];
+}
+```
+
+Which is really just a sentence translated into things Spotify's API already
+knows how to answer. Those numbers go straight into the search and
+recommendation endpoints, and what comes back becomes a playlist in your
+account.
 
 Almost all of the quality lives in that middle step. The same prompt with
 slightly different seed artists gives you a completely different playlist, and

@@ -10,10 +10,27 @@ Asks Twitch every sixty seconds whether anyone I care about has gone live, and
 posts into a Discord channel when they have — title, game, viewer count,
 thumbnail.
 
-One dependency. It keeps track of which streams it already announced in memory,
-which means it has to stay running, which means it can't go serverless. That
-was on purpose: standing up a database so a hobby bot can remember four
-usernames felt worse than just leaving a process up.
+One dependency. It keeps track of what it already announced in memory, which
+means it has to stay running, which means it can't go serverless. That was on
+purpose: standing up a database so a hobby bot can remember four usernames felt
+worse than just leaving a process up.
+
+The one bit I'd defend is what it remembers. Not "is this person live" — the
+id of the stream it last posted about:
+
+```js
+const notifiedStreamIds = new Map();
+
+if (notifiedStreamIds.get(username) !== stream.id) {
+  await sendDiscordNotification(stream);
+  notifiedStreamIds.set(username, stream.id);
+}
+```
+
+A boolean would double-post every time the API blinked and a stream looked
+offline for one poll. The id can't, because it's the same stream when it comes
+back. And if the Discord post throws, the map stays unset, so the next poll
+just tries again.
 
 It refreshes its own Twitch token, retries a Discord post if the first one
 fails, and answers on `/` with a bit of JSON so a health check can tell whether

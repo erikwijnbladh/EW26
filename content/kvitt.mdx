@@ -18,8 +18,28 @@ actually pays for things.
 
 Supabase for auth and the database. The part that took real time wasn't the
 interface, it was the row-level policies — getting it so a group's expenses are
-genuinely invisible to anyone outside the group, and staying convinced of that
-while adding invite links that let strangers in on purpose.
+genuinely invisible outside the group, and staying convinced of that while
+adding invite links whose entire job is letting strangers in.
+
+The one that got me: to see who's in a group you have to be in the group, so
+the policy on the members table has to read the members table, which re-runs
+the policy, forever. The way out is a function that's allowed to stop asking:
+
+```sql
+CREATE FUNCTION public.is_group_member(_user_id UUID, _group_id UUID)
+RETURNS BOOLEAN
+LANGUAGE sql STABLE SECURITY DEFINER
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.group_members
+    WHERE user_id = _user_id AND group_id = _group_id
+  )
+$$;
+```
+
+`SECURITY DEFINER` runs it as the owner, outside the policies, so the question
+gets a straight answer instead of recursing. Every table then leans on that one
+function.
 
 Built with Lovable to start, then picked apart and rewritten by hand where it
 mattered. There are tests, which surprised me too.
