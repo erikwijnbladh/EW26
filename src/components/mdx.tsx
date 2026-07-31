@@ -1,7 +1,7 @@
 import NextImage from "next/image";
 import type { MDXComponents } from "mdx/types";
 import { PostArt } from "@/components/post-shader";
-import { SignalsDemo } from "@/components/demos/signals-demo";
+import { SurfaceDemo } from "@/components/demos/surface-demo";
 
 /**
  * A 16:9 slot in the body of a post, for showing the thing working.
@@ -110,7 +110,7 @@ function Gallery({ images }: { images: string[] }) {
 /** Components available to every MDX post, plus prose styling for raw markdown. */
 export const mdxComponents: MDXComponents = {
   Demo,
-  SignalsDemo,
+  SurfaceDemo,
   Video,
   ButtonLink,
   Image,
