@@ -403,7 +403,7 @@ export function SurfaceDemo() {
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="say what you want"
+              placeholder="type something"
               aria-label="Instruction"
               className="min-w-0 flex-1 rounded-lg bg-foreground/[0.04] px-3 py-2 text-sm outline-none placeholder:text-muted focus:bg-foreground/[0.07]"
             />
@@ -435,8 +435,8 @@ export function SurfaceDemo() {
 
           <p className="mt-auto pt-3 font-mono text-[10px] text-muted">
             {misses > 0
-              ? `${misses} instruction${misses === 1 ? "" : "s"} went nowhere`
-              : "no vocabulary is printed anywhere"}
+              ? `${misses} didn't land`
+              : "nothing here lists what works"}
           </p>
         </section>
       </div>
@@ -444,46 +444,34 @@ export function SurfaceDemo() {
       <p className="border-t border-line px-4 py-3 text-xs leading-relaxed text-muted">
         {last.via === "none" && (
           <>
-            Same object, two ways in. Both can reach every state it has — the
-            panel is complete, not crippled. Drive it from each side and watch
-            where they stop being the same thing.
+            Same square, two ways in. Both reach every state it has, so try
+            each side.
           </>
         )}
         {last.via === "panel" && (
           <>
-            <span className="text-foreground">
-              Every move this panel can make is on screen.
-            </span>{" "}
-            That is the entire language. There is no fifth slider you could
-            have guessed at, and no phrasing that unlocks one.
+            Everything this panel can do is on screen. There&apos;s no fifth
+            slider to find.
           </>
         )}
         {last.via === "box" && last.intent && (
           <>
-            <span className="text-foreground">
-              One word moved three controls at once.
-            </span>{" "}
-            There is no <Code>{last.labels.join(" + ")}</Code> control, and
-            there couldn&apos;t have been — someone would have had to think of
-            it first, name it, and find room for it.
+            One word, {last.labels.length > 1 ? "several" : "three"} controls.
+            Nobody had to decide <Code>{last.labels.join(" + ")}</Code> was a
+            thing.
           </>
         )}
         {last.via === "box" && !last.intent && (
           <>
-            The box did it{last.labels.length > 1 ? ", all of it in one go" : ""}.
-            Nothing on screen told you <Code>{last.labels.join(", ")}</Code>{" "}
-            would work.
+            Done{last.labels.length > 1 ? ", all in one go" : ""}. Nothing on
+            screen said <Code>{last.labels.join(", ")}</Code> would work.
           </>
         )}
         {last.via === "miss" && (
           <>
-            <span className="text-foreground">
-              &ldquo;{last.input}&rdquo; did nothing.
-            </span>{" "}
-            Nothing on screen told you it wouldn&apos;t — that&apos;s the
-            floor, and you find it by falling through it. The panel has no
-            equivalent failure: you cannot ask it for something it doesn&apos;t
-            have.
+            &ldquo;{last.input}&rdquo; did nothing, and nothing said it
+            wouldn&apos;t. The panel can&apos;t fail this way — you can&apos;t
+            ask a slider for something it doesn&apos;t have.
           </>
         )}
       </p>
