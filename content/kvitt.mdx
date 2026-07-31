@@ -1,0 +1,25 @@
+---
+title: Kvitt
+subtitle: splitting bills without the spreadsheet
+date: 2026-07-15
+preview: "linear-gradient(160deg, #0f1a17 0%, #4f9c86 55%, #dceee7 100%)"
+shader: settle
+---
+
+"Kvitt" is what you say in Swedish when nobody owes anybody anything any more.
+That's the whole app, really.
+
+You make a group, throw expenses into it, and it works out who owes what — then
+reduces that to the smallest set of payments that gets everyone square, so four
+people don't end up sending each other six transfers. There are invite codes,
+because making someone sign up before you can add them to a dinner is a good way
+to never get paid back. And a stats page, mostly because I wanted to see who
+actually pays for things.
+
+Supabase for auth and the database. The part that took real time wasn't the
+interface, it was the row-level policies — getting it so a group's expenses are
+genuinely invisible to anyone outside the group, and staying convinced of that
+while adding invite links that let strangers in on purpose.
+
+Built with Lovable to start, then picked apart and rewritten by hand where it
+mattered. There are tests, which surprised me too.

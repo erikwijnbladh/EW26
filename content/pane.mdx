@@ -1,0 +1,27 @@
+---
+title: Pane
+subtitle: an infinite canvas for react components
+date: 2026-02-10
+preview: "linear-gradient(160deg, #241d6b 0%, #4338ca 50%, #a5b4fc 100%)"
+shader: prism
+---
+
+A design system lives in two places at once. There's the Figma board, where you
+can see all of it laid out, and there's the folder of files, where you can only
+ever see one component at a time. I wanted to know what happened if the board
+was the code.
+
+So every frame on the canvas is a real `.tsx` file on disk. You pan around,
+group things, edit one in the built-in editor, and everything using it updates
+while you're still typing. Git still works. Imports still work. An agent editing
+the files gets the same board you're looking at.
+
+The propagation is the part that actually felt different — changing a shared
+value and watching five usages move at the same moment, rather than opening a
+preview afterwards and deciding it looks fine.
+
+The hosted demo cheats. There's no Vite dev server on Vercel, so it transpiles
+in the browser with Sucrase and keeps your edits in memory. Refresh the page and
+they're gone — worth knowing before you type anything real into it.
+
+<ButtonLink href="https://github.com/erikwijnbladh/pane">View on GitHub →</ButtonLink>

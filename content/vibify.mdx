@@ -1,0 +1,21 @@
+---
+title: Vibify
+subtitle: describe a mood, get a playlist
+date: 2026-05-28
+preview: "linear-gradient(160deg, #160f1c 0%, #f0714a 55%, #ffd9a8 100%)"
+shader: dusk
+---
+
+You type something like "driving home at 2am, a bit sad but fine about it", and
+it builds you a real Spotify playlist.
+
+The prompt goes to a model that comes back with a name, a description, some
+seed artists and genres, and target numbers for energy, valence, danceability
+and tempo. Those go to Spotify's search and recommendation endpoints, and what
+comes back becomes a playlist in your account.
+
+Almost all of the quality lives in that middle step. The same prompt with
+slightly different seed artists gives you a completely different playlist, and
+there's no way to tell which one was right except listening to it. I spent
+most of my time there and barely any of it on the interface, which in hindsight
+is the correct ratio and also why the interface looks like that.

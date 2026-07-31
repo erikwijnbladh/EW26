@@ -1,0 +1,23 @@
+---
+title: Stream webhook
+subtitle: a small thing that pokes discord
+date: 2026-07-08
+preview: "linear-gradient(160deg, #0b0814 0%, #9146ff 55%, #e6dcff 100%)"
+shader: relay
+---
+
+Asks Twitch every sixty seconds whether anyone I care about has gone live, and
+posts into a Discord channel when they have — title, game, viewer count,
+thumbnail.
+
+One dependency. It keeps track of which streams it already announced in memory,
+which means it has to stay running, which means it can't go serverless. That
+was on purpose: standing up a database so a hobby bot can remember four
+usernames felt worse than just leaving a process up.
+
+It refreshes its own Twitch token, retries a Discord post if the first one
+fails, and answers on `/` with a bit of JSON so a health check can tell whether
+it's still breathing. That's the entire thing. I like it more than most of the
+bigger ones.
+
+<ButtonLink href="https://github.com/erikwijnbladh/stream-webhook">View on GitHub →</ButtonLink>
