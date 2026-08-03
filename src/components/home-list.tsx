@@ -36,8 +36,13 @@ export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
     <div ref={containerRef} className="relative">
       {dot}
 
+      {/* Full width of the main column, same as the photo and the intro above
+          it. It used to be `sm:w-1/2` so the hover preview could sit in the
+          other half — which made the list the one thing on the page running to
+          a different measure, and squeezed every blurb onto two lines. The
+          preview moved outside the column instead. */}
       <ul
-        className="flex flex-col sm:w-1/2"
+        className="flex flex-col"
         onPointerLeave={(e) => {
           if (e.pointerType === "mouse") release();
         }}
@@ -85,7 +90,10 @@ export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
       </ul>
 
       <div
-        className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl bg-surface shadow-ring transition-all duration-300 ease-out sm:flex ${
+        // Parked in the margin beside the column rather than inside it. Hidden
+        // below xl, where the centred column leaves less than the panel's width
+        // to its right and it would run off the edge.
+        className={`pointer-events-none absolute left-full ml-8 hidden aspect-video w-80 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl bg-surface shadow-ring transition-all duration-300 ease-out xl:flex ${
           active?.media ? "opacity-100" : "opacity-0"
         }`}
         style={{ top: center }}
