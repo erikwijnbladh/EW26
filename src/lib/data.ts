@@ -177,7 +177,7 @@ export type Work = {
   media?: { src: string; type: "image" | "video"; alt: string };
 };
 
-/** Selected work, newest first. Kept short on purpose. */
+/** Projects with something to show. Employment lives on the About page. */
 export const work: Work[] = [
   {
     id: "pane",
@@ -202,18 +202,48 @@ export const work: Work[] = [
     page: true,
     href: "https://github.com/erikwijnbladh/gptdnd",
   },
+];
+
+export type HomeRow = {
+  id: string;
+  title: string;
+  blurb?: string;
+  /** Absent = rendered as plain text rather than a link. */
+  href?: string;
+  external?: boolean;
+  /** Opens a gap above the row, to group what follows. */
+  separated?: boolean;
+  media?: Work["media"];
+};
+
+/**
+ * The home page list, top to bottom: where Erik works, then what he's built,
+ * then the page with the long version.
+ *
+ * Compileit sits at the head as the current role. It starts in September, so
+ * the row says so rather than implying he's there now — KTH is on the About
+ * page with the rest of the history.
+ */
+export const homeRows: HomeRow[] = [
   {
-    id: "brightbid",
-    title: "BrightBid",
-    year: "2022–25",
-    kind: "Product",
-    blurb: "frontend owner through the speqta merger",
+    id: "compileit",
+    title: "compileit",
+    blurb: "shipping world-class product, end to end — from september",
   },
+  ...work.map((item) => ({
+    id: item.id,
+    title: item.title,
+    blurb: item.blurb,
+    href: item.page ? `/${item.id}` : item.href,
+    external: !item.page,
+    media: item.media,
+    separated: item.id === work[0]?.id,
+  })),
   {
-    id: "selfcheck",
-    title: "Selfcheck",
-    year: "2020–22",
-    kind: "Product",
-    blurb: "qr safety inspection, prototyped and tested on site",
+    id: "about",
+    title: "about",
+    blurb: "the longer version — experience, education, contact",
+    href: "/about",
+    separated: true,
   },
 ];

@@ -3,9 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSwoop, DotSpacer } from "@/components/use-swoop";
-import { work, type Work } from "@/lib/data";
+import { homeRows, type HomeRow } from "@/lib/data";
 
-export function HomeList({ items = work }: { items?: Work[] }) {
+/**
+ * The home page list: current role, then projects, then the About page.
+ *
+ * Rows sit flush with the container's left edge — the same edge the nav name
+ * sits on — and the swooping dot hangs outside it, exactly where the nav's dot
+ * hangs. That's what makes the swoop a straight vertical rather than a diagonal
+ * across the gutter.
+ */
+export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
   const { containerRef, dot, rowProps, release, hovered, top } = useSwoop();
 
   const active = hovered ? items.find((item) => item.id === hovered) : null;
@@ -42,26 +50,25 @@ export function HomeList({ items = work }: { items?: Work[] }) {
                 <span className="block text-base text-foreground">
                   {item.title}
                 </span>
-                <span className="block text-sm text-muted">{item.blurb}</span>
+                {item.blurb && (
+                  <span className="block text-sm text-muted">{item.blurb}</span>
+                )}
               </span>
             </>
           );
 
-          const cls = "flex items-start gap-2 py-3";
+          // No gap: the dot spacer is zero-width now, so a gap would push the
+          // text off the nav's vertical for nothing.
+          const cls = "flex items-start py-3";
 
           return (
-            <li key={item.id}>
-              {/* A project with a case page opens it; one without falls back
-                  to its repo; employment rows aren't links at all. */}
-              {item.page ? (
-                <Link href={`/${item.id}`} {...rowProps(item.id)} className={cls}>
-                  {inner}
-                </Link>
-              ) : item.href ? (
+            <li key={item.id} className={item.separated ? "mt-10" : ""}>
+              {item.href ? (
                 <Link
                   href={item.href}
-                  target="_blank"
-                  rel="noreferrer"
+                  {...(item.external
+                    ? { target: "_blank", rel: "noreferrer" }
+                    : {})}
                   {...rowProps(item.id)}
                   className={cls}
                 >

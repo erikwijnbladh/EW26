@@ -12,10 +12,10 @@ import { contacts, experience, education } from "@/lib/data";
 export function AboutLists() {
   const { containerRef, dot, rowProps, release } = useSwoop();
 
-  const row = "flex items-start gap-2 py-3";
+  const row = "flex items-start py-3";
   // Contacts sit flush with no gap between them; the dot's title offset still
   // lands on the first text line (see TITLE_OFFSET).
-  const contactRow = "flex items-start gap-2 py-0";
+  const contactRow = "flex items-start py-0";
 
   return (
     <div
