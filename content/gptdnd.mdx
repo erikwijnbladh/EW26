@@ -1,57 +1,50 @@
 ---
 title: gptdnd
-subtitle: a campaign generator that checks its own work
+subtitle: what happens when you can't judge your own output
 date: 2026-01-20
 ---
 
-I don't know how to play D&D.
+Two things about this project that I should say before anything else.
 
-I've built and rebuilt this thing more times than I can count — it generates
-whole campaigns now, sessions and encounters and stat blocks and maps — and I
-still can't tell you whether any of it is good. I prompt it, I read what comes
-back, and I go: okay, sure.
+I don't know how to play D&D. And I didn't design the system — I ran a deep
+research prompt, told it to build the thing, and shipped what came back. The
+canonical graph, the quality gates, the encounter maths: I chose to keep them,
+I didn't invent them.
 
-For a while that felt like the embarrassing part. I think it's actually the
-interesting part.
+I've rebuilt it more times than I can count and I still can't tell you if the
+output is good. I prompt it, I read what comes back, and I go: okay, sure.
 
-## Not knowing changed what I built
+## That's the actual subject
 
-Making things used to be expensive, and that expense quietly kept you inside
-subjects you understood. Nobody spends six months on something they can't
-judge. That's not true any more, and I'm a fairly clean example of it — I've
-produced a lot of finished-looking material in a game I've never played.
+I keep wanting to write this up as engineering, and every time I do it comes
+out dishonest, because the interesting thing here isn't the pipeline. It's that
+I produced eleven thousand lines of working software for a game I've never
+played, in a domain where I can't evaluate a single decision, and I only
+noticed afterwards that this was strange.
 
-So I couldn't rely on reading the output. I had to make the system tell me
-whether it had done a good job:
+Making things used to be expensive, and that expense quietly kept people inside
+subjects they understood. Nobody spent six months on something they couldn't
+judge. That's gone now, and I'm a clean example of what replaces it — plausible,
+finished-looking output, produced fast, by someone with no way to check it.
 
-- encounters print their arithmetic — thresholds, the multiplier for group
-  size, measured difficulty against target — into the book rather than keeping
-  it internal
-- stat blocks get normalised, with outlier detection on the numbers that
-  actually break a fight
-- a mystery whose conclusion rests on fewer than three clues is reported as a
-  defect
-- safety limits are compiled into every prompt *and* re-checked against the
-  finished text afterwards
-- every run ends with a report I can read without knowing the game
+## The thing I'd defend
 
-That's what I ended up doing instead of having taste in the domain.
+What I did do was decide the output had to prove itself rather than assert
+itself. Encounters print their arithmetic instead of hiding it. A mystery whose
+conclusion rests on fewer than three clues is reported as a defect. Safety
+limits get re-checked against the finished text rather than just asked for in
+the prompt. Every run ends with a report a non-player can read.
 
-## The bit I think generalises
+"This encounter is hard" is a sentence a model writes whether or not it's true.
+"4,200 XP against a 3,800 threshold" is something someone who does know the
+game can disagree with.
 
-"This encounter is hard" is a sentence a model will write whether or not it's
-true. "4,200 XP against a 3,800 threshold, ×1.5 for four creatures" is
-something I can check, or argue with, or hand to someone who does know the
-game.
+I keep running into that shape. At BrightBid it was turning bidding decisions
+into scores a customer could argue with. Same problem, different domain: a
+system making calls you can't see inside, and an interface whose job is to make
+them checkable rather than convincing.
 
-I keep running into versions of this. At BrightBid I spent a lot of time
-turning ad-bidding decisions into scores and reasons a customer could push
-back on, which is the same shape of problem — a system making calls you can't
-see inside, and an interface that has to make them arguable rather than just
-confident.
-
-I hadn't connected the two until I'd built this one.
-
-{/* TODO(erik): the opening two lines are yours verbatim, from describing this
-    to me. The rest is me extending it — worth checking it still sounds like
-    you, especially the BrightBid link at the end. */}
+{/* TODO(erik): this version says out loud that the system was research-generated,
+    which is the honest framing and probably the more interesting piece. Your
+    call whether the page stays at all — nothing here is load-bearing for the
+    site. */}

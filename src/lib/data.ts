@@ -23,6 +23,9 @@ export const profile = {
     "Right now I'm a software developer at KTH Royal Institute of Technology, doing development and design for the CYVAC platform at Cybercampus Sverige, and I join Compileit in September. Before that I spent three years at BrightBid owning the frontend of an AI ad-bidding platform, through and after the Speqta merger — consolidating two production systems into one interface and building an audit tool that made an opaque algorithm legible to the people spending against it.",
     "I went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human, after a bachelor's in Informatics at Örebro.",
     "On the side I build small tools, apps and workflows. With, for and because of AI.",
+    // Erik's own words, from describing why the site is as spare as it is.
+    // Edit freely — the point is that the position is stated somewhere.
+    "I'd rather ship one small thing that's properly made than a lot of things that aren't. This site is deliberately sparse: the craft is meant to be in the interactions rather than the volume — the icons that draw themselves on, the transitions, the widgets that do something real. Restraint as taste.",
   ],
 };
 
