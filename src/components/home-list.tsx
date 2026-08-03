@@ -51,7 +51,13 @@ export function HomeList({ items = work }: { items?: Work[] }) {
 
           return (
             <li key={item.id}>
-              {item.href ? (
+              {/* A project with a case page opens it; one without falls back
+                  to its repo; employment rows aren't links at all. */}
+              {item.page ? (
+                <Link href={`/${item.id}`} {...rowProps(item.id)} className={cls}>
+                  {inner}
+                </Link>
+              ) : item.href ? (
                 <Link
                   href={item.href}
                   target="_blank"

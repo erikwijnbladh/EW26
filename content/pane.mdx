@@ -1,0 +1,57 @@
+---
+title: Pane
+subtitle: an infinite canvas for building react components
+date: 2026-02-10
+---
+
+Pane is a canvas you build React components on. Components stay real `.tsx`
+files on disk, a local Vite server renders each one into its own pane, and
+edits go straight into every pane at once through HMR — no save step, no
+rebuild, no story files.
+
+## The point isn't the canvas
+
+Storybook shows you a component in isolation. That's useful right up to the
+moment you change something shared, because isolation is exactly what hides
+the consequence.
+
+`Toolbar.tsx` in the workspace deliberately exercises five distinct
+`ButtonRoot` cases — icon-only toggles, disabled, loading, danger, primary
+with icon and text. So when you open `Button.tsx` and change one class in the
+`base` string, five real usages across two panes move as you type. Not a
+preview of a button: the button, in the places it's actually used.
+
+That's the thing I wanted to be able to see. A token change has a blast
+radius, and the tools mostly make you go and look for it.
+
+## How it works
+
+Three processes, coordinated by one `npm run dev`:
+
+- an Express server that reads and writes the component files
+- the canvas app on `:3000` — React, Vite, Tailwind, CodeMirror 6
+- the workspace on `:5174`, a plain Vite app that renders any component by URL
+  parameter
+
+Each pane is an iframe pointed at `localhost:5174?component=Name`. Live mode
+writes on every keystroke and lets Vite's HMR do the rest, which is why the
+update lands in every pane simultaneously rather than pane by pane.
+
+Keeping components as ordinary files on disk was the one thing I wasn't
+willing to give up. It means git works, imports work, and coding agents work —
+nothing has to know Pane exists.
+
+## The hosted build is a different animal
+
+There's no dev server behind the deployed demo, so the same UI runs a second
+execution model underneath: the editor posts its in-memory files into each
+preview iframe, Sucrase transpiles them in the browser, and Tailwind's browser
+JIT generates CSS for any class you type. Edits are in-memory only — a refresh
+resets them.
+
+Two ways of running the same thing, and the interface doesn't tell you which
+one you're in.
+
+{/* TODO(erik): the part only you can write — what were you doing right before
+    you decided to build this? What was the specific frustration? That paragraph
+    is worth more than everything above it. */}

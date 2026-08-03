@@ -1,9 +1,12 @@
 /**
- * Facts about Erik, transcribed from his CV. Nothing in this file is invented —
- * if something isn't verifiable from the CV it isn't here.
+ * Facts about Erik, checked against his CV.
  *
- * `intro` and `bio` are deliberately flat and factual. They are placeholders for
- * Erik's own words, not a voice to preserve. Replace them.
+ * `intro` is the home page and carries the voice — first person, personal,
+ * short. `bio` is the About page and is allowed to be formal: it sits above the
+ * experience and education lists and reads as the prose half of a CV.
+ *
+ * Neither is a placeholder any more, but both are still worth rewriting in your
+ * own words — what's here is your earlier draft with the facts corrected.
  */
 export const profile = {
   name: "Erik Wijnbladh",
@@ -11,14 +14,15 @@ export const profile = {
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
   tagline: "Design engineer in Stockholm. I design and build web products.",
-  // TODO(erik): rewrite in your own voice.
+  // The earlier, more personal draft — kept, with "currently at Compileit"
+  // corrected. Compileit starts in September; KTH is the current job.
   intro:
-    "I design and build web products. Currently a software developer at KTH, working on the CYVAC platform at Cybercampus Sverige, and studying an MSc in Human-Computer Interaction at Uppsala.",
-  // TODO(erik): rewrite in your own voice.
+    "I'm a designer and developer based in Stockholm, currently building things at KTH and joining Compileit in September. I both design and build the things I work on, and that blend of tech and design is the part I enjoy. Away from the screen I listen to heavy music, ski, play games and skateboard.",
   bio: [
-    "I design and build web products, based in Stockholm.",
-    "I'm a software developer at KTH Royal Institute of Technology, doing development and design for the CYVAC platform at Cybercampus Sverige. Before that I spent three years at BrightBid as the primary frontend owner, through and after the Speqta merger.",
-    "I'm studying an MSc in Human-Computer Interaction at Uppsala University, after a bachelor's in Informatics at Örebro.",
+    "I'm a designer and developer based in Stockholm. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
+    "Right now I'm a software developer at KTH Royal Institute of Technology, doing development and design for the CYVAC platform at Cybercampus Sverige, and I join Compileit in September. Before that I spent three years at BrightBid owning the frontend of an AI ad-bidding platform, through and after the Speqta merger — consolidating two production systems into one interface and building an audit tool that made an opaque algorithm legible to the people spending against it.",
+    "I went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human, after a bachelor's in Informatics at Örebro.",
+    "On the side I build small tools, apps and workflows. With, for and because of AI.",
   ],
 };
 
@@ -154,6 +158,9 @@ export type Work = {
    * scanning as a list.
    */
   blurb: string;
+  /** Set when the project has a case page at `/{id}`. */
+  page?: boolean;
+  /** Repository or live link, shown on the case page. */
   href?: string;
   /**
    * The artifact shown when the row is opened. A still or a looping clip in
@@ -175,6 +182,7 @@ export const work: Work[] = [
     year: "2026",
     kind: "Tool",
     blurb: "change one class, five usages move as you type",
+    page: true,
     href: "https://github.com/erikwijnbladh/pane",
     media: {
       src: "/work/pane",
@@ -188,6 +196,7 @@ export const work: Work[] = [
     year: "2026",
     kind: "System",
     blurb: "a campaign generator that checks its own work",
+    page: true,
     href: "https://github.com/erikwijnbladh/gptdnd",
   },
   {
