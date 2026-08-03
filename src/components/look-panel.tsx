@@ -26,7 +26,13 @@ import { duration, ease } from "@/lib/motion";
  * you already know.
  */
 export function LookPanel({ onClose }: { onClose: () => void }) {
+  const still = useReducedMotion();
   const [values, setValues] = useState<Record<string, number>>(DEFAULTS);
+
+  // Which row is being dragged, so its description can be shown somewhere that
+  // isn't between the rows. Lives up here rather than in the row precisely
+  // because the row must not change height.
+  const [active, setActive] = useState<Token | null>(null);
 
   // Derived rather than stored — "has anything moved" is a question `values`
   // already answers, and a second state for it is a second thing to keep true.
@@ -109,14 +115,37 @@ export function LookPanel({ onClose }: { onClose: () => void }) {
             token={token}
             value={values[token.key]}
             onChange={(next) => set(token, next)}
+            onScrub={setActive}
           />
         ))}
       </div>
 
-      <p className="mt-4 text-xs font-light text-muted">
-        Drag a number. Every one of these is a variable the whole site is built
-        on — nothing here is a preview.
-      </p>
+      {/*
+        A fixed slot, not a line that appears.
+
+        The description used to expand inside the row being dragged, which
+        pushed every row below it down — including, once the pointer had
+        travelled, the number under the cursor. Reserving the space and
+        swapping the text means nothing in the card ever changes height while
+        a drag is in flight. `min-h` is in `em` so it tracks the `text` token
+        along with the copy it holds.
+      */}
+      <div className="mt-4 min-h-[3em] text-xs font-light text-muted">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.p
+            key={active?.key ?? "idle"}
+            initial={still ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: duration.fast, ease }}
+            className="m-0"
+          >
+            {active
+              ? active.affects
+              : "Drag any number. These are the variables the whole site is built on."}
+          </motion.p>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
@@ -134,10 +163,13 @@ function Row({
   token,
   value,
   onChange,
+  onScrub,
 }: {
   token: Token;
   value: number;
   onChange: (next: number) => void;
+  /** Reports which token is under the finger, so the card can describe it. */
+  onScrub: (token: Token | null) => void;
 }) {
   const still = useReducedMotion();
   const scrub = useRef<{ id: number; x: number; from: number } | null>(null);
@@ -148,6 +180,7 @@ function Row({
     event.currentTarget.setPointerCapture(event.pointerId);
     scrub.current = { id: event.pointerId, x: event.clientX, from: value };
     setLive(true);
+    onScrub(token);
   }
 
   function onPointerMove(event: React.PointerEvent<HTMLSpanElement>) {
@@ -164,6 +197,7 @@ function Row({
     event.currentTarget.releasePointerCapture(event.pointerId);
     scrub.current = null;
     setLive(false);
+    onScrub(null);
   }
 
   function onKeyDown(event: React.KeyboardEvent<HTMLSpanElement>) {
@@ -191,6 +225,8 @@ function Row({
 
   const progress = (value - token.min) / (token.max - token.min);
 
+  // Fixed row height, no exceptions: anything that grows here moves the number
+  // out from under the pointer mid-drag.
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
@@ -208,6 +244,8 @@ function Row({
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
           onKeyDown={onKeyDown}
+          onFocus={() => onScrub(token)}
+          onBlur={() => onScrub(null)}
           className="touch-none select-none rounded-md px-1.5 py-0.5 font-mono text-xs tabular-nums text-foreground transition-colors duration-150 hover:bg-surface"
           style={{ cursor: "ew-resize" }}
         >
@@ -229,19 +267,6 @@ function Row({
         />
       </div>
 
-      <AnimatePresence>
-        {live && (
-          <motion.p
-            initial={still ? false : { opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={still ? { opacity: 0 } : { opacity: 0, height: 0 }}
-            transition={{ duration: duration.fast, ease }}
-            className="overflow-hidden text-xs font-light text-muted"
-          >
-            <span className="mt-1 block">{token.affects}</span>
-          </motion.p>
-        )}
-      </AnimatePresence>
     </div>
   );
 }
