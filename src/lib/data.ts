@@ -5,8 +5,9 @@
  * short. `bio` is the About page and is allowed to be formal: it sits above the
  * experience and education lists and reads as the prose half of a CV.
  *
- * Neither is a placeholder any more, but both are still worth rewriting in your
- * own words — what's here is your earlier draft with the facts corrected.
+ * ⚠️ Written for publication in or after September 2026, when Compileit starts.
+ * Everything here speaks about that role in the present tense, which is true on
+ * the intended publish date and not before it. Don't deploy early.
  */
 export const profile = {
   name: "Erik Wijnbladh",
@@ -14,13 +15,11 @@ export const profile = {
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
   tagline: "Design engineer in Stockholm. I design and build web products.",
-  // The earlier, more personal draft — kept, with "currently at Compileit"
-  // corrected. Compileit starts in September; KTH is the current job.
   intro:
-    "I'm a designer and developer based in Stockholm, currently building things at KTH and joining Compileit in September. I both design and build the things I work on, and that blend of tech and design is the part I enjoy. Away from the screen I listen to heavy music, ski, play games and skateboard.",
+    "I'm a designer and developer based in Stockholm, currently building things at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy. Away from the screen I listen to heavy music, ski, play games and skateboard.",
   bio: [
     "I'm a designer and developer based in Stockholm. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
-    "Right now I'm a software developer at KTH Royal Institute of Technology, doing development and design for the CYVAC platform at Cybercampus Sverige, and I join Compileit in September. Before that I spent three years at BrightBid owning the frontend of an AI ad-bidding platform, through and after the Speqta merger — consolidating two production systems into one interface and building an audit tool that made an opaque algorithm legible to the people spending against it.",
+    "Right now I'm a fullstack developer at Compileit, building web and app products for clients. Before that I was at KTH Royal Institute of Technology on the CYVAC platform at Cybercampus Sverige, and spent three years at BrightBid owning the frontend of an AI ad-bidding platform through and after the Speqta merger — consolidating two production systems into one interface and building an audit tool that made an opaque algorithm legible to the people spending against it.",
     "I went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human, after a bachelor's in Informatics at Örebro.",
     "On the side I build small tools, apps and workflows. With, for and because of AI.",
     // Erik's own words, from describing why the site is as spare as it is.
@@ -92,16 +91,17 @@ export type Experience = {
   href?: string;
 };
 
-/**
- * Experience, from the CV.
- *
- * Compileit starts September 2026 and is deliberately absent until then — the
- * old copy claimed it as the current role while KTH has been current since
- * June. Add the row when the job actually begins.
- */
+/** Experience, from the CV. Compileit leads it from September 2026. */
 export const experience: Experience[] = [
   {
     year: "2026 —",
+    org: "Compileit",
+    role: "Fullstack developer",
+    summary: "web and app products for clients, end to end",
+    href: "https://compileit.com/",
+  },
+  {
+    year: "2026",
     org: "KTH Royal Institute of Technology",
     role: "Software developer",
     summary: "dev and design for the CYVAC platform at Cybercampus Sverige",
@@ -226,15 +226,14 @@ export type HomeRow = {
  * The home page list, top to bottom: where Erik works, then what he's built,
  * then the page with the long version.
  *
- * Compileit sits at the head as the current role. It starts in September, so
- * the row says so rather than implying he's there now — KTH is on the About
- * page with the rest of the history.
+ * Compileit sits at the head as the current role — see the publish-date note
+ * at the top of this file. The rest of the history lives on the About page.
  */
 export const homeRows: HomeRow[] = [
   {
     id: "compileit",
     title: "compileit",
-    blurb: "shipping world-class product, end to end — from september",
+    blurb: "shipping world-class product, end to end.",
   },
   ...work.map((item) => ({
     id: item.id,
