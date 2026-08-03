@@ -237,7 +237,6 @@ export const homeRows: HomeRow[] = [
     href: item.page ? `/${item.id}` : item.href,
     external: !item.page,
     media: item.media,
-    separated: item.id === work[0]?.id,
   })),
   {
     id: "about",
