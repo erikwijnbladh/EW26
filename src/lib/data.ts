@@ -26,12 +26,12 @@ export const profile = {
 export const contacts = [
   { label: "hello@erikwijnbladh.com", href: "mailto:hello@erikwijnbladh.com" },
   {
-    label: "linkedin",
+    label: "LinkedIn",
     href: "https://www.linkedin.com/in/erik-wijnbladh",
     external: true,
   },
   {
-    label: "github",
+    label: "GitHub",
     href: "https://github.com/erikwijnbladh",
     external: true,
   },
@@ -95,23 +95,23 @@ export type Experience = {
 export const experience: Experience[] = [
   {
     year: "2026 —",
-    org: "kth royal institute of technology",
-    role: "software developer",
+    org: "KTH Royal Institute of Technology",
+    role: "Software developer",
     summary: "dev and design for the CYVAC platform at Cybercampus Sverige",
     href: "https://www.kth.se/",
   },
   {
     year: "2022 – 2025",
-    org: "brightbid",
-    role: "front-end developer",
+    org: "BrightBid",
+    role: "Front-end developer",
     summary:
       "primary frontend owner through and after the Speqta merger; consolidated two production systems into one interface",
     href: "https://brightbid.com/",
   },
   {
     year: "2020 – 2022",
-    org: "selfcheck",
-    role: "front-end developer & ktp project manager",
+    org: "Selfcheck",
+    role: "Front-end developer & KTP project manager",
     summary:
       "QR-based safety inspection system for hotels and commercial properties",
     href: "https://selfcheck.se/",
@@ -130,30 +130,78 @@ export type Education = {
 export const education: Education[] = [
   {
     year: "2025 – 2027",
-    org: "uppsala university",
-    degree: "msc human-computer interaction",
-    note: "in progress",
+    org: "Uppsala University",
+    degree: "MSc Human–Computer Interaction",
+    note: "In progress",
     href: "https://www.uu.se/en/study/programme/masters-programme-human-computer-interaction",
   },
   {
     year: "2016 – 2019",
-    org: "örebro university",
-    degree: "bsc informatics",
+    org: "Örebro University",
+    degree: "BSc Informatics",
     href: "https://www.oru.se/",
   },
 ];
 
-/** An entry in the home page list. `href` absent = not clickable (e.g. work). */
-export type HomeListItem = {
+export type Work = {
   id: string;
   title: string;
-  subtitle?: string;
-  /** Hover preview gradient. Omit to show no thumbnail on hover. */
-  preview?: string;
-  /** Named PostShader scene; takes precedence over `preview`. */
-  shader?: string;
+  year: string;
+  kind: string;
+  /** One sentence. What it is and why it exists — not a feature list. */
+  blurb: string;
   href?: string;
-  external?: boolean;
-  /** Adds a divider/spacing above this row in the list. */
-  separated?: boolean;
+  /**
+   * The artifact shown when the row is opened. A still or a looping clip in
+   * `/public/work/`, which is the only place colour enters the page. Videos
+   * give `src` without an extension — both `.webm` and `.mp4` are offered.
+   *
+   * Until a real one is dropped in, the row opens onto an empty frame rather
+   * than a stand-in gradient: a placeholder that looks like art would make the
+   * colour rule read as decoration, which is exactly what it isn't.
+   */
+  media?: { src: string; type: "image" | "video"; alt: string };
 };
+
+/** Selected work, newest first. Kept short on purpose. */
+export const work: Work[] = [
+  {
+    id: "pane",
+    title: "Pane",
+    year: "2026",
+    kind: "Tool",
+    blurb:
+      "An infinite canvas for building React components. Change one class on ButtonRoot and five real usages move as you type — blast radius, not isolation.",
+    href: "https://github.com/erikwijnbladh/pane",
+    media: {
+      src: "/work/pane",
+      type: "video",
+      alt: "Editing ButtonRoot in Pane while five buttons across two panes update at once",
+    },
+  },
+  {
+    id: "gptdnd",
+    title: "gptdnd",
+    year: "2026",
+    kind: "System",
+    blurb:
+      "A campaign generator that checks its own work. Encounters print their arithmetic and a critic flags conclusions resting on fewer than three clues — rigour standing in for taste I don't have in the domain.",
+    href: "https://github.com/erikwijnbladh/gptdnd",
+  },
+  {
+    id: "brightbid",
+    title: "BrightBid",
+    year: "2022–25",
+    kind: "Product",
+    blurb:
+      "Frontend owner through the Speqta merger. Two production systems consolidated into one interface, plus an audit tool that made an ad algorithm legible to the people spending against it.",
+  },
+  {
+    id: "selfcheck",
+    title: "Selfcheck",
+    year: "2020–22",
+    kind: "Product",
+    blurb:
+      "QR safety inspection for hotels and commercial property. Prototyped in Figma, tested on site with pilot clients, then built — Excel checklists turned into flows that survive a gloved hand.",
+  },
+];
