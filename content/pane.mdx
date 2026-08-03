@@ -4,49 +4,54 @@ subtitle: an infinite canvas for building react components
 date: 2026-02-10
 ---
 
-Every component tool I've used is built on isolation. You open a component, you
-see that component, you judge that component. It's a clean idea and it answers
-the wrong question.
+Like a lot of people, most of my design work happens in agents now. I don't
+keep a Figma system in sync any more, and I don't sketch states I'm going to
+rebuild in code an hour later. It's faster, and mostly it's better.
 
-Because the thing you actually need to know, the moment you touch anything
-shared, is: what did that just do to everything else? A design system isn't a
-collection of components. It's the set of relationships between them — and
-isolation is structurally incapable of showing you a relationship. The answer
-only exists in the aggregate.
+The place it stops working, for me, is anything shared.
 
-So you change a padding value on the one button every other button is built
-from, and then you go looking. Open the toolbar. Open the form. Open the empty
-state. Somewhere in there is the place it broke, and you'll find it in review,
-or you won't.
+If I change a padding value on the button every other button is built from, I
+can't see what that did. I can look at the button. I can't look at the toolbar
+and the form and the empty state at the same time, which is where the change
+actually lands. So I go and check them one by one, or I don't, and I find out
+in review.
 
-## Latency decides what you're willing to try
+Tools like Storybook show a component on its own. That's the right idea for
+looking at one thing and the wrong idea for looking at a system, because a
+system is mostly relationships and a relationship doesn't fit in one frame.
 
-The second thing is quieter and I think it matters more.
+## What I built
 
-A feedback loop with a delay in it doesn't just slow you down. It changes what
-you attempt. If seeing a change costs a save, a rebuild and a navigation, you
-stop making speculative ones — you only make the changes you already believe
-in. Which means the exploratory half of design, the part where you try the
-version you're pretty sure is wrong, quietly stops happening. You converge on
-your first instinct and call it a decision.
+A canvas that puts the components on screen together, running for real, and
+updates all of them as I type.
 
-Pane is an attempt to make that cost approximately zero, so that trying the
-wrong thing is free and you find out something.
+The workspace has a `Toolbar` that deliberately uses five different cases of
+the same root button — icon-only, disabled, loading, danger, primary with text.
+So editing one class in the button's base string moves five real usages across
+two panes at once. Not a preview: those buttons, in the places they're used.
 
-## The tool should be disposable
+That's the whole thing, honestly. Everything else is plumbing.
 
-Components stay ordinary `.tsx` files on disk. Not exported, not synced, not
-living in a proprietary format with a bridge back to reality.
+## Two decisions I'd keep
 
-This is the part I'd defend hardest, and it isn't a technical preference. A
-tool that owns your work makes leaving expensive, and a tool you can't leave
-stops having to earn its place. Files on disk means git works, imports work,
-your editor works and coding agents work without knowing Pane exists — and if
-Pane turns out to be a bad idea, you delete it and lose nothing.
+**Components stay ordinary `.tsx` files on disk.** Nothing is exported or
+synced, and there's no format to convert out of. Git works, imports work, my
+editor works, and agents work without knowing Pane exists. If I stop using it
+tomorrow I lose nothing, which is roughly the bar I want a tool like this to
+clear.
 
-The measure of a tool like this is how little it costs to abandon.
+**No save step.** I noticed that when checking a change costs a save and a
+rebuild, I stop making the ones I'm not already fairly sure about — and those
+are the ones that teach you something. Making it free changed what I was
+willing to try, more than it changed how fast I worked.
 
-{/* TODO(erik): what were you doing the moment before you decided to build it?
-    The specific change, the specific thing that broke. One concrete story is
-    worth more than everything above it — the argument is only credible if it
-    came from somewhere. */}
+## What it doesn't do
+
+It's a local thing for one person. There's no collaboration, no versioning
+beyond git, and the hosted demo runs a cut-down in-browser build with no dev
+server behind it, so edits there don't persist.
+
+{/* TODO(erik): the actual story. Which component, which change, how long you
+    spent finding what it broke. Luka's post works because every claim is
+    something he did last Tuesday — one concrete afternoon here would do more
+    than all the reasoning above it. */}

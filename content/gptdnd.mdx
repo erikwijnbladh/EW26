@@ -6,58 +6,52 @@ date: 2026-01-20
 
 I don't know how to play D&D.
 
-That's the interesting part, and for a while I thought it was the embarrassing
-part. I built a system that generates complete campaigns — sessions, encounters,
-stat blocks, maps, handouts — and I am not qualified to tell you whether any of
-it is good. I prompt it, I read the output, and I go: okay, sure.
+I've built and rebuilt this thing more times than I can count — it generates
+whole campaigns now, sessions and encounters and stat blocks and maps — and I
+still can't tell you whether any of it is good. I prompt it, I read what comes
+back, and I go: okay, sure.
 
-## The new problem is evaluation, not generation
+For a while that felt like the embarrassing part. I think it's actually the
+interesting part.
 
-Making things used to be the expensive step, and that expense did quiet work
-for us: it kept you inside domains you understood, because nobody spends six
-months on something they can't judge. Generation is cheap now, and the guardrail
-went with it. You can produce a finished-looking artefact in a field you know
-nothing about, in an afternoon.
+## Not knowing changed what I built
 
-Which leaves you holding something confident and plausible with no way to tell
-if it's right. That isn't a D&D problem. It's the problem with every interface
-sitting on top of a model.
+Making things used to be expensive, and that expense quietly kept you inside
+subjects you understood. Nobody spends six months on something they can't
+judge. That's not true any more, and I'm a fairly clean example of it — I've
+produced a lot of finished-looking material in a game I've never played.
 
-## If you can't judge it, build the judge
+So I couldn't rely on reading the output. I had to make the system tell me
+whether it had done a good job:
 
-The only answer I found was to stop relying on my reading of the output and
-make the system prove itself instead. So a run doesn't just produce a campaign,
-it produces evidence:
-
-- encounters carry their arithmetic — thresholds, the multiplier ladder,
-  measured against target difficulty — printed into the book, not hidden
-- stat blocks are normalised, with outlier detection on the numbers that
+- encounters print their arithmetic — thresholds, the multiplier for group
+  size, measured difficulty against target — into the book rather than keeping
+  it internal
+- stat blocks get normalised, with outlier detection on the numbers that
   actually break a fight
 - a mystery whose conclusion rests on fewer than three clues is reported as a
   defect
-- safety limits are compiled into every prompt *and* re-scanned against the
-  finished text, because asking politely isn't a guarantee
-- every run ends with a quality report I can read without knowing the game
+- safety limits are compiled into every prompt *and* re-checked against the
+  finished text afterwards
+- every run ends with a report I can read without knowing the game
 
-None of that exists because it's rigorous engineering. It exists because I have
-no taste here, and encoded judgement is what you use when you don't have the
-real thing.
+That's what I ended up doing instead of having taste in the domain.
 
-## Show the arithmetic, not the reasoning
+## The bit I think generalises
 
-The habit I'd keep from this: an opaque system earns trust by being auditable,
-not by being articulate.
+"This encounter is hard" is a sentence a model will write whether or not it's
+true. "4,200 XP against a 3,800 threshold, ×1.5 for four creatures" is
+something I can check, or argue with, or hand to someone who does know the
+game.
 
-"This encounter is hard" is a claim, and a fluent model will produce it whether
-or not it's true. "4,200 XP against a 3,800 threshold, ×1.5 for four creatures"
-is something you can disagree with. The second one respects you; the first one
-just sounds confident.
+I keep running into versions of this. At BrightBid I spent a lot of time
+turning ad-bidding decisions into scores and reasons a customer could push
+back on, which is the same shape of problem — a system making calls you can't
+see inside, and an interface that has to make them arguable rather than just
+confident.
 
-That's the same thing I was doing at BrightBid, turning ad-bidding decisions
-into scores someone could argue with. I didn't notice it was the same problem
-until I'd built this.
+I hadn't connected the two until I'd built this one.
 
-{/* TODO(erik): is this the framing you want? It came out of you describing the
-    project offhand and I think it's the best thing you've said about your own
-    work — but it's a fairly bold claim to make in public, so it should be
-    yours on purpose. */}
+{/* TODO(erik): the opening two lines are yours verbatim, from describing this
+    to me. The rest is me extending it — worth checking it still sounds like
+    you, especially the BrightBid link at the end. */}
