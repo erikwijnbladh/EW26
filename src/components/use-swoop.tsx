@@ -137,11 +137,7 @@ export function useSwoop() {
   const dot = (
     <div
       aria-hidden
-      // Sits where the nav dot sits: hanging off the left of the text column
-      // rather than inside it. The nav puts its dot at `right-full mr-1`
-      // (`mr-2` from sm), which is 16px then 20px left of the name — so the
-      // swoop travels a true vertical instead of a diagonal.
-      className={`pointer-events-none absolute -left-4 z-10 h-3 w-3 sm:-left-5 ${
+      className={`pointer-events-none absolute left-0 z-10 h-3 w-3 ${
         traveling ? "opacity-100" : "opacity-0"
       } ${
         armed
@@ -157,15 +153,7 @@ export function useSwoop() {
   return { containerRef, dot, rowProps, release, hovered, top };
 }
 
-/**
- * Vertical anchor for the dot. Zero width on purpose.
- *
- * It used to be 12px wide and reserve room inline, which indented every row by
- * the dot plus its gap — so the list started 20px right of the nav name and the
- * swoop ran diagonally. The dot now hangs outside the column like the nav's
- * does, and this only exists so `hover()` has an element whose `offsetTop`
- * lands on the row's first text line.
- */
+/** Leading spacer that reserves room for the dot and aligns the title. */
 export function DotSpacer() {
-  return <span className="mt-1.5 h-3 w-0 shrink-0" />;
+  return <span className="mt-1.5 h-3 w-3 shrink-0" />;
 }

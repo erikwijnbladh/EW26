@@ -8,10 +8,8 @@ import { homeRows, type HomeRow } from "@/lib/data";
 /**
  * The home page list: current role, then projects, then the About page.
  *
- * Rows sit flush with the container's left edge — the same edge the nav name
- * sits on — and the swooping dot hangs outside it, exactly where the nav's dot
- * hangs. That's what makes the swoop a straight vertical rather than a diagonal
- * across the gutter.
+ * Layout is main's: rows indented by the dot spacer, the list running to half
+ * the column and the hover preview filling the other half.
  */
 export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
   const { containerRef, dot, rowProps, release, hovered, top } = useSwoop();
@@ -36,13 +34,8 @@ export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
     <div ref={containerRef} className="relative">
       {dot}
 
-      {/* Full width of the main column, same as the photo and the intro above
-          it. It used to be `sm:w-1/2` so the hover preview could sit in the
-          other half — which made the list the one thing on the page running to
-          a different measure, and squeezed every blurb onto two lines. The
-          preview moved outside the column instead. */}
       <ul
-        className="flex flex-col"
+        className="flex flex-col sm:w-1/2"
         onPointerLeave={(e) => {
           if (e.pointerType === "mouse") release();
         }}
@@ -62,9 +55,7 @@ export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
             </>
           );
 
-          // No gap: the dot spacer is zero-width now, so a gap would push the
-          // text off the nav's vertical for nothing.
-          const cls = "flex items-start py-3";
+          const cls = "flex items-start gap-2 py-3";
 
           return (
             <li key={item.id} className={item.separated ? "mt-10" : ""}>
@@ -90,10 +81,7 @@ export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
       </ul>
 
       <div
-        // Parked in the margin beside the column rather than inside it. Hidden
-        // below xl, where the centred column leaves less than the panel's width
-        // to its right and it would run off the edge.
-        className={`pointer-events-none absolute left-full ml-8 hidden aspect-video w-80 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl bg-surface shadow-ring transition-all duration-300 ease-out xl:flex ${
+        className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl bg-surface shadow-ring transition-all duration-300 ease-out sm:flex ${
           active?.media ? "opacity-100" : "opacity-0"
         }`}
         style={{ top: center }}

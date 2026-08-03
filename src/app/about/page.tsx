@@ -11,18 +11,15 @@ export const metadata: Metadata = {
 
 export default function About() {
   return (
-    // Same container as the nav and the home page. It used to be `max-w-3xl`
-    // with its own left inset, which put the text on a different vertical to
-    // the name in the header — three pages, three grids.
-    <div className="mx-auto w-full max-w-md px-5 pb-40 pt-4 sm:pb-44">
-      <section className="pb-12">
+    <div className="mx-auto w-full max-w-3xl px-5 pb-40 sm:px-8 sm:pb-44">
+      <section className="pb-12 pt-4 sm:pl-5">
         <Reveal>
           <div className="relative aspect-[7/6] w-full max-w-xl overflow-hidden rounded-2xl shadow-ring">
             <Image
               src="/images/pfp.png"
               alt={profile.name}
               fill
-              sizes="(max-width: 640px) 90vw, 448px"
+              sizes="(max-width: 640px) 90vw, 576px"
               quality={90}
               className="object-cover object-top grayscale"
               priority
@@ -33,10 +30,10 @@ export default function About() {
 
       {/* One group so all paragraphs reveal together with a small stagger —
           per-paragraph whileInView made the last one wait until scrolled to. */}
-      <RevealGroup className="flex flex-col gap-5" stagger={0.05}>
+      <RevealGroup className="flex flex-col gap-5 pl-5" stagger={0.05}>
         {profile.bio.map((paragraph, i) => (
           <RevealItem key={i}>
-            <p className="text-base leading-relaxed text-muted">
+            <p className="max-w-xl text-base leading-relaxed text-muted">
               {paragraph}
             </p>
           </RevealItem>
