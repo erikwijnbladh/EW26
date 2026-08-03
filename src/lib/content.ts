@@ -33,8 +33,10 @@ function readPost(slug: string): Post {
   };
 }
 
-/** All posts, newest first. */
+/** All posts, newest first. Empty until there are real ones to publish. */
 export function getAllPosts(): Post[] {
+  if (!fs.existsSync(CONTENT_DIR)) return [];
+
   return fs
     .readdirSync(CONTENT_DIR)
     .filter((f) => f.endsWith(".mdx"))

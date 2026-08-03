@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { profile } from "@/lib/data";
 import { Nav } from "@/components/nav";
 import { Dock } from "@/components/dock";
 import { ScrollReset } from "@/components/scroll-reset";
@@ -25,9 +26,8 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://erikwijnbladh.com"),
-  title: "erik wijnbladh — designer & developer",
-  description:
-    "Designer and developer in Stockholm, currently at Compileit. I design and build web products.",
+  title: "erik wijnbladh — design engineer",
+  description: profile.tagline,
 };
 
 export const viewport: Viewport = {

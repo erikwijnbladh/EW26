@@ -1,15 +1,24 @@
+/**
+ * Facts about Erik, transcribed from his CV. Nothing in this file is invented —
+ * if something isn't verifiable from the CV it isn't here.
+ *
+ * `intro` and `bio` are deliberately flat and factual. They are placeholders for
+ * Erik's own words, not a voice to preserve. Replace them.
+ */
 export const profile = {
   name: "Erik Wijnbladh",
-  role: "Tech & Design",
+  role: "Design engineer",
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
-  tagline: "I design and build web products. Living in the blend of tech and design.",
+  tagline: "Design engineer in Stockholm. I design and build web products.",
+  // TODO(erik): rewrite in your own voice.
   intro:
-    "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy. Away from the screen I listen to heavy music, ski, play games and skateboard.",
+    "I design and build web products. Currently a software developer at KTH, working on the CYVAC platform at Cybercampus Sverige, and studying an MSc in Human-Computer Interaction at Uppsala.",
+  // TODO(erik): rewrite in your own voice.
   bio: [
-    "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
-    "Prior I've spent my time owning the frontend of an AI ad-bidding platform at BrightBid, then went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human.",
-    "On the side I build small tools, apps and workflows. With, for and because of AI.",
+    "I design and build web products, based in Stockholm.",
+    "I'm a software developer at KTH Royal Institute of Technology, doing development and design for the CYVAC platform at Cybercampus Sverige. Before that I spent three years at BrightBid as the primary frontend owner, through and after the Speqta merger.",
+    "I'm studying an MSc in Human-Computer Interaction at Uppsala University, after a bachelor's in Informatics at Örebro.",
   ],
 };
 
@@ -67,36 +76,44 @@ export const nowPlaying: Track[] = [
 ];
 
 export type Experience = {
+  /** Displayed span. Open-ended roles end in "—". */
   year: string;
   org: string;
   role: string;
+  /** One line on what the work actually was. */
+  summary?: string;
   href?: string;
 };
 
-/** Curated experience for the About page — start year, company, role. */
+/**
+ * Experience, from the CV.
+ *
+ * Compileit is deliberately absent: the CV headline says "soon @Compileit" and
+ * lists KTH as the current role, so the site claiming Compileit as current
+ * contradicted it. Add it back once it starts.
+ */
 export const experience: Experience[] = [
   {
-    year: "2026",
-    org: "compileit",
-    role: "fullstack",
-    href: "https://compileit.com/",
-  },
-  {
-    year: "2026",
-    org: "kth",
-    role: "frontend",
+    year: "2026 —",
+    org: "kth royal institute of technology",
+    role: "software developer",
+    summary: "dev and design for the CYVAC platform at Cybercampus Sverige",
     href: "https://www.kth.se/",
   },
   {
-    year: "2022",
+    year: "2022 – 2025",
     org: "brightbid",
-    role: "frontend",
+    role: "front-end developer",
+    summary:
+      "primary frontend owner through and after the Speqta merger; consolidated two production systems into one interface",
     href: "https://brightbid.com/",
   },
   {
-    year: "2020",
+    year: "2020 – 2022",
     org: "selfcheck",
-    role: "frontend",
+    role: "front-end developer & ktp project manager",
+    summary:
+      "QR-based safety inspection system for hotels and commercial properties",
     href: "https://selfcheck.se/",
   },
 ];
@@ -109,14 +126,20 @@ export type Education = {
   href?: string;
 };
 
-/** Education for the About page. */
+/** Education, from the CV. */
 export const education: Education[] = [
   {
-    year: "2025",
+    year: "2025 – 2027",
     org: "uppsala university",
     degree: "msc human-computer interaction",
-    note: "highest grade",
+    note: "in progress",
     href: "https://www.uu.se/en/study/programme/masters-programme-human-computer-interaction",
+  },
+  {
+    year: "2016 – 2019",
+    org: "örebro university",
+    degree: "bsc informatics",
+    href: "https://www.oru.se/",
   },
 ];
 
@@ -133,12 +156,4 @@ export type HomeListItem = {
   external?: boolean;
   /** Adds a divider/spacing above this row in the list. */
   separated?: boolean;
-};
-
-/** The current role row, rendered as plain text with no link. */
-export const currentRoleItem: HomeListItem = {
-  id: "current-role",
-  title: "compileit",
-  subtitle: "shipping world-class product, end to end.",
-  // Preview is the compileit logo on black — see previewLogos in logos.tsx.
 };

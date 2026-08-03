@@ -62,13 +62,18 @@ export function AboutLists() {
             className={row}
           >
             <DotSpacer />
-            <span className="grid grid-cols-[3rem_1fr] gap-6">
-              <span className="text-base text-muted">{item.year}</span>
+            <span className="grid grid-cols-[7rem_1fr] gap-6">
+              <span className="whitespace-nowrap text-base text-muted">{item.year}</span>
               <span>
                 <span className="block text-base text-muted">{item.org}</span>
                 <span className="block text-base text-foreground">
                   {item.role}
                 </span>
+                {item.summary && (
+                  <span className="mt-1 block max-w-md text-sm leading-relaxed text-muted">
+                    {item.summary}
+                  </span>
+                )}
               </span>
             </span>
           </a>
@@ -91,8 +96,8 @@ export function AboutLists() {
             className={row}
           >
             <DotSpacer />
-            <span className="grid grid-cols-[3rem_1fr] gap-6">
-              <span className="text-base text-muted">{item.year}</span>
+            <span className="grid grid-cols-[7rem_1fr] gap-6">
+              <span className="whitespace-nowrap text-base text-muted">{item.year}</span>
               <span>
                 <span className="block text-base text-muted">{item.org}</span>
                 <span className="block text-base text-foreground">

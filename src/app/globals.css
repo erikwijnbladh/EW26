@@ -35,13 +35,16 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  user-select: none;
 }
 
-/* Posts are for reading — let people select and copy the text. */
-article {
-  -webkit-user-select: text;
-  user-select: text;
+/* Only chrome resists selection — the dock and the nav, where a drag across a
+   control shouldn't leave a blue smear. Everything that is words stays
+   selectable: an email address nobody can copy is a contact page that doesn't
+   work. */
+.dock,
+header {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Clickable elements get the pointer cursor. */
