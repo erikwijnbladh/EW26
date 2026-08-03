@@ -161,6 +161,8 @@ export type Work = {
    * scanning as a list.
    */
   blurb: string;
+  /** Named PostShader scene, drawn in the hover preview. */
+  shader?: string;
   /** Set when the project has a case page at `/{id}`. */
   page?: boolean;
   /** Repository or live link, shown on the case page. */
@@ -185,6 +187,7 @@ export const work: Work[] = [
     year: "2026",
     kind: "Tool",
     blurb: "change one class, five usages move as you type",
+    shader: "prism",
     page: true,
     href: "https://github.com/erikwijnbladh/pane",
     media: {
@@ -199,6 +202,7 @@ export const work: Work[] = [
     year: "2026",
     kind: "System",
     blurb: "a campaign generator that checks its own work",
+    shader: "ember",
     page: true,
     href: "https://github.com/erikwijnbladh/gptdnd",
   },
@@ -213,6 +217,8 @@ export type HomeRow = {
   external?: boolean;
   /** Opens a gap above the row, to group what follows. */
   separated?: boolean;
+  /** Named PostShader scene for the hover preview. */
+  shader?: string;
   media?: Work["media"];
 };
 
@@ -236,6 +242,7 @@ export const homeRows: HomeRow[] = [
     blurb: item.blurb,
     href: item.page ? `/${item.id}` : item.href,
     external: !item.page,
+    shader: item.shader,
     media: item.media,
   })),
   {

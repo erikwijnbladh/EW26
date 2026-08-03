@@ -3,6 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useSwoop, DotSpacer } from "@/components/use-swoop";
+import { previewLogos } from "@/components/logos";
+import { PostShader, hasPostShader } from "@/components/post-shader";
 import { homeRows, type HomeRow } from "@/lib/data";
 
 /**
@@ -15,6 +17,10 @@ export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
   const { containerRef, dot, rowProps, release, hovered, top } = useSwoop();
 
   const active = hovered ? items.find((item) => item.id === hovered) : null;
+  const ActiveLogo = active ? previewLogos[active.id] : undefined;
+  // A recording wins over a generated scene: it's the real artifact.
+  const media = active?.media;
+  const shows = Boolean(media || active?.shader || ActiveLogo);
 
   // The preview panel parks at the last hovered row and only fades out — it
   // must NOT follow the blob back up to its origin, which would make the
@@ -81,15 +87,18 @@ export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
       </ul>
 
       <div
-        className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl bg-surface shadow-ring transition-all duration-300 ease-out sm:flex ${
-          active?.media ? "opacity-100" : "opacity-0"
+        className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out sm:flex ${
+          shows ? "opacity-100" : "opacity-0"
         }`}
-        style={{ top: center }}
+        style={{
+          top: center,
+          backgroundColor: ActiveLogo ? "#000000" : undefined,
+        }}
       >
-        {active?.media?.type === "video" ? (
+        {media?.type === "video" ? (
           <video
-            key={active.id}
-            aria-label={active.media.alt}
+            key={active?.id}
+            aria-label={media.alt}
             autoPlay
             muted
             loop
@@ -97,16 +106,20 @@ export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
             preload="metadata"
             className="h-full w-full object-cover"
           >
-            <source src={`${active.media.src}.webm`} type="video/webm" />
-            <source src={`${active.media.src}.mp4`} type="video/mp4" />
+            <source src={`${media.src}.webm`} type="video/webm" />
+            <source src={`${media.src}.mp4`} type="video/mp4" />
           </video>
-        ) : active?.media?.type === "image" ? (
+        ) : media?.type === "image" ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={active.media.src}
-            alt={active.media.alt}
+            src={media.src}
+            alt={media.alt}
             className="h-full w-full object-cover"
           />
+        ) : ActiveLogo ? (
+          <ActiveLogo className="h-1/3 w-auto" />
+        ) : hasPostShader(active?.shader) ? (
+          <PostShader name={active?.shader} className="h-full w-full" />
         ) : null}
       </div>
     </div>
