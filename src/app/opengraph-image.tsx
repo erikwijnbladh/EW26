@@ -57,7 +57,7 @@ export default async function OpengraphImage() {
         </div>
 
         <div style={{ display: "flex", fontSize: 24, color: "#6b6a64" }}>
-          I design and build web products.
+          Tech first, with design never far off.
         </div>
       </div>
     ),

@@ -14,14 +14,35 @@ export const profile = {
   role: "Design engineer",
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
-  tagline: "Design engineer in Stockholm. I design and build web products.",
+  tagline:
+    "Developer in Stockholm, currently at Compileit. Tech first, with design never far off.",
+  /*
+   * Tech first, design close behind — not "designer and developer", which
+   * overclaimed a job Erik isn't doing at Compileit yet. The middle sentence is
+   * the actual range: interaction detail at one end, parallel agents at the
+   * other. Being all over the place is the interesting part, so it says so
+   * rather than tidying it away.
+   *
+   * Two other drafts, if this one reads wrong:
+   *
+   *   "I build things for the web and care more than is reasonable about how
+   *    they feel. Currently at Compileit. Some weeks that's the easing on a
+   *    single hover state, other weeks it's ten agents running at once."
+   *
+   *   "Developer in Stockholm, currently at Compileit, building stuff people
+   *    love. I came up through design and never quite left it — the work
+   *    ranges from interaction detail to whole systems that generate
+   *    themselves."
+   */
   intro:
-    "I'm a designer and developer based in Stockholm, currently building things at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy. Away from the screen I listen to heavy music, ski, play games and skateboard.",
+    "I'm a developer based in Stockholm, currently at Compileit building stuff people love. Tech first, but design is never far off — I'll spend a day on the timing of one hover state and the next wiring up a pile of agents to see what happens. Away from the screen I listen to heavy music, ski, play games and skateboard.",
   bio: [
-    "I'm a designer and developer based in Stockholm. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
+    "I'm a developer based in Stockholm, and design is the half of the work I keep coming back to. Tech first — but I've never much liked handing the interface to someone else.",
     "Right now I'm a fullstack developer at Compileit, building web and app products for clients. Before that I was at KTH Royal Institute of Technology on the CYVAC platform at Cybercampus Sverige, and spent three years at BrightBid owning the frontend of an AI ad-bidding platform through and after the Speqta merger — consolidating two production systems into one interface and building an audit tool that made an opaque algorithm legible to the people spending against it.",
-    "I went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human, after a bachelor's in Informatics at Örebro.",
-    "On the side I build small tools, apps and workflows. With, for and because of AI.",
+    // Honest whether or not the MSc gets finished: a year of it happened, and
+    // it's a real part of why the work spans what it spans.
+    "I've spent a year on an MSc in Human-Computer Interaction at Uppsala, after a bachelor's in Informatics at Örebro.",
+    "The range is wide on purpose. At one end it's interaction detail — easing, timing, the state a component forgets to have. At the other it's systems that mostly run themselves: Pane came out of wanting to see a change land everywhere at once, gptdnd out of wondering what a dozen agents would do with a brief.",
     // Erik's own words, from describing why the site is as spare as it is.
     // Edit freely — the point is that the position is stated somewhere.
     "I'd rather ship one small thing that's properly made than a lot of things that aren't. This site is deliberately sparse: the craft is meant to be in the interactions rather than the volume — the icons that draw themselves on, the transitions, the widgets that do something real. Restraint as taste.",
