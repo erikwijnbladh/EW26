@@ -4,61 +4,60 @@ subtitle: a campaign generator that checks its own work
 date: 2026-01-20
 ---
 
-gptdnd turns a brief into a complete 5e-compatible campaign and renders it to a
-printable book, a Foundry VTT module, a Roll20 bundle and Universal VTT maps.
-Everything is generated into one canonical graph with strict schemas and
-deterministic seeds; every output format is a renderer over that graph.
+I don't know how to play D&D.
 
-The premise it's built on is that the product is an adventure production
-system, not a chatbot.
+That's the interesting part, and for a while I thought it was the embarrassing
+part. I built a system that generates complete campaigns — sessions, encounters,
+stat blocks, maps, handouts — and I am not qualified to tell you whether any of
+it is good. I prompt it, I read the output, and I go: okay, sure.
 
-## I don't know how to play D&D
+## The new problem is evaluation, not generation
 
-That's not a disclaimer, it's the reason the thing is shaped the way it is.
+Making things used to be the expensive step, and that expense did quiet work
+for us: it kept you inside domains you understood, because nobody spends six
+months on something they can't judge. Generation is cheap now, and the guardrail
+went with it. You can produce a finished-looking artefact in a field you know
+nothing about, in an afternoon.
 
-I couldn't tell you whether a generated campaign is any good. I have no taste
-in the domain — no instinct for whether an encounter is balanced, whether a
-mystery is solvable, whether a session is paced right. So instead of trusting
-my own judgement of the output, I had to encode what "good" means and make the
-system prove it every run:
+Which leaves you holding something confident and plausible with no way to tell
+if it's right. That isn't a D&D problem. It's the problem with every interface
+sitting on top of a model.
 
-- encounters carry their arithmetic — XP thresholds, the multiplier ladder,
-  action-economy warnings, measured versus target difficulty — printed into
-  the book rather than hidden
-- stat blocks are CR-normalised, with XP and proficiency derived rather than
-  guessed, and outlier detection on AC, HP and damage
-- a continuity critic reads the finished text back
-- conclusions supported by fewer than three clues are flagged as a defect
-- safety lines and veils are compiled into every prompt *and* re-scanned
-  against the finished text
-- every run ends with a quality report
+## If you can't judge it, build the judge
 
-None of that would exist if I could just read the output and know.
+The only answer I found was to stop relying on my reading of the output and
+make the system prove itself instead. So a run doesn't just produce a campaign,
+it produces evidence:
 
-## Making a guess show its work
+- encounters carry their arithmetic — thresholds, the multiplier ladder,
+  measured against target difficulty — printed into the book, not hidden
+- stat blocks are normalised, with outlier detection on the numbers that
+  actually break a fight
+- a mystery whose conclusion rests on fewer than three clues is reported as a
+  defect
+- safety limits are compiled into every prompt *and* re-scanned against the
+  finished text, because asking politely isn't a guarantee
+- every run ends with a quality report I can read without knowing the game
 
-The interesting problem was never generation. It was that the thing produces
-confident output I have no way to verify, which is the same problem as any
-interface sitting on top of a model.
+None of that exists because it's rigorous engineering. It exists because I have
+no taste here, and encoded judgement is what you use when you don't have the
+real thing.
 
-The answer I keep arriving at is that the system has to show its work — not
-its reasoning, its arithmetic. "This encounter is hard" is a claim. "This
-encounter is 4,200 XP against a 3,800 threshold, ×1.5 for four creatures" is
-something you can argue with.
+## Show the arithmetic, not the reasoning
 
-## What it costs
+The habit I'd keep from this: an opaque system earns trust by being auditable,
+not by being articulate.
 
-Cost control is built in rather than bolted on. The style guide, rights
-posture, safety policy and brief live in `instructions` and are identical
-across every call in a run, so prompt caching serves them; only the per-node
-payload changes. Cached and uncached input are metered separately and the
-running total is emitted as a pipeline event — `41 model calls, $2.18, cache
-hit rate 63%`. `store` defaults to false, because campaign text is user
-content.
+"This encounter is hard" is a claim, and a fluent model will produce it whether
+or not it's true. "4,200 XP against a 3,800 threshold, ×1.5 for four creatures"
+is something you can disagree with. The second one respects you; the first one
+just sounds confident.
 
-It also runs with no API key at all: `pnpm demo` produces the full export
-bundle from deterministic fixtures.
+That's the same thing I was doing at BrightBid, turning ad-bidding decisions
+into scores someone could argue with. I didn't notice it was the same problem
+until I'd built this.
 
-{/* TODO(erik): worth saying in your own words — is the "I built rigour for a
-    domain I can't judge" framing the one you want? It's the most interesting
-    thing about this project and it came out of you describing it offhand. */}
+{/* TODO(erik): is this the framing you want? It came out of you describing the
+    project offhand and I think it's the best thing you've said about your own
+    work — but it's a fairly bold claim to make in public, so it should be
+    yours on purpose. */}

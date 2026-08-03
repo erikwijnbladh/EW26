@@ -4,54 +4,49 @@ subtitle: an infinite canvas for building react components
 date: 2026-02-10
 ---
 
-Pane is a canvas you build React components on. Components stay real `.tsx`
-files on disk, a local Vite server renders each one into its own pane, and
-edits go straight into every pane at once through HMR — no save step, no
-rebuild, no story files.
+Every component tool I've used is built on isolation. You open a component, you
+see that component, you judge that component. It's a clean idea and it answers
+the wrong question.
 
-## The point isn't the canvas
+Because the thing you actually need to know, the moment you touch anything
+shared, is: what did that just do to everything else? A design system isn't a
+collection of components. It's the set of relationships between them — and
+isolation is structurally incapable of showing you a relationship. The answer
+only exists in the aggregate.
 
-Storybook shows you a component in isolation. That's useful right up to the
-moment you change something shared, because isolation is exactly what hides
-the consequence.
+So you change a padding value on the one button every other button is built
+from, and then you go looking. Open the toolbar. Open the form. Open the empty
+state. Somewhere in there is the place it broke, and you'll find it in review,
+or you won't.
 
-`Toolbar.tsx` in the workspace deliberately exercises five distinct
-`ButtonRoot` cases — icon-only toggles, disabled, loading, danger, primary
-with icon and text. So when you open `Button.tsx` and change one class in the
-`base` string, five real usages across two panes move as you type. Not a
-preview of a button: the button, in the places it's actually used.
+## Latency decides what you're willing to try
 
-That's the thing I wanted to be able to see. A token change has a blast
-radius, and the tools mostly make you go and look for it.
+The second thing is quieter and I think it matters more.
 
-## How it works
+A feedback loop with a delay in it doesn't just slow you down. It changes what
+you attempt. If seeing a change costs a save, a rebuild and a navigation, you
+stop making speculative ones — you only make the changes you already believe
+in. Which means the exploratory half of design, the part where you try the
+version you're pretty sure is wrong, quietly stops happening. You converge on
+your first instinct and call it a decision.
 
-Three processes, coordinated by one `npm run dev`:
+Pane is an attempt to make that cost approximately zero, so that trying the
+wrong thing is free and you find out something.
 
-- an Express server that reads and writes the component files
-- the canvas app on `:3000` — React, Vite, Tailwind, CodeMirror 6
-- the workspace on `:5174`, a plain Vite app that renders any component by URL
-  parameter
+## The tool should be disposable
 
-Each pane is an iframe pointed at `localhost:5174?component=Name`. Live mode
-writes on every keystroke and lets Vite's HMR do the rest, which is why the
-update lands in every pane simultaneously rather than pane by pane.
+Components stay ordinary `.tsx` files on disk. Not exported, not synced, not
+living in a proprietary format with a bridge back to reality.
 
-Keeping components as ordinary files on disk was the one thing I wasn't
-willing to give up. It means git works, imports work, and coding agents work —
-nothing has to know Pane exists.
+This is the part I'd defend hardest, and it isn't a technical preference. A
+tool that owns your work makes leaving expensive, and a tool you can't leave
+stops having to earn its place. Files on disk means git works, imports work,
+your editor works and coding agents work without knowing Pane exists — and if
+Pane turns out to be a bad idea, you delete it and lose nothing.
 
-## The hosted build is a different animal
+The measure of a tool like this is how little it costs to abandon.
 
-There's no dev server behind the deployed demo, so the same UI runs a second
-execution model underneath: the editor posts its in-memory files into each
-preview iframe, Sucrase transpiles them in the browser, and Tailwind's browser
-JIT generates CSS for any class you type. Edits are in-memory only — a refresh
-resets them.
-
-Two ways of running the same thing, and the interface doesn't tell you which
-one you're in.
-
-{/* TODO(erik): the part only you can write — what were you doing right before
-    you decided to build this? What was the specific frustration? That paragraph
-    is worth more than everything above it. */}
+{/* TODO(erik): what were you doing the moment before you decided to build it?
+    The specific change, the specific thing that broke. One concrete story is
+    worth more than everything above it — the argument is only credible if it
+    came from somewhere. */}
