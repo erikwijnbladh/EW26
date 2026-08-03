@@ -88,9 +88,9 @@ export type Experience = {
 /**
  * Experience, from the CV.
  *
- * Compileit is deliberately absent: the CV headline says "soon @Compileit" and
- * lists KTH as the current role, so the site claiming Compileit as current
- * contradicted it. Add it back once it starts.
+ * Compileit starts September 2026 and is deliberately absent until then — the
+ * old copy claimed it as the current role while KTH has been current since
+ * June. Add the row when the job actually begins.
  */
 export const experience: Experience[] = [
   {
