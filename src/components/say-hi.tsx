@@ -1,41 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { profile } from "@/lib/data";
+import { duration, ease, springSnappy } from "@/lib/motion";
+
+const fieldClass =
+  "w-full rounded-xl border border-line bg-surface/50 px-3.5 py-2.5 text-[15px] text-foreground outline-none transition-colors duration-150 placeholder:text-muted/70 focus:border-foreground/25 focus:bg-surface/80";
 
 /** Where the form is in the send: nothing yet, in flight, failed, or done. */
 type Status = "idle" | "sending" | "error" | "sent";
 
+/** What the button says in each state. */
 const LABEL: Record<Status, string> = {
-  idle: "Send",
+  idle: "Send it",
   sending: "Sending…",
   error: "Try again",
   sent: "Sent — thanks",
 };
 
-const field =
-  "w-full border border-[color:var(--line)] bg-transparent px-[var(--s2)] py-[var(--s2)] text-[length:var(--t-body)] text-[color:var(--ink)] outline-none transition-colors placeholder:text-[color:var(--dim)] focus:border-[color:var(--ink)]";
-
 /**
- * Posts to `/api/contact`, which sends the message through Resend. Kept from
- * the previous site because the route and the Resend wiring behind it work —
- * only the surface is redrawn, in the same tokens as everything else.
+ * The contents of the "what's up" card. Rendered inside the dock surface once
+ * it has expanded.
  *
- * Holds itself open on failure: the message exists nowhere but these fields,
- * and dismissing the form over a failed send would throw away something
- * somebody just wrote.
+ * Posts to `/api/contact`, which sends the message through Resend. It used to
+ * build a `mailto:` and hand off to the visitor's mail client, which only works
+ * for people who have one configured — on a shared desktop it opens something
+ * nobody has signed into, and the message is lost without ever looking lost.
+ *
+ * The card holds itself open on failure. Closing on submit was fine when
+ * handing off to a mail client, because the draft survived in the client; now
+ * the message only exists in these fields, and dismissing the card over a failed
+ * send would throw away something someone just wrote.
  */
-export function SayHi() {
+export function SayHiForm({ onClose }: { onClose: () => void }) {
+  const still = useReducedMotion();
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [message, setMessage] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const firstFieldRef = useRef<HTMLInputElement>(null);
 
-  const busy = status === "sending" || status === "sent";
+  useEffect(() => {
+    // Focus once the surface has finished expanding, so the browser doesn't
+    // scroll or repaint mid-morph.
+    const focusTimer = setTimeout(() => firstFieldRef.current?.focus(), 320);
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (busy) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKeyDown);
 
-    const data = new FormData(event.currentTarget);
+    return () => {
+      clearTimeout(focusTimer);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [onClose]);
+
+  // Only once the send has actually succeeded, and long enough to read the
+  // confirmation. Cleared on unmount so a card closed by hand mid-wait doesn't
+  // leave a timer pointed at a gone component.
+  useEffect(() => {
+    if (status !== "sent") return;
+    const timer = setTimeout(onClose, 1600);
+    return () => clearTimeout(timer);
+  }, [status, onClose]);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    // A second press while the first is in flight would send twice.
+    if (status === "sending" || status === "sent") return;
+
     setStatus("sending");
     setError(null);
 
@@ -43,17 +79,16 @@ export function SayHi() {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          name: data.get("name"),
-          email: data.get("email"),
-          message: data.get("message"),
-        }),
+        body: JSON.stringify({ name, email, message }),
       });
 
       if (!res.ok) {
+        // The route sends a reason worth showing; a proxy failing in front of
+        // it won't, so there's a fallback that doesn't say "undefined".
         const body = (await res.json().catch(() => null)) as {
           error?: string;
         } | null;
+
         setError(body?.error ?? "Couldn't send that. Try again in a moment.");
         setStatus("error");
         return;
@@ -61,80 +96,118 @@ export function SayHi() {
 
       setStatus("sent");
     } catch {
+      // Offline, DNS, a connection cut mid-request.
       setError("Couldn't reach the server. Check your connection.");
       setStatus("error");
     }
   }
 
+  const busy = status === "sending" || status === "sent";
+
   return (
-    <form
-      onSubmit={onSubmit}
-      className="stack"
-      style={{ gap: "var(--s2)", maxWidth: "26rem", borderRadius: "var(--radius)" }}
-    >
-      <p className="label" style={{ margin: 0 }}>
-        Or say something
-      </p>
+    <div className="w-[min(22rem,calc(100vw-4rem))] select-text p-4">
+      <h2 className="text-[26px] font-medium leading-tight tracking-[-0.02em] text-foreground">
+        What&rsquo;s up?
+      </h2>
 
-      <div className="flex flex-col gap-[var(--s2)] sm:flex-row">
-        <input
-          name="name"
-          placeholder="Name"
-          aria-label="Your name"
-          autoComplete="name"
-          maxLength={100}
-          disabled={busy}
-          className={field}
-          style={{ borderRadius: "var(--radius)" }}
-        />
-        <input
-          name="email"
-          type="email"
+      <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-2.5">
+        <div className="flex flex-col gap-2.5 sm:flex-row">
+          <input
+            ref={firstFieldRef}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            aria-label="Your name"
+            autoComplete="name"
+            maxLength={100}
+            disabled={busy}
+            className={fieldClass}
+          />
+          <input
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            type="email"
+            required
+            placeholder="Your email"
+            // Required now that the reply goes to this address rather than
+            // being composed in the visitor's own client — without it there is
+            // no way to answer.
+            aria-label="Your email (required)"
+            autoComplete="email"
+            maxLength={200}
+            disabled={busy}
+            className={fieldClass}
+          />
+        </div>
+
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
           required
-          placeholder="Email"
-          aria-label="Your email (required)"
-          autoComplete="email"
-          maxLength={200}
+          rows={3}
+          placeholder="hey erik, i have a stupid idea and a budget"
+          aria-label="Message"
+          maxLength={5000}
           disabled={busy}
-          className={field}
-          style={{ borderRadius: "var(--radius)" }}
+          className={`${fieldClass} resize-none`}
         />
-      </div>
 
-      <textarea
-        name="message"
-        required
-        rows={3}
-        placeholder="What's up?"
-        aria-label="Message"
-        maxLength={5000}
-        disabled={busy}
-        className={`${field} resize-none`}
-        style={{ borderRadius: "var(--radius)" }}
-      />
+        <motion.button
+          type="submit"
+          whileHover={still || busy ? undefined : { scale: 1.01 }}
+          whileTap={still || busy ? undefined : { scale: 0.985 }}
+          transition={springSnappy}
+          className="mt-1 overflow-hidden rounded-xl bg-foreground px-4 py-3 text-[15px] font-medium text-background transition-opacity duration-150 hover:opacity-90 disabled:opacity-70"
+          disabled={busy}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={status}
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: duration.fast, ease }}
+              className="block"
+            >
+              {LABEL[status]}
+            </motion.span>
+          </AnimatePresence>
+        </motion.button>
+      </form>
 
-      <button
-        type="submit"
-        disabled={busy}
-        className="border border-[color:var(--ink)] bg-[color:var(--ink)] px-[var(--s3)] py-[var(--s2)] text-[color:var(--paper)] transition-opacity hover:opacity-85 disabled:opacity-60"
-        style={{ borderRadius: "var(--radius)" }}
-      >
-        {LABEL[status]}
-      </button>
-
-      {status === "error" && error && (
-        <p role="alert" className="mono m-0" style={{ lineHeight: 1.5 }}>
-          {error} Or email{" "}
-          <a
-            href={`mailto:${profile.email}`}
-            className="underline underline-offset-2"
-            style={{ color: "var(--ink)" }}
+      {/*
+        `role="alert"` so it's announced rather than silently appearing, since
+        the button's label change is easy to miss and the reason for it lives
+        down here.
+      */}
+      <AnimatePresence>
+        {status === "error" && error && (
+          <motion.p
+            role="alert"
+            initial={still ? false : { opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={still ? { opacity: 0 } : { opacity: 0, height: 0 }}
+            transition={{ duration: duration.fast, ease }}
+            className="overflow-hidden text-xs font-light text-foreground/80"
           >
-            {profile.email}
-          </a>{" "}
-          directly.
-        </p>
-      )}
-    </form>
+            <span className="mt-2.5 block">
+              {error} Or email{" "}
+              <a
+                href={`mailto:${profile.email}`}
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                {profile.email}
+              </a>{" "}
+              directly.
+            </span>
+          </motion.p>
+        )}
+      </AnimatePresence>
+
+      <p className="mt-4 text-xs font-light text-muted">
+        No newsletter, no funnel, no &ldquo;quick sync&rdquo;. Just me, on the
+        other end.
+      </p>
+    </div>
   );
 }

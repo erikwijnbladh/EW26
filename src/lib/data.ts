@@ -148,7 +148,11 @@ export type Work = {
   title: string;
   year: string;
   kind: string;
-  /** One sentence. What it is and why it exists — not a feature list. */
+  /**
+   * One short line. This renders as a row subtitle in a half-width column, so
+   * anything past about eight words wraps into a paragraph and the list stops
+   * scanning as a list.
+   */
   blurb: string;
   href?: string;
   /**
@@ -170,8 +174,7 @@ export const work: Work[] = [
     title: "Pane",
     year: "2026",
     kind: "Tool",
-    blurb:
-      "An infinite canvas for building React components. Change one class on ButtonRoot and five real usages move as you type — blast radius, not isolation.",
+    blurb: "change one class, five usages move as you type",
     href: "https://github.com/erikwijnbladh/pane",
     media: {
       src: "/work/pane",
@@ -184,8 +187,7 @@ export const work: Work[] = [
     title: "gptdnd",
     year: "2026",
     kind: "System",
-    blurb:
-      "A campaign generator that checks its own work. Encounters print their arithmetic and a critic flags conclusions resting on fewer than three clues — rigour standing in for taste I don't have in the domain.",
+    blurb: "a campaign generator that checks its own work",
     href: "https://github.com/erikwijnbladh/gptdnd",
   },
   {
@@ -193,15 +195,13 @@ export const work: Work[] = [
     title: "BrightBid",
     year: "2022–25",
     kind: "Product",
-    blurb:
-      "Frontend owner through the Speqta merger. Two production systems consolidated into one interface, plus an audit tool that made an ad algorithm legible to the people spending against it.",
+    blurb: "frontend owner through the speqta merger",
   },
   {
     id: "selfcheck",
     title: "Selfcheck",
     year: "2020–22",
     kind: "Product",
-    blurb:
-      "QR safety inspection for hotels and commercial property. Prototyped in Figma, tested on site with pilot clients, then built — Excel checklists turned into flows that survive a gloved hand.",
+    blurb: "qr safety inspection, prototyped and tested on site",
   },
 ];
