@@ -248,7 +248,6 @@ export const homeRows: HomeRow[] = [
   {
     id: "about",
     title: "about",
-    blurb: "the longer version — experience, education, contact",
     href: "/about",
     separated: true,
   },
