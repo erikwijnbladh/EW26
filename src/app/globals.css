@@ -1,12 +1,8 @@
 @import "tailwindcss";
 
-/* ─────────────────────────────────────────────────────────────────────────
-   The seven knobs behind the cog in the dock (see `src/lib/tokens.ts`).
-   Defaults are duplicated here on purpose: they render before any JavaScript
-   runs, so the first paint is already right and the panel only takes over.
-   These values reproduce the original palette exactly at their defaults —
-   nothing about the site looks different until someone moves something.
-   ───────────────────────────────────────────────────────────────────────── */
+/* The static foundations of the site: geometry, density and the warm stone
+   palette. They stay as custom properties so utilities and hand-written CSS
+   resolve through the same source of truth. */
 :root {
   --radius: 16px;
   --space: 1;
@@ -48,11 +44,11 @@
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-instrument-serif);
 
-  /* Tailwind's own scales, rebuilt on the tokens. This is the whole trick:
-     every `mt-12`, `rounded-2xl` and `text-base` already written in the
-     components resolves through these, so the cog moves the entire site
-     without a single class being touched. `inline` matters — it emits the
-     calc into the utility rather than freezing a value at build time. */
+  /* Tailwind's own scales, rebuilt on the tokens. This keeps every
+     `mt-12`, `rounded-2xl` and `text-base` already written in the
+     components on the same geometry and type ramp. `inline` matters — it
+     emits the calc into the utility rather than freezing a value at build
+     time. */
   --spacing: calc(0.25rem * var(--space));
   --radius-sm: calc(var(--radius) * 0.25);
   --radius-md: calc(var(--radius) * 0.375);

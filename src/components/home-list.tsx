@@ -87,10 +87,9 @@ export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
       </ul>
 
       <div
-        // Beside the column, not inside it — the column is centred now and
-        // there's no half to give up. Hidden below xl, where the margin is
-        // narrower than the panel.
-        className={`pointer-events-none absolute left-full ml-8 hidden aspect-video w-72 -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out xl:flex ${
+        // The preview begins after the shared rail, so it can grow without covering
+        // any home-page content. Its width is capped by the remaining viewport space.
+        className={`pointer-events-none absolute left-full ml-8 hidden aspect-video w-[min(32rem,calc(50vw-20rem))] -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out xl:flex ${
           shows ? "opacity-100" : "opacity-0"
         }`}
         style={{

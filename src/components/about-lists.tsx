@@ -50,7 +50,7 @@ export function AboutLists() {
       <div className="mt-16">
         <div className={row}>
           <DotSpacer />
-          <span className="text-base text-foreground">experience</span>
+          <span className="text-base text-foreground">Experience</span>
         </div>
         {experience.map((item) => (
           <a
@@ -84,7 +84,7 @@ export function AboutLists() {
       <div className="mt-16">
         <div className={row}>
           <DotSpacer />
-          <span className="text-base text-foreground">education</span>
+          <span className="text-base text-foreground">Education</span>
         </div>
         {education.map((item) => (
           <a

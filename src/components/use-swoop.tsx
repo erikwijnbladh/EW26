@@ -70,8 +70,12 @@ export function useSwoop() {
     () => () => {
       if (returnTimer.current) clearTimeout(returnTimer.current);
       if (settleTimer.current) clearTimeout(settleTimer.current);
+      // A route change can remove the list before its pathname effect runs.
+      // Hand the indicator back to the persistent nav as the list unmounts so
+      // the nav dot never stays hidden after following a row link.
+      setTraveling(false);
     },
-    [],
+    [setTraveling],
   );
 
   function hover(el: HTMLElement, id: string) {

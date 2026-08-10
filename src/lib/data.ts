@@ -1,9 +1,8 @@
 /**
  * Facts about Erik, checked against his CV.
  *
- * `intro` is the home page and carries the voice — first person, personal,
- * short. `bio` is the About page and is allowed to be formal: it sits above the
- * experience and education lists and reads as the prose half of a CV.
+ * `intro` is the short version on the home page. `bio` is the About page: still
+ * personal, but with enough detail to make the experience list mean something.
  *
  * ⚠️ Written for publication in or after September 2026, when Compileit starts.
  * Everything here speaks about that role in the present tense, which is true on
@@ -14,38 +13,15 @@ export const profile = {
   role: "Design engineer",
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
-  tagline:
-    "Developer in Stockholm, currently at Compileit. Tech first, with design never far off.",
-  /*
-   * Tech first, design close behind — not "designer and developer", which
-   * overclaimed a job Erik isn't doing at Compileit yet. The middle sentence is
-   * the actual range: interaction detail at one end, parallel agents at the
-   * other. Being all over the place is the interesting part, so it says so
-   * rather than tidying it away.
-   *
-   * Two other drafts, if this one reads wrong:
-   *
-   *   "I build things for the web and care more than is reasonable about how
-   *    they feel. Currently at Compileit. Some weeks that's the easing on a
-   *    single hover state, other weeks it's ten agents running at once."
-   *
-   *   "Developer in Stockholm, currently at Compileit, building stuff people
-   *    love. I came up through design and never quite left it — the work
-   *    ranges from interaction detail to whole systems that generate
-   *    themselves."
-   */
+  tagline: "Currently building products people love to use at Compileit.",
   intro:
-    "I'm a developer based in Stockholm, currently at Compileit building stuff people love. Tech first, but design is never far off — I'll spend a day on the timing of one hover state and the next wiring up a pile of agents to see what happens. Away from the screen I listen to heavy music, ski, play games and skateboard.",
+    "I build digital products and care a lot about the parts people actually use. How they look, move and feel.",
   bio: [
-    "I'm a developer based in Stockholm, and design is the half of the work I keep coming back to. Tech first — but I've never much liked handing the interface to someone else.",
-    "Right now I'm a fullstack developer at Compileit, building web and app products for clients. Before that I was at KTH Royal Institute of Technology on the CYVAC platform at Cybercampus Sverige, and spent three years at BrightBid owning the frontend of an AI ad-bidding platform through and after the Speqta merger — consolidating two production systems into one interface and building an audit tool that made an opaque algorithm legible to the people spending against it.",
-    // Honest whether or not the MSc gets finished: a year of it happened, and
-    // it's a real part of why the work spans what it spans.
-    "I've spent a year on an MSc in Human-Computer Interaction at Uppsala, after a bachelor's in Informatics at Örebro.",
-    "The range is wide on purpose. At one end it's interaction detail — easing, timing, the state a component forgets to have. At the other it's systems that mostly run themselves: Pane came out of wanting to see a change land everywhere at once, gptdnd out of wondering what a dozen agents would do with a brief.",
-    // Erik's own words, from describing why the site is as spare as it is.
-    // Edit freely — the point is that the position is stated somewhere.
-    "I'd rather ship one small thing that's properly made than a lot of things that aren't. This site is deliberately sparse: the craft is meant to be in the interactions rather than the volume — the icons that draw themselves on, the transitions, the widgets that do something real. Restraint as taste.",
+    "I'm a fullstack developer at Compileit in Stockholm, building web and app products for clients. I started out in frontend and never really stopped caring about the design side of it. I like figuring out how something should work and then building it.",
+    "Before Compileit I worked on CYVAC at KTH and spent three years at BrightBid. I owned a lot of the frontend through the Speqta merger, helped turn two products into one and built tools that made the AI bidding easier for customers to understand.",
+    "I studied Informatics at Örebro and later Human Computer Interaction at Uppsala. Most of what I care about sits somewhere between those two.",
+    "Outside work I build small tools and experiments, usually with AI and usually because I want to see what happens. Pane and gptdnd are two of them.",
+    "When I'm not at a screen I listen to heavy music, ski, play games and skateboard.",
   ],
 };
 
@@ -118,14 +94,14 @@ export const experience: Experience[] = [
     year: "2026 —",
     org: "Compileit",
     role: "Fullstack developer",
-    summary: "web and app products for clients, end to end",
+    summary: "Web and app products for clients, end to end.",
     href: "https://compileit.com/",
   },
   {
     year: "2026",
     org: "KTH Royal Institute of Technology",
     role: "Software developer",
-    summary: "dev and design for the CYVAC platform at Cybercampus Sverige",
+    summary: "Development and design for the CYVAC platform at Cybercampus Sverige.",
     href: "https://www.kth.se/",
   },
   {
@@ -133,7 +109,7 @@ export const experience: Experience[] = [
     org: "BrightBid",
     role: "Front-end developer",
     summary:
-      "primary frontend owner through and after the Speqta merger; consolidated two production systems into one interface",
+      "Primary frontend owner through and after the Speqta merger. Consolidated two production systems into one interface.",
     href: "https://brightbid.com/",
   },
   {
@@ -141,7 +117,7 @@ export const experience: Experience[] = [
     org: "Selfcheck",
     role: "Front-end developer & KTP project manager",
     summary:
-      "QR-based safety inspection system for hotels and commercial properties",
+      "QR-based safety inspection system for hotels and commercial properties.",
     href: "https://selfcheck.se/",
   },
 ];
@@ -207,7 +183,7 @@ export const work: Work[] = [
     title: "Pane",
     year: "2026",
     kind: "Tool",
-    blurb: "change one class, five usages move as you type",
+    blurb: "Change one class, five usages move as you type.",
     shader: "prism",
     page: true,
     href: "https://github.com/erikwijnbladh/pane",
@@ -222,7 +198,7 @@ export const work: Work[] = [
     title: "gptdnd",
     year: "2026",
     kind: "System",
-    blurb: "a campaign generator that checks its own work",
+    blurb: "A campaign generator that checks its own work.",
     shader: "ember",
     page: true,
     href: "https://github.com/erikwijnbladh/gptdnd",
@@ -253,8 +229,8 @@ export type HomeRow = {
 export const homeRows: HomeRow[] = [
   {
     id: "compileit",
-    title: "compileit",
-    blurb: "shipping world-class product, end to end.",
+    title: "Compileit",
+    blurb: "Building products people love and businesses grow with.",
   },
   ...work.map((item) => ({
     id: item.id,
@@ -267,7 +243,7 @@ export const homeRows: HomeRow[] = [
   })),
   {
     id: "about",
-    title: "about",
+    title: "About",
     href: "/about",
     separated: true,
   },

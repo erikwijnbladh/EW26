@@ -1,12 +1,11 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
 import { profile, contacts } from "@/lib/data";
-import { ease, easeInOut, springSnappy } from "@/lib/motion";
+import { ease, easeInOut } from "@/lib/motion";
 import { ExpandableTabs } from "@/components/ui/be-ui-expandable-tabs";
 import { SayHiForm } from "@/components/say-hi";
-import { LookPanel } from "@/components/look-panel";
 
 const stroke = {
   fill: "none",
@@ -88,36 +87,6 @@ function CopyIcon({ copied }: { copied: boolean }) {
   );
 }
 
-/**
- * A real cog: six trapezoidal teeth on a root circle, plus the hub. Six rather
- * than eight because at 16px with a 1.5 stroke, eight teeth close up into a
- * blur — and the tips are narrower than the roots so they stay separate once
- * the stroke thickens them.
- *
- * It turns while its card is open rather than on hover: the rotation reports
- * state instead of decorating a pointer. Half a tooth (30°) is the whole
- * travel — enough to read as movement, not so much that it spins.
- */
-function CogIcon({ open }: { open: boolean }) {
-  const still = useReducedMotion();
-  return (
-    <motion.svg
-      viewBox="0 0 24 24"
-      className="size-4"
-      aria-hidden
-      initial={false}
-      animate={{ rotate: open ? 30 : 0 }}
-      transition={still ? { duration: 0 } : springSnappy}
-    >
-      <path
-        d="M9.66 5.19L9.77 2.35L14.23 2.35L14.34 5.19A7.2 7.2 0 0 1 16.72 6.57L19.24 5.25L21.47 9.11L19.07 10.63A7.2 7.2 0 0 1 19.07 13.37L21.47 14.89L19.24 18.75L16.72 17.43A7.2 7.2 0 0 1 14.34 18.81L14.23 21.65L9.77 21.65L9.66 18.81A7.2 7.2 0 0 1 7.28 17.43L4.76 18.75L2.53 14.89L4.93 13.37A7.2 7.2 0 0 1 4.93 10.63L2.53 9.11L4.76 5.25L7.28 6.57A7.2 7.2 0 0 1 9.66 5.19Z"
-        {...stroke}
-      />
-      <circle cx="12" cy="12" r="3.1" {...stroke} />
-    </motion.svg>
-  );
-}
-
 function GithubIcon() {
   return (
     <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
@@ -174,27 +143,7 @@ export function Dock() {
         )}
       </AnimatePresence>
 
-      {/*
-        The dock opts out of two of its own tokens.
-
-        `spacing` and `text` are the ones that change layout, and the bar is
-        the thing you change them with — let them through and the card resizes
-        under your finger while you drag, walking the number out from under the
-        pointer. Redeclaring them here rather than at `:root` means the whole
-        page still answers while the instrument holds still.
-
-        Colour and radius are deliberately not frozen: neither moves anything,
-        and watching `warmth` and `contrast` land on the card you're holding is
-        the point of having them.
-      */}
-      <div
-        className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-5 sm:p-8"
-        // `--space` and not `--spacing`: `@theme inline` inlines the theme
-        // value into every utility, so `p-4` emits
-        // `calc(0.25rem * var(--space) * 4)` and never reads `--spacing` at
-        // all. Overriding the wrong one is a silent no-op.
-        style={{ "--space": "1", "--text": "1" } as React.CSSProperties}
-      >
+      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-5 sm:p-8">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
@@ -216,12 +165,6 @@ export function Dock() {
                 label: "Say hi",
                 icon: <ChatIcon />,
                 content: <SayHiForm onClose={close} />,
-              },
-              {
-                id: "look",
-                label: "The look",
-                icon: <CogIcon open={active === "look"} />,
-                content: <LookPanel onClose={close} />,
               },
               {
                 id: "email",

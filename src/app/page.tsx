@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import Image from "next/image";
 import { profile } from "@/lib/data";
+import { PAGE_RAIL } from "@/lib/layout";
 import { getContributions } from "@/lib/github";
 import { Reveal } from "@/components/reveal";
 import { PlayingSection, PlayingSkeleton } from "@/components/playing-section";
@@ -15,28 +15,17 @@ export default async function Home() {
     // One centred column, shared with the nav and About. Text carries `pl-5`
     // so it starts level with the name in the header; the list doesn't, because
     // its dot has to start level with the nav's dot, 20px to the left of it.
-    <div className="mx-auto w-full max-w-md px-5 pb-40 pt-4 sm:pb-44">
-      <section className="pl-5">
-        <Reveal onMount>
-          <div className="relative aspect-[7/6] w-full overflow-hidden rounded-2xl shadow-ring">
-            <Image
-              src="/images/pfp.png"
-              alt={profile.name}
-              fill
-              sizes="(max-width: 640px) 90vw, 428px"
-              quality={90}
-              className="object-cover object-top grayscale"
-              priority
-            />
-          </div>
-        </Reveal>
-      </section>
-
+    <div className={`${PAGE_RAIL} pb-40 pt-4 sm:pb-44`}>
       <div>
         <Reveal onMount delay={0.06}>
-          <p className="mt-8 pl-5 text-sm leading-relaxed text-muted">
-            {profile.intro}
-          </p>
+          <div className="mt-8 pl-5">
+            <h1 className="text-base font-normal text-foreground">
+              Hello, I&apos;m Erik.
+            </h1>
+            <p className="mt-1 text-sm leading-relaxed text-muted">
+              {profile.intro}
+            </p>
+          </div>
         </Reveal>
 
         <Reveal onMount delay={0.12}>

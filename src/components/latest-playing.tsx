@@ -444,7 +444,7 @@ export function LatestPlaying({
         back to the neutral wording, because by then we know what was last on
         but nothing about the player.
       */}
-      <p className="flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-muted/70">
+      <p className="flex items-center gap-2 text-xs text-muted/70">
         {playing ? "Playing now" : current && !held ? "Paused" : "Latest playing"}
         {playing ? <AudioLines /> : <PlayOff />}
       </p>
@@ -556,7 +556,7 @@ export function LatestPlaying({
           aria-expanded={expanded}
           whileTap={still ? undefined : { scale: 0.97 }}
           transition={springSnappy}
-          className="mt-4 flex items-center gap-1.5 text-xs uppercase tracking-[0.08em] text-muted/70 transition-colors duration-150 hover:text-foreground"
+          className="mt-4 flex items-center gap-1.5 text-xs text-muted/70 transition-colors duration-150 hover:text-foreground"
         >
           {expanded ? "Show less" : `View more (${tracks.length})`}
           <Chevron up={expanded} />

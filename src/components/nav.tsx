@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { DitherDot } from "@/components/dither-dot";
 import { useIndicator } from "@/components/indicator-context";
+import { PAGE_RAIL } from "@/lib/layout";
 
 export function Nav() {
   const { traveling } = useIndicator();
 
   return (
-    <header className="fixed inset-x-0 top-0 z-50 border-b border-line bg-background/80 backdrop-blur-md">
-      <div className="mx-auto w-full max-w-md px-5">
+    <header className="fixed inset-x-0 top-0 z-50 bg-background">
+      <div className={PAGE_RAIL}>
         <div className="flex h-16 items-center gap-2">
           {/* Resting indicator — a real child of the (fixed) nav so it stays
               glued to the name during iOS overscroll. Hidden while the
@@ -25,7 +26,7 @@ export function Nav() {
           <Link
             href="/"
             id="nav-name"
-            className="text-sm font-medium lowercase tracking-tight text-foreground"
+            className="text-sm font-medium tracking-tight text-foreground"
           >
             Erik Wijnbladh
           </Link>

@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { profile } from "@/lib/data";
+import { PAGE_RAIL } from "@/lib/layout";
 import { Reveal, RevealGroup, RevealItem } from "@/components/reveal";
 import { AboutLists } from "@/components/about-lists";
 
 export const metadata: Metadata = {
-  title: "about — erik wijnbladh",
+  title: "About — Erik Wijnbladh",
   description: profile.tagline,
 };
 
 export default function About() {
   return (
-    <div className="mx-auto w-full max-w-md px-5 pb-40 sm:pb-44">
+    <div className={`${PAGE_RAIL} pb-40 sm:pb-44`}>
       <section className="pb-12 pt-4 pl-5">
         <Reveal>
           <div className="relative aspect-[7/6] w-full overflow-hidden rounded-2xl shadow-ring">
@@ -19,7 +20,7 @@ export default function About() {
               src="/images/pfp.png"
               alt={profile.name}
               fill
-              sizes="(max-width: 640px) 90vw, 428px"
+              sizes="(max-width: 640px) 90vw, 516px"
               quality={90}
               className="object-cover object-top grayscale"
               priority
