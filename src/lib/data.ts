@@ -18,9 +18,9 @@ export const profile = {
     "I build digital products and care a lot about the parts people actually use. How they look, move and feel.",
   bio: [
     "I'm a fullstack developer at Compileit in Stockholm, building web and app products for clients. I started out in frontend and never really stopped caring about the design side of it. I like figuring out how something should work and then building it.",
-    "Before Compileit I worked on CYVAC at KTH and spent three years at BrightBid. I owned a lot of the frontend through the Speqta merger, helped turn two products into one and built tools that made the AI bidding easier for customers to understand.",
-    "I studied Informatics at Örebro and later Human Computer Interaction at Uppsala. Most of what I care about sits somewhere between those two.",
-    "Outside work I build small tools and experiments, usually with AI and usually because I want to see what happens. Pane and gptdnd are two of them.",
+    "Before Compileit I had a short stint at KTH building the CYVAC platform. Prior to that I spent the better part of three years at BrightBid, on an AI bidding product where I built the interface people actually used it through — the login, the endpoints, the tables that had to flex correctly. I worked closely with designers the whole time.",
+    "I studied Informatics at Örebro and later Human–Computer Interaction at Uppsala, which gives me a multidisciplinary way of building things and designing them.",
+    "On the side I build experiments with AI, design and tech, usually because I want to see what happens.",
     "When I'm not at a screen I listen to heavy music, ski, play games and skateboard.",
   ],
 };
@@ -83,8 +83,6 @@ export type Experience = {
   year: string;
   org: string;
   role: string;
-  /** One line on what the work actually was. */
-  summary?: string;
   href?: string;
 };
 
@@ -94,30 +92,24 @@ export const experience: Experience[] = [
     year: "2026 —",
     org: "Compileit",
     role: "Fullstack developer",
-    summary: "Web and app products for clients, end to end.",
     href: "https://compileit.com/",
   },
   {
     year: "2026",
     org: "KTH Royal Institute of Technology",
     role: "Software developer",
-    summary: "Development and design for the CYVAC platform at Cybercampus Sverige.",
     href: "https://www.kth.se/",
   },
   {
     year: "2022 – 2025",
     org: "BrightBid",
     role: "Front-end developer",
-    summary:
-      "Primary frontend owner through and after the Speqta merger. Consolidated two production systems into one interface.",
     href: "https://brightbid.com/",
   },
   {
     year: "2020 – 2022",
     org: "Selfcheck",
     role: "Front-end developer & KTP project manager",
-    summary:
-      "QR-based safety inspection system for hotels and commercial properties.",
     href: "https://selfcheck.se/",
   },
 ];

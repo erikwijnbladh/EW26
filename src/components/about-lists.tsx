@@ -69,11 +69,6 @@ export function AboutLists() {
                 <span className="block text-base text-foreground">
                   {item.role}
                 </span>
-                {item.summary && (
-                  <span className="mt-1 block max-w-md text-sm leading-relaxed text-muted">
-                    {item.summary}
-                  </span>
-                )}
               </span>
             </span>
           </a>
