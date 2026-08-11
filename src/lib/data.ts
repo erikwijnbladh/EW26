@@ -203,6 +203,24 @@ export const mentions: Mention[] = [
 ];
 
 /**
+ * What an organisation was, in the two lines a card has room for.
+ *
+ * The cards used to be waiting on thumbnails, which meant hovering a place got
+ * you a gradient and nothing else. This is the detail that left the page with
+ * the About route — the role and the span — put back where it is actually
+ * being asked for. Images layer on top of it when there are any.
+ */
+export function orgDetail(org: string) {
+  const role = experience.find((item) => item.org === org);
+  if (role) return { title: role.role, year: role.year };
+
+  const study = education.find((item) => item.org === org);
+  if (study) return { title: study.degree, year: study.year };
+
+  return null;
+}
+
+/**
  * Where an organisation's link lives, wherever it lives.
  *
  * The bio says "KTH" and the CV says "KTH Royal Institute of Technology"; this

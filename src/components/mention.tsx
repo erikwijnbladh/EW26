@@ -3,7 +3,14 @@
 import { useState, type ReactNode } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { contactHref, mentions, orgHref, profile, type Mention } from "@/lib/data";
+import {
+  contactHref,
+  mentions,
+  orgDetail,
+  orgHref,
+  profile,
+  type Mention,
+} from "@/lib/data";
 import { duration, ease, springSoft } from "@/lib/motion";
 
 /**
@@ -96,6 +103,7 @@ function Flare({ mention, children }: { mention: Mention; children: ReactNode })
   const [open, setOpen] = useState(false);
 
   const href = orgHref(mention.org);
+  const detail = orgDetail(mention.org);
   const cards = [0, 1];
 
   return (
@@ -161,6 +169,20 @@ function Flare({ mention, children }: { mention: Mention; children: ReactNode })
                       sizes="96px"
                       className="object-cover"
                     />
+                  )}
+
+                  {/* Only the front card. The one behind it is a card back —
+                      repeating the same words twice would read as a glitch
+                      rather than a stack. */}
+                  {i === 1 && detail && (
+                    <span className="absolute inset-0 flex flex-col justify-end gap-0.5 bg-foreground/45 p-2 text-left">
+                      <span className="text-[11px] font-medium leading-tight text-background">
+                        {detail.title}
+                      </span>
+                      <span className="text-[10px] leading-none text-background/70">
+                        {detail.year}
+                      </span>
+                    </span>
                   )}
                 </motion.span>
               );
