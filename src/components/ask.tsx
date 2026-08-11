@@ -46,7 +46,7 @@ class ReplyError extends Error {}
 const PROMPTS = [
   "What does he do?",
   "Where has he worked?",
-  "What's he written?",
+  "What has he built?",
   "How do I reach him?",
 ];
 

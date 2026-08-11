@@ -2,7 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { profile, contacts } from "@/lib/data";
+import { profile, contactHref } from "@/lib/data";
 import { ease } from "@/lib/motion";
 import { ExpandableTabs } from "@/components/ui/be-ui-expandable-tabs";
 import { SayHiForm } from "@/components/say-hi";
@@ -128,9 +128,6 @@ function LinkedinIcon() {
     </svg>
   );
 }
-
-const contactHref = (label: string) =>
-  contacts.find((c) => c.label === label)?.href ?? "";
 
 /**
  * The floating bar: one expanding tab (the form) and three plain icon actions,

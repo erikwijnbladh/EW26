@@ -38,7 +38,7 @@ else. Four files:
 | `src/app/api/chat/route.ts` | Rate limit, validation, and the NDJSON token stream |
 | `src/components/ask.tsx` | The card: transcript, composer, and the paced reveal |
 
-There is no vector store on purpose. The whole corpus is under two thousand
+There is no vector store on purpose. The whole corpus is a couple of thousand
 tokens, so it goes into the system prompt in full behind a cache breakpoint —
 retrieval would add a round trip per turn and the chance of fetching the wrong
 three paragraphs, and buy nothing. If the writing grows by an order of

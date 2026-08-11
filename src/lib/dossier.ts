@@ -4,7 +4,7 @@ import {
   experience,
   education,
   nowPlaying,
-  currentRoleItem,
+  work,
 } from "@/lib/data";
 import { getAllPosts } from "@/lib/content";
 
@@ -31,13 +31,19 @@ function bulletList(lines: string[]) {
 }
 
 /**
- * MDX bodies carry a handful of JSX components (see `components/mdx.tsx`).
- * Their text is worth keeping and their tags are not — left in, they're an
- * invitation to answer in markup, and the chat replies in prose.
+ * MDX bodies, flattened for the prompt.
+ *
+ * Two things go. The JSX components (see `components/mdx.tsx`) — their text is
+ * worth keeping and their tags are not, since left in they're an invitation to
+ * answer in markup, and the chat replies in prose. And their heading levels get
+ * pushed below the ones this file uses: a case page's own `## What I built`
+ * otherwise lands in the outline as a sibling of `## Experience`, and the
+ * document stops saying which project it belongs to.
  */
 function plain(body: string) {
   return body
     .replace(/<\/?[A-Za-z][^>]*>/g, "")
+    .replace(/^#{1,6} /gm, "#### ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
@@ -54,10 +60,6 @@ ${profile.tagline}`,
     `## In his own words
 
 ${profile.bio.join("\n\n")}`,
-
-    `## Currently
-
-${currentRoleItem.title} — ${currentRoleItem.subtitle ?? ""}`.trim(),
 
     `## Experience
 
@@ -105,27 +107,34 @@ names above as though they were current, and don't send anyone to look at the
 listening strip on the page: that reads the same Spotify account the tool does,
 so there is nothing there you can't fetch yourself.`,
 
-    `## Writing and projects
+    `## Projects
 
-These are the pieces published on this site. Each is real work or a real
-opinion of his — quote and summarise freely, and point people at the page.`,
+The work published on this site. Each one is real and his — quote and
+summarise freely, and point people at the page it lives on.`,
 
-    ...posts.map(
-      (post) => `### ${post.title}
-${post.subtitle}
-Published ${post.date.slice(0, 10)}. ${
-        post.link ? `Lives at ${post.link}` : `On this site at /${post.slug}`
-      }
+    ...work.map((project) => {
+      // Not every project has written up; the ones that do carry the only
+      // account anywhere of how he actually thinks about building things,
+      // which is most of what anyone asking these questions wants.
+      const post = posts.find((entry) => entry.slug === project.id);
 
-${plain(post.body)}`,
-    ),
+      return [
+        `### ${project.title}`,
+        `${project.kind}, ${project.year}. ${project.blurb}`,
+        project.page ? `Case page on this site at /${project.id}.` : "",
+        project.href ? `Lives at ${project.href}.` : "",
+        post ? `\n${plain(post.body)}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+    }),
 
     `## About this site
 
 Built by Erik. Next.js (App Router) and React on TypeScript, Tailwind CSS v4,
-Motion for the animation, MDX for the writing. The listening strip is the live
-Spotify API, the contribution graph is the GitHub API, and the contact form
-sends through Resend.
+Motion for the animation, MDX for the case pages. The listening strip is the
+live Spotify API, the contribution graph is the GitHub API, and the contact
+form sends through Resend.
 
 This chat is his too: a LangChain chain over Claude, streaming token by token
 from a Next.js route handler, with the whole of the above as its context. If

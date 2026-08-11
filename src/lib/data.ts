@@ -40,6 +40,19 @@ export const contacts = [
   },
 ];
 
+/**
+ * A contact's href by label, matched case-insensitively.
+ *
+ * The labels are display strings — they read "GitHub" because that is how it is
+ * written, not because anything keys off the capitals. Matching exactly meant a
+ * label being retitled silently emptied every href built from it, which is a
+ * link that looks fine and reloads the page.
+ */
+export function contactHref(label: string) {
+  const wanted = label.toLowerCase();
+  return contacts.find((item) => item.label.toLowerCase() === wanted)?.href ?? "";
+}
+
 export type Track = {
   title: string;
   artist: string;

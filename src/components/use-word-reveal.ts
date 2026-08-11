@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { contacts, profile } from "@/lib/data";
+import { contactHref, profile } from "@/lib/data";
 
 /**
  * Hands back the streamed answer a word at a time, so each one can be animated
@@ -38,9 +38,6 @@ export type Token = {
   /** Set on Erik's address, which gets a copy button as well as a link. */
   copy?: string;
 };
-
-const contactHref = (label: string) =>
-  contacts.find((c) => c.label === label)?.href ?? "";
 
 /**
  * The words worth turning into something clickable.
