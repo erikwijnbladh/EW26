@@ -197,7 +197,9 @@ function Flare({ mention, children }: { mention: Mention; children: ReactNode })
 /** One bio paragraph, with its places turned into hover targets. */
 export function Prose({ text }: { text: string }) {
   return (
-    <p className="max-w-xl text-sm leading-relaxed text-muted">
+    // No width of its own: the rail decides the measure, and a second cap here
+    // would be the one that silently won the day the rail changed.
+    <p className="text-sm leading-relaxed text-muted">
       {toPieces(text).map((piece, i) =>
         piece.mention ? (
           <Flare key={i} mention={piece.mention}>

@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Image from "next/image";
 import { profile } from "@/lib/data";
-import { PAGE_RAIL } from "@/lib/layout";
+import { PAGE_RAIL, PORTRAIT } from "@/lib/layout";
 import { getContributions } from "@/lib/github";
 import { Reveal, RevealGroup, RevealItem } from "@/components/reveal";
 import { PlayingSection, PlayingSkeleton } from "@/components/playing-section";
@@ -18,12 +18,17 @@ export default async function Home() {
     <div className={`${PAGE_RAIL} pb-40 pt-4 sm:pb-44`}>
       <Reveal onMount>
         <div className="pl-5">
-          <div className="relative aspect-[7/6] w-full max-w-xl overflow-hidden rounded-2xl shadow-ring">
+          {/* Square, because the source is. The old 7/6 box cropped a square
+              photograph to a landscape one and then scaled it up to fill the
+              column — losing the top and bottom of it to make it larger. */}
+          <div
+            className={`relative aspect-square ${PORTRAIT} overflow-hidden rounded-xl shadow-ring`}
+          >
             <Image
               src="/images/pfp.png"
               alt={profile.name}
               fill
-              sizes="(max-width: 640px) 90vw, 576px"
+              sizes="240px"
               quality={90}
               className="object-cover object-top grayscale"
               priority
