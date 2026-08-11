@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "motion/react";
-import { ease, easeInOut } from "@/lib/motion";
+import { drawOff, drawOn } from "@/lib/motion";
 
 /**
  * The site's copy affordance, shared by the dock's email button and the chat's
@@ -19,23 +19,6 @@ const stroke = {
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
 };
-
-/** Unspooling on. Opacity snaps in early so the line reads as being drawn. */
-const drawOn = (delay = 0) => ({
-  duration: 0.4,
-  ease,
-  delay,
-  opacity: { duration: 0.1, delay },
-});
-
-/** Retracting off — the stroke shortens away instead of the icon popping. */
-const drawOff = (delay = 0) => ({
-  duration: 0.26,
-  ease: easeInOut,
-  delay,
-  // Held visible until the line has almost finished retracting.
-  opacity: { duration: 0.1, delay: delay + 0.18 },
-});
 
 const svgClass = "absolute inset-0 size-full";
 

@@ -131,6 +131,29 @@ export const wordIn: Transition = {
   opacity: { duration: 0.36, ease },
 };
 
+/**
+ * Drawing a stroke on, and retracting it off.
+ *
+ * The pair behind every icon on the site that changes meaning without swapping
+ * glyphs — the dock's envelope becoming a tick, the chat's bin becoming a
+ * shredder. Opacity snaps in early on the way on so the line reads as being
+ * drawn rather than fading up, and is held almost to the end on the way off so
+ * the stroke shortens away instead of the icon popping.
+ */
+export const drawOn = (delay = 0): Transition => ({
+  duration: 0.4,
+  ease,
+  delay,
+  opacity: { duration: 0.1, delay },
+});
+
+export const drawOff = (delay = 0): Transition => ({
+  duration: 0.26,
+  ease: easeInOut,
+  delay,
+  opacity: { duration: 0.1, delay: delay + 0.18 },
+});
+
 /** Reduced motion: same states, no travel between them. */
 export const instant: Transition = { duration: 0 };
 

@@ -9,6 +9,8 @@ import {
   springSnappy,
   springSoft,
   wordIn,
+  drawOn,
+  drawOff,
 } from "@/lib/motion";
 import { useWordReveal } from "@/components/use-word-reveal";
 import { DitherDot } from "@/components/dither-dot";
@@ -100,17 +102,18 @@ function SendIcon({ busy }: { busy: boolean }) {
 }
 
 /**
- * Clearing the conversation, as a shredder that actually shreds.
+ * Clearing the conversation: a bin that becomes a shredder and eats the paper.
  *
- * The sheet slides down into the slot and is clipped away by it, while the
- * strips draw themselves on underneath — so the paper doesn't vanish, it goes
- * somewhere. The strips are redrawn from the slot downwards rather than
- * Lucide's bottom-up, because `pathLength` fills from the start of the path and
- * the wrong end makes them retract into the machine instead of falling out.
+ * Built on the dock's envelope-to-tick — one box, nothing unmounts, strokes draw
+ * on and retract off — but the two icons here share a stroke rather than merely
+ * taking turns. The bin's lid and the shredder's slot are the same line: it
+ * slides down the face, and as it goes the handle above it becomes a sheet of
+ * paper and the bin below it becomes the shreddings. So it reads as one object
+ * changing rather than two icons crossfading.
  *
- * Scalar targets on a prop flip, like the copy icon — a keyframe array would be
- * the obvious way to write a one-shot like this and Motion silently refuses to
- * animate `pathLength` from one.
+ * The order is the point. Bin retracts, line drops, sheet draws in above it,
+ * sheet feeds down through it, strips fall out underneath — about 1.1s end to
+ * end, which is also how long the transcript stays up for.
  */
 function ShredderIcon({ shredding }: { shredding: boolean }) {
   // Two copies of this card exist — the real one and the hidden one the dock
@@ -122,49 +125,81 @@ function ShredderIcon({ shredding }: { shredding: boolean }) {
     <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
       <defs>
         <clipPath id={slot}>
-          <rect x="0" y="0" width="24" height="12.5" />
+          {/* Stops just above the line's resting place, so the sheet is eaten
+              by the slot rather than sliding over it. */}
+          <rect x="0" y="0" width="24" height="12.4" />
         </clipPath>
       </defs>
 
       <g clipPath={`url(#${slot})`}>
+        {/* The bin's handle, in the same place the paper will be. */}
+        <motion.path
+          d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+          {...stroke}
+          initial={false}
+          animate={{ pathLength: shredding ? 0 : 1, opacity: shredding ? 0 : 1 }}
+          transition={shredding ? drawOff() : drawOn(0.26)}
+        />
+
         <motion.g
           initial={false}
           animate={{ y: shredding ? 12 : 0 }}
-          transition={{ duration: shredding ? 0.42 : 0, ease: easeInOut }}
+          transition={{
+            duration: shredding ? 0.34 : 0,
+            ease: easeInOut,
+            delay: shredding ? 0.58 : 0,
+          }}
         >
-          <path
+          <motion.path
             d="M4 13V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v5"
             {...stroke}
+            initial={false}
+            animate={{ pathLength: shredding ? 1 : 0, opacity: shredding ? 1 : 0 }}
+            transition={shredding ? drawOn(0.2) : drawOff()}
           />
-          <path d="M14 2v5a1 1 0 0 0 1 1h5" {...stroke} />
+          <motion.path
+            d="M14 2v5a1 1 0 0 0 1 1h5"
+            {...stroke}
+            initial={false}
+            animate={{ pathLength: shredding ? 1 : 0, opacity: shredding ? 1 : 0 }}
+            transition={shredding ? drawOn(0.3) : drawOff()}
+          />
         </motion.g>
       </g>
 
-      <path d="M2 13h20" {...stroke} />
+      {/* Lid and slot are one stroke. It never draws or retracts — it travels. */}
+      <motion.path
+        d="M3 6h18"
+        {...stroke}
+        initial={false}
+        animate={{ y: shredding ? 7 : 0 }}
+        transition={{
+          duration: 0.36,
+          ease: easeInOut,
+          delay: shredding ? 0.06 : 0,
+        }}
+      />
 
-      {[
-        { d: "M6 17v3", delay: 0.24 },
-        { d: "M10 17v5", delay: 0.18 },
-        { d: "M14 17v2", delay: 0.3 },
-        { d: "M18 17v3", delay: 0.21 },
-      ].map((strip) => (
+      {/* The bin, in the same place the shreddings will be. */}
+      <motion.path
+        d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"
+        {...stroke}
+        initial={false}
+        animate={{ pathLength: shredding ? 0 : 1, opacity: shredding ? 0 : 1 }}
+        transition={shredding ? drawOff(0.03) : drawOn(0.3)}
+      />
+
+      {/* Drawn top-down rather than Lucide's bottom-up: `pathLength` fills from
+          the start of the path, and the other way round they retract into the
+          machine instead of falling out of it. */}
+      {["M6 17v3", "M10 17v5", "M14 17v2", "M18 17v3"].map((strip, i) => (
         <motion.path
-          key={strip.d}
-          d={strip.d}
+          key={strip}
+          d={strip}
           {...stroke}
           initial={false}
-          // At rest these are short, faint stubs rather than nothing: hidden
-          // entirely, the icon reads as a document sitting on a line, and the
-          // thing it is a button for stops being obvious.
-          animate={{
-            pathLength: shredding ? 1 : 0.45,
-            opacity: shredding ? 1 : 0.35,
-          }}
-          transition={
-            shredding
-              ? { duration: 0.34, ease, delay: strip.delay }
-              : { duration: 0.2, ease: easeInOut }
-          }
+          animate={{ pathLength: shredding ? 1 : 0, opacity: shredding ? 1 : 0 }}
+          transition={shredding ? drawOn(0.66 + i * 0.05) : drawOff()}
         />
       ))}
     </svg>
@@ -345,30 +380,25 @@ export function AskPanel({ open }: { open: boolean }) {
 
   useEffect(() => () => abort.current?.abort(), []);
 
-  // The sheet has to be seen going into the slot. Clearing on the click would
-  // empty the transcript, unmount the button and take the animation with it —
-  // so the transcript goes a beat later, and the button holds its place until
-  // the strips have finished falling.
+  // The whole morph has to play before the transcript goes: clearing on the
+  // click empties the card, unmounts the button and takes the animation with
+  // it. Resetting `shredding` in the same breath drops the button out on its
+  // exit fade, so the reverse morph is never seen — and the next time there is
+  // something to clear it mounts as a bin again.
   useEffect(() => {
     if (!shredding) return;
 
-    const emptied = setTimeout(() => {
+    const done = setTimeout(() => {
       abort.current?.abort();
       abort.current = null;
       setBusy(false);
       setMessages([]);
       setError(null);
-    }, 300);
-
-    const settled = setTimeout(() => {
       setShredding(false);
       inputRef.current?.focus();
-    }, 900);
+    }, 1100);
 
-    return () => {
-      clearTimeout(emptied);
-      clearTimeout(settled);
-    };
+    return () => clearTimeout(done);
   }, [shredding]);
 
   const send = useCallback(
