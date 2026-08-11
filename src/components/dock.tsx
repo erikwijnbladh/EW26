@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { profile, contacts } from "@/lib/data";
 import { ease, easeInOut } from "@/lib/motion";
 import { ExpandableTabs } from "@/components/ui/be-ui-expandable-tabs";
@@ -34,20 +34,78 @@ const drawOff = (delay = 0) => ({
 });
 
 /**
- * A four-pointed spark for the chat tab. The obvious icon was another speech
- * bubble, which is exactly what sits next to it — this one has to read as a
- * different kind of thing at 16px, not a second way to write to him.
+ * The bot, blinking.
+ *
+ * Built on the same principle as the copy button below — one box, nothing ever
+ * unmounts, states are reached by drawing strokes on and retracting them —
+ * except the interesting thing about this icon is that it's a face, so it
+ * blinks instead of swapping glyphs. The eyes retract to nothing and come back
+ * on a slow loop, a hair out of step with each other so it reads as a blink
+ * rather than two shutters closing.
+ *
+ * Opening the card wakes it: the antenna redraws itself, and the blink speeds
+ * up. It goes back to idling when the card closes.
  */
-function SparkIcon() {
+function BotIcon({ awake }: { awake: boolean }) {
+  const still = useReducedMotion();
+
+  /**
+   * Open, hold, shut, open — the hold is most of it, which is what a blink is.
+   *
+   * Not `pathLength`, which is what the copy button below retracts its strokes
+   * with. Motion animates that as a scalar target only; handed a keyframe array
+   * it sets the last value and never moves, which is a silent no-op rather than
+   * an error. `scaleY` does the closing and `opacity` covers the last hair of
+   * it, since a 2px stroke scaled to nothing still leaves a cap behind.
+   */
+  const eye = { scaleY: [1, 1, 0.05, 1, 1], opacity: [1, 1, 0.15, 1, 1] };
+
+  const blink = (offset: number) => ({
+    duration: awake ? 3.4 : 6.2,
+    times: [0, 0.9, 0.94, 0.98, 1],
+    // A named curve, not the shared `easeInOut` tuple. With five keyframes
+    // Motion reads a four-element array as one easing per segment, and
+    // `[0.65, 0, 0.35, 1]` is four numbers — so the bezier this file uses
+    // everywhere else is silently taken as four nonsense easings.
+    ease: "easeInOut" as const,
+    repeat: Infinity,
+    // Applied once, so after the first pass the two eyes stay this far apart.
+    delay: offset,
+  });
+
   return (
     <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
-      <path
-        d="M11 4.5c0 3.6 2.9 6.5 6.5 6.5-3.6 0-6.5 2.9-6.5 6.5 0-3.6-2.9-6.5-6.5-6.5 3.6 0 6.5-2.9 6.5-6.5Z"
+      {/* Antenna. Redraws itself on waking — the keyframe pair is what makes a
+          prop flip replay it, where a bare target would just already be there. */}
+      <motion.path
+        d="M12 8V4H8"
         {...stroke}
+        initial={false}
+        animate={{ pathLength: awake && !still ? [0, 1] : 1 }}
+        transition={{ duration: 0.42, ease }}
       />
-      <path
-        d="M18.5 15c0 1.4 1.1 2.5 2.5 2.5-1.4 0-2.5 1.1-2.5 2.5 0-1.4-1.1-2.5-2.5-2.5 1.4 0 2.5-1.1 2.5-2.5Z"
+
+      <rect x="4" y="8" width="16" height="12" rx="2" {...stroke} />
+      <path d="M2 14h2" {...stroke} />
+      <path d="M20 14h2" {...stroke} />
+
+      {/* `fill-box` so each eye scales about its own centre rather than the
+          whole 24-unit canvas, which would slide it up the face instead. */}
+      <motion.path
+        d="M9 13v2"
         {...stroke}
+        style={{ transformBox: "fill-box", transformOrigin: "center" }}
+        initial={{ scaleY: 1, opacity: 1 }}
+        animate={still ? { scaleY: 1, opacity: 1 } : eye}
+        transition={still ? undefined : blink(0)}
+      />
+      <motion.path
+        d="M15 13v2"
+        {...stroke}
+        style={{ transformBox: "fill-box", transformOrigin: "center" }}
+        initial={{ scaleY: 1, opacity: 1 }}
+        animate={still ? { scaleY: 1, opacity: 1 } : eye}
+        transition={still ? undefined : blink(0.07)}
       />
     </svg>
   );
@@ -184,7 +242,7 @@ export function Dock() {
               {
                 id: "ask",
                 label: "Ask",
-                icon: <SparkIcon />,
+                icon: <BotIcon awake={active === "ask"} />,
                 content: <AskPanel open={active === "ask"} />,
               },
               {

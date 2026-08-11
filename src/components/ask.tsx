@@ -164,7 +164,7 @@ function Reply({
               // permanent typographic cost for a half-second effect. Blur and
               // opacity apply to inline boxes; only a transform would have
               // needed the block, which is why there isn't one.
-              initial={still ? false : { opacity: 0, filter: "blur(6px)" }}
+              initial={still ? false : { opacity: 0, filter: "blur(2.5px)" }}
               animate={{ opacity: 1, filter: "blur(0px)" }}
               transition={wordIn}
             >

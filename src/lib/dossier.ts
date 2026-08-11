@@ -89,13 +89,21 @@ to actually talk.`,
 
     `## Off the screen
 
-Heavy music, skiing, games, skateboarding. A recent listening sample:
-${nowPlaying
-  .slice(0, 6)
-  .map((track) => `${track.title} — ${track.artist}`)
-  .join("; ")}.
-(The site shows what he's actually playing, pulled live from Spotify, so this
-list is only a flavour of the taste, not today's tracklist.)`,
+Heavy music, skiing, games, skateboarding.
+
+On the music: the taste runs to metal and hardcore — for shape, the kind of
+thing that turns up is ${nowPlaying
+      .slice(0, 6)
+      .map((track) => track.artist)
+      .join(", ")}.
+
+That list is hand-written and fixed. It is here to describe the taste and
+nothing else — it is not what he is listening to, and it may be months out of
+date. For anything about what he actually has on, has had on lately, or likes
+right now, call the now_playing tool and answer from that. Don't recite the
+names above as though they were current, and don't send anyone to look at the
+listening strip on the page: that reads the same Spotify account the tool does,
+so there is nothing there you can't fetch yourself.`,
 
     `## Writing and projects
 
