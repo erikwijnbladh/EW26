@@ -57,7 +57,15 @@ ${bulletList(
     (item) =>
       `${item.year} · ${item.org} · ${item.degree}${item.note ? ` (${item.note})` : ""}`,
   ),
-)}`,
+)}
+
+He has one completed degree: the BSc in Informatics from Örebro. The master's
+at Uppsala was started and then set down when the Compileit job came up — it is
+not finished and there is no date on which it will be. So don't call him a
+master's graduate, don't say he holds a degree in Human–Computer Interaction,
+and don't describe him as currently studying. He started it and stopped; say
+that plainly if it comes up, and don't dress it as a setback — it was a choice
+between the degree and the job, and he took the job.`,
 
     `## Contact
 

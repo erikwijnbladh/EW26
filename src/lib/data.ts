@@ -17,9 +17,9 @@ export const profile = {
   intro:
     "I build digital products and care a lot about the parts people actually use. How they look, move and feel.",
   bio: [
-    "I'm a fullstack developer at Compileit in Stockholm, where we build web and app products for clients. I think the artifact was never really the job — two people with the same tools and the same brief ship very different things, and the difference was never the typing.",
+    "I'm a fullstack developer at Compileit in Stockholm, where we build web and app products — the client list runs to apps you've probably got on your phone. I think the artifact was never really the job — two people with the same tools and the same brief ship very different things, and the difference was never the typing.",
     "On the side I build things with AI, mostly to find out what happens. The chat on this page is one of them. That's also where the problem I actually care about lives: a button does one thing, and the design work is making that one thing clear, but a system that guesses at what you meant can't make that promise. What an interface owes you when it isn't sure is the part I don't have finished.",
-    "Before Compileit I was at KTH building the CYVAC platform, and spent the better part of three years at BrightBid on an AI bidding product, building the interface people actually used it through. I studied Informatics at Örebro and Human–Computer Interaction at Uppsala. You can reach me at hello@erikwijnbladh.com, or see my code on GitHub.",
+    "Before Compileit I was at KTH building the CYVAC platform, and spent the better part of three years at BrightBid on an AI bidding product, building the interface people actually used it through. Front-end at Selfcheck before that. My degree is in Informatics from Örebro; I started a master's in Human–Computer Interaction at Uppsala and put it down for Compileit. You can reach me at hello@erikwijnbladh.com, or see my code on GitHub.",
   ],
 };
 
@@ -136,10 +136,13 @@ export type Education = {
 /** Education, from the CV. */
 export const education: Education[] = [
   {
-    year: "2025 – 2027",
+    // Not a span. An end year is a promise about finishing, and this one is
+    // started and set down — the note carries the state instead, everywhere the
+    // year is shown.
+    year: "2025",
     org: "Uppsala University",
     degree: "MSc Human–Computer Interaction",
-    note: "In progress",
+    note: "started, paused",
     href: "https://www.uu.se/en/study/programme/masters-programme-human-computer-interaction",
   },
   {
@@ -191,6 +194,11 @@ export const mentions: Mention[] = [
     tone: "linear-gradient(150deg, #21180f 0%, #6b4a22 55%, #e0cbaa 100%)",
   },
   {
+    phrase: "Selfcheck",
+    org: "Selfcheck",
+    tone: "linear-gradient(150deg, #101d20 0%, #2f5359 55%, #b6cfd3 100%)",
+  },
+  {
     phrase: "Örebro",
     org: "Örebro University",
     tone: "linear-gradient(150deg, #14201a 0%, #3a5a48 55%, #bed3c6 100%)",
@@ -214,8 +222,16 @@ export function orgDetail(org: string) {
   const role = experience.find((item) => item.org === org);
   if (role) return { title: role.role, year: role.year };
 
+  // Education carries a state the jobs don't — a degree can be finished, or
+  // started and set down. The card has two lines and the second one is the
+  // dates, so the state rides along with them rather than going unsaid.
   const study = education.find((item) => item.org === org);
-  if (study) return { title: study.degree, year: study.year };
+  if (study) {
+    return {
+      title: study.degree,
+      year: study.note ? `${study.year} · ${study.note}` : study.year,
+    };
+  }
 
   return null;
 }
