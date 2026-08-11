@@ -6,6 +6,7 @@ import { profile, contacts } from "@/lib/data";
 import { ease, easeInOut } from "@/lib/motion";
 import { ExpandableTabs } from "@/components/ui/be-ui-expandable-tabs";
 import { SayHiForm } from "@/components/say-hi";
+import { AskPanel } from "@/components/ask";
 
 const stroke = {
   fill: "none",
@@ -31,6 +32,26 @@ const drawOff = (delay = 0) => ({
   // Held visible until the line has almost finished retracting.
   opacity: { duration: 0.1, delay: delay + 0.18 },
 });
+
+/**
+ * A four-pointed spark for the chat tab. The obvious icon was another speech
+ * bubble, which is exactly what sits next to it — this one has to read as a
+ * different kind of thing at 16px, not a second way to write to him.
+ */
+function SparkIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
+      <path
+        d="M11 4.5c0 3.6 2.9 6.5 6.5 6.5-3.6 0-6.5 2.9-6.5 6.5 0-3.6-2.9-6.5-6.5-6.5 3.6 0 6.5-2.9 6.5-6.5Z"
+        {...stroke}
+      />
+      <path
+        d="M18.5 15c0 1.4 1.1 2.5 2.5 2.5-1.4 0-2.5 1.1-2.5 2.5 0-1.4-1.1-2.5-2.5-2.5 1.4 0 2.5-1.1 2.5-2.5Z"
+        {...stroke}
+      />
+    </svg>
+  );
+}
 
 function ChatIcon() {
   return (
@@ -160,6 +181,12 @@ export function Dock() {
               pill: "bg-foreground/[0.08]",
             }}
             items={[
+              {
+                id: "ask",
+                label: "Ask",
+                icon: <SparkIcon />,
+                content: <AskPanel open={active === "ask"} />,
+              },
               {
                 id: "say-hi",
                 label: "Say hi",
