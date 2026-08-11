@@ -90,23 +90,67 @@ function SendIcon({ busy }: { busy: boolean }) {
   );
 }
 
-/** Waiting on the first token. Three dots, breathing out of phase. */
-function Thinking({ still }: { still: boolean }) {
+/**
+ * The Bayer 4×4 threshold matrix, row-major.
+ *
+ * This is the same ordered-dither table the nav dot's shader is running —
+ * `type="4x4"` in `dither-dot.tsx` — just drawn by hand at pixel scale instead
+ * of sampled on a GPU. Using it here means the waiting mark is made of the
+ * site's own material rather than being a widget borrowed from somewhere else.
+ */
+const BAYER = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
+
+const CELL = 3;
+const GAP = 1;
+const GRID = 4;
+const SPAN = GRID * CELL + (GRID - 1) * GAP;
+
+/** How long one sweep takes. Slow enough to read as deliberate, not a spinner. */
+const SWEEP = 1.6;
+
+/**
+ * Waiting on the first token.
+ *
+ * Each cell's phase is its dither threshold rather than its position, so
+ * brightness crosses the grid in the matrix's own scattered order — the pattern
+ * you get in a dithered gradient, animated. A row-by-row sweep would read as a
+ * progress bar, which would be a lie: nothing here knows how far along it is.
+ *
+ * CSS rather than Motion, for two reasons. This mark mounts inside an
+ * `AnimatePresence` with `initial={false}`, which suppresses mount-time
+ * animation on everything under it — the cells sat at their first keyframe and
+ * never moved. And it remounts on every single reply, where sixteen JS-driven
+ * values is a lot of machinery for a loop with no state in it. The offsets are
+ * negative so every cell is already mid-cycle on the first frame, instead of
+ * the grid spending its first sweep filling in.
+ */
+function Thinking() {
   return (
-    <span className="flex items-center gap-1 py-1" aria-label="Thinking">
-      {[0, 1, 2].map((i) => (
-        <motion.span
-          key={i}
-          className="block size-1.5 rounded-full bg-foreground/35"
-          animate={still ? undefined : { opacity: [0.3, 1, 0.3] }}
-          transition={{
-            duration: 1.1,
-            ease: "easeInOut",
-            repeat: Infinity,
-            delay: i * 0.16,
-          }}
-        />
-      ))}
+    <span className="block py-1" role="status" aria-label="Thinking">
+      <svg
+        width={SPAN}
+        height={SPAN}
+        viewBox={`0 0 ${SPAN} ${SPAN}`}
+        className="text-foreground"
+        aria-hidden
+      >
+        {BAYER.map((threshold, i) => (
+          <rect
+            key={i}
+            className="dither-cell"
+            x={(i % GRID) * (CELL + GAP)}
+            y={Math.floor(i / GRID) * (CELL + GAP)}
+            width={CELL}
+            height={CELL}
+            fill="currentColor"
+            // The resting value the animation overrides while it runs — so
+            // reduced motion is left holding the matrix as a static dither
+            // ramp rather than a blank square. See globals.css.
+            opacity={0.12 + (threshold / 15) * 0.55}
+            style={{ animationDelay: `-${(threshold / 16) * SWEEP}s` }}
+          />
+        ))}
+      </svg>
     </span>
   );
 }
@@ -138,20 +182,40 @@ function Reply({
   // the last few words look like they arrived after the answer ended.
   const writing = streaming || shown.length < content.length;
 
-  if (!shown && streaming) return <Thinking still={still} />;
-
+  // `mode="wait"` so the grid is gone before the first words land in its place —
+  // the two crossing over each other in the same spot is what makes a handoff
+  // like this read as a glitch.
   return (
-    <p className="text-[15px] leading-relaxed text-foreground/90">
-      {shown}
-      {writing && (
+    <AnimatePresence mode="wait" initial={false}>
+      {!shown && streaming ? (
         <motion.span
-          aria-hidden
-          className="ml-0.5 inline-block h-[0.95em] w-[2px] translate-y-[0.15em] bg-foreground/60"
-          animate={still ? undefined : { opacity: [1, 0.15, 1] }}
-          transition={{ duration: 1, ease: "easeInOut", repeat: Infinity }}
-        />
+          key="waiting"
+          className="block"
+          exit={still ? { opacity: 0 } : { opacity: 0, filter: "blur(3px)" }}
+          transition={{ duration: 0.14, ease }}
+        >
+          <Thinking />
+        </motion.span>
+      ) : (
+        <motion.p
+          key="answer"
+          initial={still ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: duration.fast, ease }}
+          className="text-[15px] leading-relaxed text-foreground/90"
+        >
+          {shown}
+          {writing && (
+            <motion.span
+              aria-hidden
+              className="ml-0.5 inline-block h-[0.95em] w-[2px] translate-y-[0.15em] bg-foreground/60"
+              animate={still ? undefined : { opacity: [1, 0.15, 1] }}
+              transition={{ duration: 1, ease: "easeInOut", repeat: Infinity }}
+            />
+          )}
+        </motion.p>
       )}
-    </p>
+    </AnimatePresence>
   );
 }
 
