@@ -77,7 +77,8 @@ to actually talk.`,
 
     `## Off the screen
 
-Heavy music, skiing, games, skateboarding.
+Cooking, skiing, skateboarding, games, reading, and heavy music with the shows
+that come with it. He lives with his girlfriend and their cat.
 
 On the music: the taste runs to metal and hardcore — for shape, the kind of
 thing that turns up is ${nowPlaying

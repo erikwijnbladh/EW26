@@ -1,8 +1,10 @@
 /**
  * Facts about Erik, checked against his CV.
  *
- * `intro` is the short version on the home page. `bio` is the About page: still
- * personal, but with enough detail to make the experience list mean something.
+ * `bio` is the site. There is no other page and no summary above it, so it has
+ * to do the whole job in three paragraphs: what he does now, what he did before,
+ * and what he's like. Everything longer than that lives in the chat, which reads
+ * from the same file — the page is the pitch, the dossier is the detail.
  *
  * ⚠️ Written for publication in or after September 2026, when Compileit starts.
  * Everything here speaks about that role in the present tense, which is true on
@@ -14,12 +16,10 @@ export const profile = {
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
   tagline: "Currently building products people love to use at Compileit.",
-  intro:
-    "I build digital products and care a lot about the parts people actually use. How they look, move and feel.",
   bio: [
-    "I'm a fullstack developer at Compileit in Stockholm, where we build web and app products — the client list runs to apps you've probably got on your phone. I think the artifact was never really the job — two people with the same tools and the same brief ship very different things, and the difference was never the typing.",
-    "On the side I build things with AI, mostly to find out what happens. The chat on this page is one of them. That's also where the problem I actually care about lives: a button does one thing, and the design work is making that one thing clear, but a system that guesses at what you meant can't make that promise. What an interface owes you when it isn't sure is the part I don't have finished.",
-    "Before Compileit I was at KTH building the CYVAC platform, and spent the better part of three years at BrightBid on an AI bidding product, building the interface people actually used it through. Front-end at Selfcheck before that. My degree is in Informatics from Örebro; I started a master's in Human–Computer Interaction at Uppsala and put it down for Compileit. You can reach me at hello@erikwijnbladh.com, or see my code on GitHub.",
+    "I'm a fullstack engineer at Compileit in Stockholm, building web and app products people like using. Most of them have a model somewhere inside them now, which broke the part I was good at: a button does one thing, and the work is making that one thing obvious — a system that guesses can't promise you that. What an interface owes you when it isn't sure is the part I haven't worked out.",
+    "A few places before this. Most recently development and design at KTH, on the CYVAC platform, and before that a handful of years owning the frontend at BrightBid — an AI ads platform, where the work was making automated bidding decisions legible to the people who had to answer for them.",
+    "Off the screen I cook, ski, skate, play games and read, and go to more heavy shows than is strictly reasonable. There's a girlfriend and a cat at home who put up with all of it.",
   ],
 };
 
@@ -176,6 +176,11 @@ export type Mention = {
  * here holds a URL — that lives once, on the `experience` and `education` entry
  * the `org` names, so a company changing address can't leave the prose pointing
  * somewhere the CV doesn't.
+ *
+ * Only the places the bio actually names. The earlier roles and both degrees
+ * are still in `experience` and `education` above, and the chat answers from
+ * them — an entry here for a word the prose doesn't say would just be a flare
+ * nobody can reach.
  */
 export const mentions: Mention[] = [
   {
@@ -192,21 +197,6 @@ export const mentions: Mention[] = [
     phrase: "BrightBid",
     org: "BrightBid",
     tone: "linear-gradient(150deg, #21180f 0%, #6b4a22 55%, #e0cbaa 100%)",
-  },
-  {
-    phrase: "Selfcheck",
-    org: "Selfcheck",
-    tone: "linear-gradient(150deg, #101d20 0%, #2f5359 55%, #b6cfd3 100%)",
-  },
-  {
-    phrase: "Örebro",
-    org: "Örebro University",
-    tone: "linear-gradient(150deg, #14201a 0%, #3a5a48 55%, #bed3c6 100%)",
-  },
-  {
-    phrase: "Uppsala",
-    org: "Uppsala University",
-    tone: "linear-gradient(150deg, #201421 0%, #573a5c 55%, #d2c0d6 100%)",
   },
 ];
 
