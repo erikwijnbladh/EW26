@@ -12,13 +12,15 @@
  */
 export const profile = {
   name: "Erik Wijnbladh",
-  role: "Design engineer",
+  // How he describes himself in the bio's first line. The dossier opens with
+  // it, so the chat introduces him the same way the page does.
+  role: "Developer and designer",
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
   tagline: "Currently building products people love to use at Compileit.",
   bio: [
-    "I'm Erik, a developer in Stockholm. I studied informatics and interaction design, and I've worked on both sides of that ever since: I design things and then build them.",
-    "Currently fullstack at Compileit, where we build web and app products for other companies. Before that, development and design at KTH, three years owning the frontend at BrightBid, an AI ads platform, and a few other places further back. This page is mine down to the icons.",
+    "I'm Erik, developer and designer based in Stockholm.",
+    "Currently fullstack at Compileit, where we build web and app products for other companies. Before that, development and design at KTH, three years owning the frontend at BrightBid, an AI ads platform, and a few other places further back.",
     "Away from the screen I cook, ski, skateboard, play games and read, and go to a lot of heavy shows. Home is my girlfriend and our cat.",
   ],
 };
