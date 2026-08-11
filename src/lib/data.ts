@@ -1,15 +1,27 @@
+/**
+ * Facts about Erik, checked against his CV.
+ *
+ * `intro` is the short version on the home page. `bio` is the About page: still
+ * personal, but with enough detail to make the experience list mean something.
+ *
+ * ⚠️ Written for publication in or after September 2026, when Compileit starts.
+ * Everything here speaks about that role in the present tense, which is true on
+ * the intended publish date and not before it. Don't deploy early.
+ */
 export const profile = {
   name: "Erik Wijnbladh",
-  role: "Tech & Design",
+  role: "Design engineer",
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
-  tagline: "I design and build web products. Living in the blend of tech and design.",
+  tagline: "Currently building products people love to use at Compileit.",
   intro:
-    "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy. Away from the screen I listen to heavy music, ski, play games and skateboard.",
+    "I build digital products and care a lot about the parts people actually use. How they look, move and feel.",
   bio: [
-    "I'm a designer and developer based in Stockholm, currently building stuff at Compileit. I both design and build the things I work on, and that blend of tech and design is the part I enjoy.",
-    "Prior I've spent my time owning the frontend of an AI ad-bidding platform at BrightBid, then went back to study Human-Computer Interaction at Uppsala to get better at making technology feel human.",
-    "On the side I build small tools, apps and workflows. With, for and because of AI.",
+    "I'm a fullstack developer at Compileit in Stockholm, building web and app products for clients. I started out in frontend and never really stopped caring about the design side of it. I like figuring out how something should work and then building it.",
+    "Before Compileit I had a short stint at KTH building the CYVAC platform. Prior to that I spent the better part of three years at BrightBid, on an AI bidding product where I built the interface people actually used it through — the login, the endpoints, the tables that had to flex correctly. I worked closely with designers the whole time.",
+    "I studied Informatics at Örebro and later Human–Computer Interaction at Uppsala, which gives me a multidisciplinary way of building things and designing them.",
+    "On the side I build experiments with AI, design and tech, usually because I want to see what happens.",
+    "When I'm not at a screen I listen to heavy music, ski, play games and skateboard.",
   ],
 };
 
@@ -17,12 +29,12 @@ export const profile = {
 export const contacts = [
   { label: "hello@erikwijnbladh.com", href: "mailto:hello@erikwijnbladh.com" },
   {
-    label: "linkedin",
+    label: "LinkedIn",
     href: "https://www.linkedin.com/in/erik-wijnbladh",
     external: true,
   },
   {
-    label: "github",
+    label: "GitHub",
     href: "https://github.com/erikwijnbladh",
     external: true,
   },
@@ -67,36 +79,37 @@ export const nowPlaying: Track[] = [
 ];
 
 export type Experience = {
+  /** Displayed span. Open-ended roles end in "—". */
   year: string;
   org: string;
   role: string;
   href?: string;
 };
 
-/** Curated experience for the About page — start year, company, role. */
+/** Experience, from the CV. Compileit leads it from September 2026. */
 export const experience: Experience[] = [
   {
-    year: "2026",
-    org: "compileit",
-    role: "fullstack",
+    year: "2026 —",
+    org: "Compileit",
+    role: "Fullstack developer",
     href: "https://compileit.com/",
   },
   {
     year: "2026",
-    org: "kth",
-    role: "frontend",
+    org: "KTH Royal Institute of Technology",
+    role: "Software developer",
     href: "https://www.kth.se/",
   },
   {
-    year: "2022",
-    org: "brightbid",
-    role: "frontend",
+    year: "2022 – 2025",
+    org: "BrightBid",
+    role: "Front-end developer",
     href: "https://brightbid.com/",
   },
   {
-    year: "2020",
-    org: "selfcheck",
-    role: "frontend",
+    year: "2020 – 2022",
+    org: "Selfcheck",
+    role: "Front-end developer & KTP project manager",
     href: "https://selfcheck.se/",
   },
 ];
@@ -109,36 +122,121 @@ export type Education = {
   href?: string;
 };
 
-/** Education for the About page. */
+/** Education, from the CV. */
 export const education: Education[] = [
   {
-    year: "2025",
-    org: "uppsala university",
-    degree: "msc human-computer interaction",
-    note: "highest grade",
+    year: "2025 – 2027",
+    org: "Uppsala University",
+    degree: "MSc Human–Computer Interaction",
+    note: "In progress",
     href: "https://www.uu.se/en/study/programme/masters-programme-human-computer-interaction",
+  },
+  {
+    year: "2016 – 2019",
+    org: "Örebro University",
+    degree: "BSc Informatics",
+    href: "https://www.oru.se/",
   },
 ];
 
-/** An entry in the home page list. `href` absent = not clickable (e.g. work). */
-export type HomeListItem = {
+export type Work = {
   id: string;
   title: string;
-  subtitle?: string;
-  /** Hover preview gradient. Omit to show no thumbnail on hover. */
-  preview?: string;
-  /** Named PostShader scene; takes precedence over `preview`. */
+  year: string;
+  kind: string;
+  /**
+   * One short line. This renders as a row subtitle in a half-width column, so
+   * anything past about eight words wraps into a paragraph and the list stops
+   * scanning as a list.
+   */
+  blurb: string;
+  /** Named PostShader scene, drawn in the hover preview. */
   shader?: string;
+  /** Set when the project has a case page at `/{id}`. */
+  page?: boolean;
+  /** Repository or live link, shown on the case page. */
   href?: string;
-  external?: boolean;
-  /** Adds a divider/spacing above this row in the list. */
-  separated?: boolean;
+  /**
+   * The artifact shown when the row is opened. A still or a looping clip in
+   * `/public/work/`, which is the only place colour enters the page. Videos
+   * give `src` without an extension — both `.webm` and `.mp4` are offered.
+   *
+   * Until a real one is dropped in, the row opens onto an empty frame rather
+   * than a stand-in gradient: a placeholder that looks like art would make the
+   * colour rule read as decoration, which is exactly what it isn't.
+   */
+  media?: { src: string; type: "image" | "video"; alt: string };
 };
 
-/** The current role row, rendered as plain text with no link. */
-export const currentRoleItem: HomeListItem = {
-  id: "current-role",
-  title: "compileit",
-  subtitle: "shipping world-class product, end to end.",
-  // Preview is the compileit logo on black — see previewLogos in logos.tsx.
+/** Projects with something to show. Employment lives on the About page. */
+export const work: Work[] = [
+  {
+    id: "pane",
+    title: "Pane",
+    year: "2026",
+    kind: "Tool",
+    blurb: "Change one class, five usages move as you type.",
+    shader: "prism",
+    page: true,
+    href: "https://github.com/erikwijnbladh/pane",
+    media: {
+      src: "/work/pane",
+      type: "video",
+      alt: "Editing ButtonRoot in Pane while five buttons across two panes update at once",
+    },
+  },
+  {
+    id: "gptdnd",
+    title: "gptdnd",
+    year: "2026",
+    kind: "System",
+    blurb: "A campaign generator that checks its own work.",
+    shader: "ember",
+    page: true,
+    href: "https://github.com/erikwijnbladh/gptdnd",
+  },
+];
+
+export type HomeRow = {
+  id: string;
+  title: string;
+  blurb?: string;
+  /** Absent = rendered as plain text rather than a link. */
+  href?: string;
+  external?: boolean;
+  /** Opens a gap above the row, to group what follows. */
+  separated?: boolean;
+  /** Named PostShader scene for the hover preview. */
+  shader?: string;
+  media?: Work["media"];
 };
+
+/**
+ * The home page list, top to bottom: where Erik works, then what he's built,
+ * then the page with the long version.
+ *
+ * Compileit sits at the head as the current role — see the publish-date note
+ * at the top of this file. The rest of the history lives on the About page.
+ */
+export const homeRows: HomeRow[] = [
+  {
+    id: "compileit",
+    title: "Compileit",
+    blurb: "Building products people love and businesses grow with.",
+  },
+  ...work.map((item) => ({
+    id: item.id,
+    title: item.title,
+    blurb: item.blurb,
+    href: item.page ? `/${item.id}` : item.href,
+    external: !item.page,
+    shader: item.shader,
+    media: item.media,
+  })),
+  {
+    id: "about",
+    title: "About",
+    href: "/about",
+    separated: true,
+  },
+];

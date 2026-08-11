@@ -40,12 +40,15 @@ export function useSwoop() {
   }
 
   // Park at the nav origin before first paint so the opening swoop starts from
-  // the name, not from the top of the container.
+  // the name, not from the top of the container. `originTop` measures the DOM,
+  // so this can only run after layout — the position genuinely isn't knowable
+  // during render, which is the case the rule can't distinguish from a
+  // cascade.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTop(originTop());
     const id = requestAnimationFrame(() => setArmed(true));
     return () => cancelAnimationFrame(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // On navigation, spring the dot back up to the nav origin and clear any
@@ -53,6 +56,10 @@ export function useSwoop() {
   useEffect(() => {
     if (returnTimer.current) clearTimeout(returnTimer.current);
     if (settleTimer.current) clearTimeout(settleTimer.current);
+    // Both of these settle the dot against the new page's layout, which is
+    // only measurable after it exists — the same post-layout sync as the mount
+    // effect above, not a cascade.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setHovered(null);
     setTop(originTop());
     setTraveling(false);
@@ -63,8 +70,12 @@ export function useSwoop() {
     () => () => {
       if (returnTimer.current) clearTimeout(returnTimer.current);
       if (settleTimer.current) clearTimeout(settleTimer.current);
+      // A route change can remove the list before its pathname effect runs.
+      // Hand the indicator back to the persistent nav as the list unmounts so
+      // the nav dot never stays hidden after following a row link.
+      setTraveling(false);
     },
-    [],
+    [setTraveling],
   );
 
   function hover(el: HTMLElement, id: string) {
