@@ -1,12 +1,30 @@
 @import "tailwindcss";
 
+/* The static foundations of the site: geometry, density and the warm stone
+   palette. They stay as custom properties so utilities and hand-written CSS
+   resolve through the same source of truth. */
 :root {
-  --background: #f4f3f1;
-  --foreground: #15140f;
-  --muted: #6b6a64;
-  --line: rgba(21, 20, 15, 0.12);
-  --surface: #ebe9e5;
-  --accent: #15140f;
+  --radius: 16px;
+  --space: 1;
+  --text: 1;
+  --warmth: 1;
+  --contrast: 1;
+  --rule: 0.12;
+  --grain: 0.04;
+
+  /* Warmth rotates the whole palette on one hue, so paper and ink stay
+     related instead of drifting apart. At 1 this is the original stone
+     (#f4f3f1 / #15140f); at 0 the same design in cool grey. */
+  --h: calc(220deg - var(--warmth) * 182deg);
+
+  --background: hsl(var(--h) 12% 95%);
+  /* Contrast pulls the ink toward the paper rather than fading it out, so
+     text stays solid at every setting instead of turning grey. */
+  --foreground: hsl(var(--h) 17% calc(7% + (1 - var(--contrast)) * 30%));
+  --muted: hsl(var(--h) 5% calc(41% + (1 - var(--contrast)) * 12%));
+  --line: hsl(var(--h) 17% 7% / var(--rule));
+  --surface: hsl(var(--h) 9% 91%);
+  --accent: var(--foreground);
 }
 
 @theme inline {
@@ -25,6 +43,28 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-instrument-serif);
+
+  /* Tailwind's own scales, rebuilt on the tokens. This keeps every
+     `mt-12`, `rounded-2xl` and `text-base` already written in the
+     components on the same geometry and type ramp. `inline` matters — it
+     emits the calc into the utility rather than freezing a value at build
+     time. */
+  --spacing: calc(0.25rem * var(--space));
+  --radius-sm: calc(var(--radius) * 0.25);
+  --radius-md: calc(var(--radius) * 0.375);
+  --radius-lg: calc(var(--radius) * 0.5);
+  --radius-xl: calc(var(--radius) * 0.75);
+  --radius-2xl: var(--radius);
+  --radius-3xl: calc(var(--radius) * 1.5);
+
+  --text-xs: calc(0.75rem * var(--text));
+  --text-sm: calc(0.875rem * var(--text));
+  --text-base: calc(1rem * var(--text));
+  --text-lg: calc(1.125rem * var(--text));
+  --text-xl: calc(1.25rem * var(--text));
+  --text-2xl: calc(1.5rem * var(--text));
+  --text-3xl: calc(1.875rem * var(--text));
+  --text-4xl: calc(2.25rem * var(--text));
 }
 
 * {
@@ -35,13 +75,16 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  user-select: none;
 }
 
-/* Posts are for reading — let people select and copy the text. */
-article {
-  -webkit-user-select: text;
-  user-select: text;
+/* Only chrome resists selection — the dock and the nav, where a drag across a
+   control shouldn't leave a blue smear. Everything that is words stays
+   selectable: an email address nobody can copy is a contact page that doesn't
+   work. */
+.dock,
+header {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Clickable elements get the pointer cursor. */
@@ -156,7 +199,7 @@ summary {
   height: 200%;
   pointer-events: none;
   z-index: 60;
-  opacity: 0.04;
+  opacity: var(--grain);
   /* No mix-blend-mode: blending forces the compositor to read back everything
      underneath, every frame, across the whole screen. */
   will-change: transform;

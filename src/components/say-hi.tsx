@@ -16,7 +16,7 @@ const LABEL: Record<Status, string> = {
   idle: "Send it",
   sending: "Sending…",
   error: "Try again",
-  sent: "Sent — thanks",
+  sent: "Sent!",
 };
 
 /**
@@ -145,7 +145,7 @@ export function SayHiForm({ onClose }: { onClose: () => void }) {
           onChange={(e) => setMessage(e.target.value)}
           required
           rows={3}
-          placeholder="hey erik, i have a stupid idea and a budget"
+          placeholder="Hey Erik, I have a stupid idea and a budget"
           aria-label="Message"
           maxLength={5000}
           disabled={busy}
@@ -176,21 +176,22 @@ export function SayHiForm({ onClose }: { onClose: () => void }) {
       </form>
 
       {/*
-        `role="alert"` so it's announced rather than silently appearing, since
-        the button's label change is easy to miss and the reason for it lives
-        down here.
+        Error copy swaps into the footer's reserved space instead of adding a
+        new row. The dock measures a separate hidden copy of this form, so live
+        state cannot safely change its height after the shell has opened.
       */}
-      <AnimatePresence>
-        {status === "error" && error && (
-          <motion.p
-            role="alert"
-            initial={still ? false : { opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={still ? { opacity: 0 } : { opacity: 0, height: 0 }}
-            transition={{ duration: duration.fast, ease }}
-            className="overflow-hidden text-xs font-light text-foreground/80"
-          >
-            <span className="mt-2.5 block">
+      <div className="relative mt-4 min-h-12 text-xs font-light">
+        <AnimatePresence mode="wait" initial={false}>
+          {status === "error" && error ? (
+            <motion.p
+              key="error"
+              role="alert"
+              initial={still ? false : { opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={still ? { opacity: 0 } : { opacity: 0, y: -4 }}
+              transition={{ duration: duration.fast, ease }}
+              className="absolute inset-x-0 top-0 leading-relaxed text-foreground/80"
+            >
               {error} Or email{" "}
               <a
                 href={`mailto:${profile.email}`}
@@ -199,15 +200,21 @@ export function SayHiForm({ onClose }: { onClose: () => void }) {
                 {profile.email}
               </a>{" "}
               directly.
-            </span>
-          </motion.p>
-        )}
-      </AnimatePresence>
-
-      <p className="mt-4 text-xs font-light text-muted">
-        No newsletter, no funnel, no &ldquo;quick sync&rdquo;. Just me, on the
-        other end.
-      </p>
+            </motion.p>
+          ) : (
+            <motion.p
+              key="note"
+              initial={still ? false : { opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={still ? { opacity: 0 } : { opacity: 0, y: -4 }}
+              transition={{ duration: duration.fast, ease }}
+              className="absolute inset-x-0 top-0 text-muted"
+            >
+              Please don't try to sell me anything...
+            </motion.p>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

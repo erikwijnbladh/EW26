@@ -1,32 +1,47 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useSwoop, DotSpacer } from "@/components/use-swoop";
 import { previewLogos } from "@/components/logos";
 import { PostShader, hasPostShader } from "@/components/post-shader";
-import type { HomeListItem } from "@/lib/data";
+import { homeRows, type HomeRow } from "@/lib/data";
 
-export function HomeList({ items }: { items: HomeListItem[] }) {
+/**
+ * The home page list: current role, then projects, then the About page.
+ *
+ * Layout is main's: rows indented by the dot spacer, the list running to half
+ * the column and the hover preview filling the other half.
+ */
+export function HomeList({ items = homeRows }: { items?: HomeRow[] }) {
   const { containerRef, dot, rowProps, release, hovered, top } = useSwoop();
 
   const active = hovered ? items.find((item) => item.id === hovered) : null;
   const ActiveLogo = active ? previewLogos[active.id] : undefined;
+  // A recording wins over a generated scene: it's the real artifact.
+  const media = active?.media;
+  const shows = Boolean(media || active?.shader || ActiveLogo);
 
   // The preview panel parks at the last hovered row and only fades out — it
-  // must NOT follow the blob back up to its origin (which would make the
-  // fading rectangle swoop away with the dot). So we freeze its position
-  // whenever nothing is hovered.
-  const panelTop = useRef(0);
-  if (active) panelTop.current = top;
-  const center = panelTop.current;
+  // must NOT follow the blob back up to its origin, which would make the
+  // fading rectangle swoop away with the dot. So its position freezes whenever
+  // nothing is hovered.
+  //
+  // Held in state and adjusted during render rather than in a ref: a ref
+  // written while rendering is torn by concurrent React, which is free to
+  // render a tree it then throws away — the parked position would be updated
+  // by a pass that never painted. This is React's documented pattern for
+  // deriving state from a changing input, and it re-renders immediately
+  // without a wasted commit.
+  const [center, setCenter] = useState(0);
+  if (active && top !== center) setCenter(top);
 
   return (
     <div ref={containerRef} className="relative">
       {dot}
 
       <ul
-        className="flex flex-col sm:w-1/2"
+        className="flex flex-col"
         onPointerLeave={(e) => {
           if (e.pointerType === "mouse") release();
         }}
@@ -39,10 +54,8 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
                 <span className="block text-base text-foreground">
                   {item.title}
                 </span>
-                {item.subtitle && (
-                  <span className="block text-sm text-muted">
-                    {item.subtitle}
-                  </span>
+                {item.blurb && (
+                  <span className="block text-sm text-muted">{item.blurb}</span>
                 )}
               </span>
             </>
@@ -74,25 +87,42 @@ export function HomeList({ items }: { items: HomeListItem[] }) {
       </ul>
 
       <div
-        className={`pointer-events-none absolute right-0 hidden aspect-video w-[calc(50%-2rem)] -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out sm:flex ${
-          active?.preview || active?.shader || ActiveLogo
-            ? "opacity-100"
-            : "opacity-0"
+        // The preview begins after the shared rail, so it can grow without covering
+        // any home-page content. Its width is capped by the remaining viewport space.
+        className={`pointer-events-none absolute left-full ml-8 hidden aspect-video w-[min(32rem,calc(50vw-20rem))] -translate-y-1/2 items-center justify-center overflow-hidden rounded-2xl shadow-ring transition-all duration-300 ease-out xl:flex ${
+          shows ? "opacity-100" : "opacity-0"
         }`}
         style={{
           top: center,
-          backgroundImage:
-            ActiveLogo || hasPostShader(active?.shader)
-              ? undefined
-              : active?.preview,
           backgroundColor: ActiveLogo ? "#000000" : undefined,
         }}
       >
-        {ActiveLogo ? (
+        {media?.type === "video" ? (
+          <video
+            key={active?.id}
+            aria-label={media.alt}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+            className="h-full w-full object-cover"
+          >
+            <source src={`${media.src}.webm`} type="video/webm" />
+            <source src={`${media.src}.mp4`} type="video/mp4" />
+          </video>
+        ) : media?.type === "image" ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={media.src}
+            alt={media.alt}
+            className="h-full w-full object-cover"
+          />
+        ) : ActiveLogo ? (
           <ActiveLogo className="h-1/3 w-auto" />
-        ) : (
+        ) : hasPostShader(active?.shader) ? (
           <PostShader name={active?.shader} className="h-full w-full" />
-        )}
+        ) : null}
       </div>
     </div>
   );

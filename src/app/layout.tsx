@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { profile } from "@/lib/data";
 import { Nav } from "@/components/nav";
 import { Dock } from "@/components/dock";
 import { ScrollReset } from "@/components/scroll-reset";
@@ -25,9 +26,8 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://erikwijnbladh.com"),
-  title: "erik wijnbladh — designer & developer",
-  description:
-    "Designer and developer in Stockholm, currently at Compileit. I design and build web products.",
+  title: "Erik Wijnbladh — Design engineer",
+  description: profile.tagline,
 };
 
 export const viewport: Viewport = {
@@ -44,6 +44,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">

@@ -94,7 +94,7 @@ export function PlayingSkeleton() {
 
   return (
     <section aria-label="Latest playing" aria-busy>
-      <p className="flex items-center gap-2 text-xs uppercase tracking-[0.08em] text-muted/70">
+      <p className="flex items-center gap-2 text-xs text-muted/70">
         Latest playing
         {/* Holds the status icon's place, so the heading doesn't jog. */}
         <span className="size-3.5" aria-hidden />

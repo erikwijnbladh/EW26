@@ -23,5 +23,5 @@ export const previewLogos: Record<
   string,
   (props: { className?: string }) => React.ReactNode
 > = {
-  "current-role": CompileitMark,
+  compileit: CompileitMark,
 };

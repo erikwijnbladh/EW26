@@ -50,7 +50,7 @@ export function AboutLists() {
       <div className="mt-16">
         <div className={row}>
           <DotSpacer />
-          <span className="text-base text-foreground">experience</span>
+          <span className="text-base text-foreground">Experience</span>
         </div>
         {experience.map((item) => (
           <a
@@ -62,8 +62,8 @@ export function AboutLists() {
             className={row}
           >
             <DotSpacer />
-            <span className="grid grid-cols-[3rem_1fr] gap-6">
-              <span className="text-base text-muted">{item.year}</span>
+            <span className="grid grid-cols-[7rem_1fr] gap-6">
+              <span className="whitespace-nowrap text-base text-muted">{item.year}</span>
               <span>
                 <span className="block text-base text-muted">{item.org}</span>
                 <span className="block text-base text-foreground">
@@ -79,7 +79,7 @@ export function AboutLists() {
       <div className="mt-16">
         <div className={row}>
           <DotSpacer />
-          <span className="text-base text-foreground">education</span>
+          <span className="text-base text-foreground">Education</span>
         </div>
         {education.map((item) => (
           <a
@@ -91,8 +91,8 @@ export function AboutLists() {
             className={row}
           >
             <DotSpacer />
-            <span className="grid grid-cols-[3rem_1fr] gap-6">
-              <span className="text-base text-muted">{item.year}</span>
+            <span className="grid grid-cols-[7rem_1fr] gap-6">
+              <span className="whitespace-nowrap text-base text-muted">{item.year}</span>
               <span>
                 <span className="block text-base text-muted">{item.org}</span>
                 <span className="block text-base text-foreground">

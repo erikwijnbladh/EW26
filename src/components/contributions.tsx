@@ -98,7 +98,7 @@ export function Contributions({ data }: { data: ContributionsData }) {
   return (
     <section aria-label="GitHub activity">
       <div className="flex items-baseline justify-between gap-4">
-        <p className="text-xs uppercase tracking-[0.08em] text-muted/70">
+        <p className="text-xs text-muted/70">
           GitHub activity
         </p>
         <p className="text-xs text-muted">
