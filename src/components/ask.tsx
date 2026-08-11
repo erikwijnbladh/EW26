@@ -102,6 +102,16 @@ function SendIcon({ busy }: { busy: boolean }) {
 }
 
 /**
+ * What the clear button is doing.
+ *
+ * `vanishing` is a state rather than an unmount because the machine should put
+ * itself away — the slot and the shreddings retract the way every other stroke
+ * on this site leaves, instead of the whole icon fading out from underneath
+ * you.
+ */
+type Phase = "idle" | "shredding" | "vanishing";
+
+/**
  * Clearing the conversation: a bin that becomes a shredder and eats the paper.
  *
  * Built on the dock's envelope-to-tick — one box, nothing unmounts, strokes draw
@@ -112,14 +122,20 @@ function SendIcon({ busy }: { busy: boolean }) {
  * changing rather than two icons crossfading.
  *
  * The order is the point. Bin retracts, line drops, sheet draws in above it,
- * sheet feeds down through it, strips fall out underneath — about 1.1s end to
- * end, which is also how long the transcript stays up for.
+ * sheet feeds down through it, strips fall out underneath — and then the
+ * shreddings pull back up into the slot and the slot itself unspools, so the
+ * button leaves the way it arrived.
  */
-function ShredderIcon({ shredding }: { shredding: boolean }) {
+function ShredderIcon({ phase }: { phase: Phase }) {
   // Two copies of this card exist — the real one and the hidden one the dock
   // measures — so a fixed id would put two identical clip paths in the document
   // under the same name.
   const slot = useId();
+
+  /** The shredder side is present — the bin is not. */
+  const machine = phase !== "idle";
+  const shredding = phase === "shredding";
+  const gone = phase === "vanishing";
 
   return (
     <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
@@ -137,13 +153,15 @@ function ShredderIcon({ shredding }: { shredding: boolean }) {
           d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
           {...stroke}
           initial={false}
-          animate={{ pathLength: shredding ? 0 : 1, opacity: shredding ? 0 : 1 }}
-          transition={shredding ? drawOff() : drawOn(0.26)}
+          animate={{ pathLength: machine ? 0 : 1, opacity: machine ? 0 : 1 }}
+          transition={machine ? drawOff() : drawOn(0.26)}
         />
 
         <motion.g
           initial={false}
-          animate={{ y: shredding ? 12 : 0 }}
+          // Held down through `vanishing` — snapping the sheet back up while it
+          // still had any opacity left would flash it through the slot.
+          animate={{ y: phase === "idle" ? 0 : 12 }}
           transition={{
             duration: shredding ? 0.34 : 0,
             ease: easeInOut,
@@ -167,16 +185,20 @@ function ShredderIcon({ shredding }: { shredding: boolean }) {
         </motion.g>
       </g>
 
-      {/* Lid and slot are one stroke. It never draws or retracts — it travels. */}
+      {/* Lid and slot are one stroke. Through the morph it travels rather than
+          redrawing; only at the end does it unspool. */}
       <motion.path
         d="M3 6h18"
         {...stroke}
         initial={false}
-        animate={{ y: shredding ? 7 : 0 }}
+        animate={{
+          y: machine ? 7 : 0,
+          pathLength: gone ? 0 : 1,
+          opacity: gone ? 0 : 1,
+        }}
         transition={{
-          duration: 0.36,
-          ease: easeInOut,
-          delay: shredding ? 0.06 : 0,
+          ...(gone ? drawOff(0.14) : drawOn()),
+          y: { duration: 0.36, ease: easeInOut, delay: shredding ? 0.06 : 0 },
         }}
       />
 
@@ -185,13 +207,14 @@ function ShredderIcon({ shredding }: { shredding: boolean }) {
         d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"
         {...stroke}
         initial={false}
-        animate={{ pathLength: shredding ? 0 : 1, opacity: shredding ? 0 : 1 }}
-        transition={shredding ? drawOff(0.03) : drawOn(0.3)}
+        animate={{ pathLength: machine ? 0 : 1, opacity: machine ? 0 : 1 }}
+        transition={machine ? drawOff(0.03) : drawOn(0.3)}
       />
 
       {/* Drawn top-down rather than Lucide's bottom-up: `pathLength` fills from
-          the start of the path, and the other way round they retract into the
-          machine instead of falling out of it. */}
+          the start of the path, and the other way round they would retract into
+          the machine instead of falling out of it — which is exactly what they
+          should do on the way back, and do, for free. */}
       {["M6 17v3", "M10 17v5", "M14 17v2", "M18 17v3"].map((strip, i) => (
         <motion.path
           key={strip}
@@ -199,7 +222,7 @@ function ShredderIcon({ shredding }: { shredding: boolean }) {
           {...stroke}
           initial={false}
           animate={{ pathLength: shredding ? 1 : 0, opacity: shredding ? 1 : 0 }}
-          transition={shredding ? drawOn(0.66 + i * 0.05) : drawOff()}
+          transition={shredding ? drawOn(0.66 + i * 0.05) : drawOff(i * 0.03)}
         />
       ))}
     </svg>
@@ -336,7 +359,7 @@ export function AskPanel({ open }: { open: boolean }) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [shredding, setShredding] = useState(false);
+  const [phase, setPhase] = useState<Phase>("idle");
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -360,7 +383,10 @@ export function AskPanel({ open }: { open: boolean }) {
     pinned.current = el.scrollHeight - el.scrollTop - el.clientHeight < 32;
   }, []);
 
-  useEffect(stickToBottom, [messages, stickToBottom]);
+  // `open` is in here because the answer keeps arriving while the card is shut:
+  // reopening onto the middle of a reply you missed is worse than not having
+  // closed it.
+  useEffect(stickToBottom, [messages, open, stickToBottom]);
 
   // Focus once the dock has finished expanding, so the browser doesn't scroll
   // or repaint mid-morph. The measuring copy of this card is `visibility:
@@ -371,35 +397,40 @@ export function AskPanel({ open }: { open: boolean }) {
     return () => clearTimeout(timer);
   }, [open]);
 
-  // Closing the card mid-answer should stop the answer. The route aborts its
-  // upstream call when this connection drops, so nothing keeps generating into
-  // a page nobody is looking at.
-  useEffect(() => {
-    if (!open) abort.current?.abort();
-  }, [open]);
-
+  // Only on unmount. Closing the card deliberately does *not* stop the answer —
+  // the request keeps streaming into state and the whole reply is waiting when
+  // it's opened again. The card is closed, not gone: the dock keeps it mounted,
+  // so there is something left to stream into. On a real unmount there isn't.
   useEffect(() => () => abort.current?.abort(), []);
 
   // The whole morph has to play before the transcript goes: clearing on the
   // click empties the card, unmounts the button and takes the animation with
-  // it. Resetting `shredding` in the same breath drops the button out on its
-  // exit fade, so the reverse morph is never seen — and the next time there is
-  // something to clear it mounts as a bin again.
+  // it. Then `vanishing` keeps it mounted a moment longer so the machine can
+  // unspool rather than blink out — and by the time it does unmount there is
+  // nothing left on screen to disappear.
   useEffect(() => {
-    if (!shredding) return;
+    if (phase === "idle") return;
 
-    const done = setTimeout(() => {
-      abort.current?.abort();
-      abort.current = null;
-      setBusy(false);
-      setMessages([]);
-      setError(null);
-      setShredding(false);
+    if (phase === "shredding") {
+      const shredded = setTimeout(() => {
+        abort.current?.abort();
+        abort.current = null;
+        setBusy(false);
+        setMessages([]);
+        setError(null);
+        setPhase("vanishing");
+      }, 1100);
+
+      return () => clearTimeout(shredded);
+    }
+
+    const away = setTimeout(() => {
+      setPhase("idle");
       inputRef.current?.focus();
-    }, 1100);
+    }, 520);
 
-    return () => clearTimeout(done);
-  }, [shredding]);
+    return () => clearTimeout(away);
+  }, [phase]);
 
   const send = useCallback(
     async (text: string) => {
@@ -543,7 +574,7 @@ export function AskPanel({ open }: { open: boolean }) {
         </h2>
 
         <AnimatePresence initial={false}>
-          {(!empty || shredding) && (
+          {(!empty || phase !== "idle") && (
             <motion.button
               type="button"
               aria-label="Clear the conversation"
@@ -551,11 +582,11 @@ export function AskPanel({ open }: { open: boolean }) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: duration.fast, ease }}
-              onClick={() => setShredding(true)}
-              disabled={shredding}
+              onClick={() => setPhase("shredding")}
+              disabled={phase !== "idle"}
               className="shrink-0 text-muted transition-colors duration-150 hover:text-foreground"
             >
-              <ShredderIcon shredding={shredding} />
+              <ShredderIcon phase={phase} />
             </motion.button>
           )}
         </AnimatePresence>
