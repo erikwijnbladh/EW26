@@ -17,11 +17,9 @@ export const profile = {
   intro:
     "I build digital products and care a lot about the parts people actually use. How they look, move and feel.",
   bio: [
-    "I'm a fullstack developer at Compileit in Stockholm, building web and app products for clients. I started out in frontend and never really stopped caring about the design side of it. I like figuring out how something should work and then building it.",
-    "Before Compileit I had a short stint at KTH building the CYVAC platform. Prior to that I spent the better part of three years at BrightBid, on an AI bidding product where I built the interface people actually used it through — the login, the endpoints, the tables that had to flex correctly. I worked closely with designers the whole time.",
-    "I studied Informatics at Örebro and later Human–Computer Interaction at Uppsala, which gives me a multidisciplinary way of building things and designing them.",
-    "On the side I build experiments with AI, design and tech, usually because I want to see what happens.",
-    "When I'm not at a screen I listen to heavy music, ski, play games and skateboard.",
+    "I'm a fullstack developer at Compileit in Stockholm, where we build web and app products for clients. I think the artifact was never really the job — two people with the same tools and the same brief ship very different things, and the difference was never the typing.",
+    "On the side I build things with AI, mostly to find out what happens. The chat on this page is one of them. That's also where the problem I actually care about lives: a button does one thing, and the design work is making that one thing clear, but a system that guesses at what you meant can't make that promise. What an interface owes you when it isn't sure is the part I don't have finished.",
+    "Before Compileit I was at KTH building the CYVAC platform, and spent the better part of three years at BrightBid on an AI bidding product, building the interface people actually used it through. I studied Informatics at Örebro and Human–Computer Interaction at Uppsala. You can reach me at hello@erikwijnbladh.com, or see my code on GitHub.",
   ],
 };
 
@@ -152,104 +150,67 @@ export const education: Education[] = [
   },
 ];
 
-export type Work = {
-  id: string;
-  title: string;
-  year: string;
-  kind: string;
+export type Mention = {
+  /** The words exactly as they appear in `profile.bio`. */
+  phrase: string;
+  /** Whose entry in `experience` or `education` carries the link. */
+  org: string;
   /**
-   * One short line. This renders as a row subtitle in a half-width column, so
-   * anything past about eight words wraps into a paragraph and the list stops
-   * scanning as a list.
+   * The gradient behind the thumbnails — and all you see until there are any.
+   * Deliberately abstract: a stand-in that looked like a screenshot would be
+   * claiming something about a company that hasn't been shown.
    */
-  blurb: string;
-  /** Named PostShader scene, drawn in the hover preview. */
-  shader?: string;
-  /** Set when the project has a case page at `/{id}`. */
-  page?: boolean;
-  /** Repository or live link, shown on the case page. */
-  href?: string;
-  /**
-   * The artifact shown when the row is opened. A still or a looping clip in
-   * `/public/work/`, which is the only place colour enters the page. Videos
-   * give `src` without an extension — both `.webm` and `.mp4` are offered.
-   *
-   * Until a real one is dropped in, the row opens onto an empty frame rather
-   * than a stand-in gradient: a placeholder that looks like art would make the
-   * colour rule read as decoration, which is exactly what it isn't.
-   */
-  media?: { src: string; type: "image" | "video"; alt: string };
-};
-
-/** Projects with something to show. Employment lives on the About page. */
-export const work: Work[] = [
-  {
-    id: "pane",
-    title: "Pane",
-    year: "2026",
-    kind: "Tool",
-    blurb: "Change one class, five usages move as you type.",
-    shader: "prism",
-    page: true,
-    href: "https://github.com/erikwijnbladh/pane",
-    media: {
-      src: "/work/pane",
-      type: "video",
-      alt: "Editing ButtonRoot in Pane while five buttons across two panes update at once",
-    },
-  },
-  {
-    id: "gptdnd",
-    title: "gptdnd",
-    year: "2026",
-    kind: "System",
-    blurb: "A campaign generator that checks its own work.",
-    shader: "ember",
-    page: true,
-    href: "https://github.com/erikwijnbladh/gptdnd",
-  },
-];
-
-export type HomeRow = {
-  id: string;
-  title: string;
-  blurb?: string;
-  /** Absent = rendered as plain text rather than a link. */
-  href?: string;
-  external?: boolean;
-  /** Opens a gap above the row, to group what follows. */
-  separated?: boolean;
-  /** Named PostShader scene for the hover preview. */
-  shader?: string;
-  media?: Work["media"];
+  tone: string;
+  /** Up to two, fanned out on hover. Drop files in `/public/mentions/`. */
+  images?: { src: string; alt: string }[];
 };
 
 /**
- * The home page list, top to bottom: where Erik works, then what he's built,
- * then the page with the long version.
+ * The words in the bio that are worth hovering.
  *
- * Compileit sits at the head as the current role — see the publish-date note
- * at the top of this file. The rest of the history lives on the About page.
+ * Keyed to the prose rather than the other way round: the paragraph is written
+ * as a paragraph, and this says which of its words happen to be places. Nothing
+ * here holds a URL — that lives once, on the `experience` and `education` entry
+ * the `org` names, so a company changing address can't leave the prose pointing
+ * somewhere the CV doesn't.
  */
-export const homeRows: HomeRow[] = [
+export const mentions: Mention[] = [
   {
-    id: "compileit",
-    title: "Compileit",
-    blurb: "Building products people love and businesses grow with.",
+    phrase: "Compileit",
+    org: "Compileit",
+    tone: "linear-gradient(150deg, #1b1a16 0%, #4a4842 55%, #cbc7bf 100%)",
   },
-  ...work.map((item) => ({
-    id: item.id,
-    title: item.title,
-    blurb: item.blurb,
-    href: item.page ? `/${item.id}` : item.href,
-    external: !item.page,
-    shader: item.shader,
-    media: item.media,
-  })),
   {
-    id: "about",
-    title: "About",
-    href: "/about",
-    separated: true,
+    phrase: "KTH",
+    org: "KTH Royal Institute of Technology",
+    tone: "linear-gradient(150deg, #1a1f2b 0%, #3f4a63 55%, #b9c2d4 100%)",
+  },
+  {
+    phrase: "BrightBid",
+    org: "BrightBid",
+    tone: "linear-gradient(150deg, #21180f 0%, #6b4a22 55%, #e0cbaa 100%)",
+  },
+  {
+    phrase: "Örebro",
+    org: "Örebro University",
+    tone: "linear-gradient(150deg, #14201a 0%, #3a5a48 55%, #bed3c6 100%)",
+  },
+  {
+    phrase: "Uppsala",
+    org: "Uppsala University",
+    tone: "linear-gradient(150deg, #201421 0%, #573a5c 55%, #d2c0d6 100%)",
   },
 ];
+
+/**
+ * Where an organisation's link lives, wherever it lives.
+ *
+ * The bio says "KTH" and the CV says "KTH Royal Institute of Technology"; this
+ * is the one place that knows they're the same place.
+ */
+export function orgHref(org: string) {
+  const match = (item: { org: string; href?: string }) => item.org === org;
+  return (
+    experience.find(match)?.href ?? education.find(match)?.href ?? ""
+  );
+}

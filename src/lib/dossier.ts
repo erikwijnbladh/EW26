@@ -4,9 +4,7 @@ import {
   experience,
   education,
   nowPlaying,
-  work,
 } from "@/lib/data";
-import { getAllPosts } from "@/lib/content";
 
 /**
  * Everything the site chat is allowed to know, assembled from the same data the
@@ -17,10 +15,10 @@ import { getAllPosts } from "@/lib/content";
  * worst kind: a chat that confidently describes a job you left. Edit
  * `src/lib/data.ts` or a post in `content/`, and the answers follow.
  *
- * The posts go in whole rather than as titles. They're the only place the site
- * says anything about *how* Erik thinks, which is most of what anyone asking
- * these questions actually wants — and at this size the whole corpus is a few
- * thousand tokens, cached on the way in (see `lib/chat.ts`).
+ * It now carries more than the page does. The site is one column of prose; the
+ * CV behind it — every role, every date, both degrees — lives here and comes
+ * out when somebody asks. That division is deliberate: the page is the pitch
+ * and this is the detail, which is also what stops the chat being decoration.
  */
 
 /** Built once per instance. The content directory doesn't change under us. */
@@ -30,27 +28,7 @@ function bulletList(lines: string[]) {
   return lines.map((line) => `- ${line}`).join("\n");
 }
 
-/**
- * MDX bodies, flattened for the prompt.
- *
- * Two things go. The JSX components (see `components/mdx.tsx`) — their text is
- * worth keeping and their tags are not, since left in they're an invitation to
- * answer in markup, and the chat replies in prose. And their heading levels get
- * pushed below the ones this file uses: a case page's own `## What I built`
- * otherwise lands in the outline as a sibling of `## Experience`, and the
- * document stops saying which project it belongs to.
- */
-function plain(body: string) {
-  return body
-    .replace(/<\/?[A-Za-z][^>]*>/g, "")
-    .replace(/^#{1,6} /gm, "#### ")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
-
 function build(): string {
-  const posts = getAllPosts();
-
   const sections = [
     `# ${profile.name}
 
@@ -107,34 +85,13 @@ names above as though they were current, and don't send anyone to look at the
 listening strip on the page: that reads the same Spotify account the tool does,
 so there is nothing there you can't fetch yourself.`,
 
-    `## Projects
-
-The work published on this site. Each one is real and his — quote and
-summarise freely, and point people at the page it lives on.`,
-
-    ...work.map((project) => {
-      // Not every project has written up; the ones that do carry the only
-      // account anywhere of how he actually thinks about building things,
-      // which is most of what anyone asking these questions wants.
-      const post = posts.find((entry) => entry.slug === project.id);
-
-      return [
-        `### ${project.title}`,
-        `${project.kind}, ${project.year}. ${project.blurb}`,
-        project.page ? `Case page on this site at /${project.id}.` : "",
-        project.href ? `Lives at ${project.href}.` : "",
-        post ? `\n${plain(post.body)}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n");
-    }),
-
     `## About this site
 
 Built by Erik. Next.js (App Router) and React on TypeScript, Tailwind CSS v4,
-Motion for the animation, MDX for the case pages. The listening strip is the
-live Spotify API, the contribution graph is the GitHub API, and the contact
-form sends through Resend.
+Motion for the animation. The listening strip is the live Spotify API, the
+contribution graph is the GitHub API, and the contact form sends through
+Resend. It is deliberately one page — the detail that would have been case
+studies is in here instead, which is what this chat is for.
 
 This chat is his too: a LangChain chain over Claude, streaming token by token
 from a Next.js route handler, with the whole of the above as its context. If
