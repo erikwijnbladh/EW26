@@ -20,8 +20,8 @@ export const profile = {
   tagline: "Currently building products people love to use at Compileit.",
   bio: [
     "I'm Erik, developer and designer based in Stockholm.",
-    "Currently fullstack at Compileit. Before that, development and design at KTH, three years owning the frontend at BrightBid, an AI ads platform, and a few other places further back.",
-    "Away from the screen I cook, ski, skateboard, play games and read, and go to a lot of heavy shows. Home is my girlfriend and our cat.",
+    "Currently fullstack at Compileit. Before that, development and design at KTH, and three years owning the frontend at BrightBid, an AI ads platform, where the job was making automated bidding decisions legible to the people who had to answer for them. A few other places further back.",
+    "Away from the screen I cook, ski, skateboard, game and read, and spend a lot of time in small rooms watching heavy bands. Home is my girlfriend and our cat.",
   ],
 };
 
