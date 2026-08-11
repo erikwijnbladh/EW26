@@ -116,6 +116,21 @@ export const trackShift: Transition = {
 /** The card falling off the end. Out of sight, so it only has to not snap. */
 export const trackLeave: Transition = { duration: 0.32, ease };
 
+/**
+ * A word of a streamed answer resolving out of blur.
+ *
+ * Long, and expo-out, because the settle is the whole point — several of these
+ * overlap at any moment, and anything quicker turns a sentence arriving into a
+ * flicker. Opacity runs shorter than the blur so a word is readable slightly
+ * before it is sharp, which is what stops the line looking smeared while it
+ * fills; same trick as the dock's icons drawing themselves on.
+ */
+export const wordIn: Transition = {
+  duration: 0.55,
+  ease,
+  opacity: { duration: 0.36, ease },
+};
+
 /** Reduced motion: same states, no travel between them. */
 export const instant: Transition = { duration: 0 };
 

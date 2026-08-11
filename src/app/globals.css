@@ -136,32 +136,6 @@ summary {
   scrollbar-width: none;
 }
 
-/* The chat card's waiting mark: a Bayer 4×4 matrix where each cell carries a
-   negative animation-delay equal to its own dither threshold, so brightness
-   crosses the grid in the matrix's scattered order rather than in a line.
-   Kept in CSS so it costs nothing per reply — see components/ask.tsx. */
-@keyframes dither-cell {
-  0%,
-  100% {
-    opacity: 0.12;
-  }
-  50% {
-    opacity: 0.9;
-  }
-}
-
-.dither-cell {
-  animation: dither-cell 1.6s ease-in-out infinite;
-}
-
-/* Falls back to the static opacity on each cell, which is the same matrix as a
-   still ramp — the pattern without the pulse. */
-@media (prefers-reduced-motion: reduce) {
-  .dither-cell {
-    animation: none;
-  }
-}
-
 @keyframes grain {
   0%, 100% { transform: translate(0, 0); }
   10% { transform: translate(-1%, -2%); }
