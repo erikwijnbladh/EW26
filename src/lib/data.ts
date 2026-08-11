@@ -17,8 +17,8 @@ export const profile = {
   email: "hello@erikwijnbladh.com",
   tagline: "Currently building products people love to use at Compileit.",
   bio: [
-    "I'm a fullstack engineer at Compileit in Stockholm, making web and app products people like using. I design and build, so the handoff happens in my head. This site is mostly the two at once — the icons, the motion, the chat at the bottom of the page.",
-    "A few places before this. Most recently development and design at KTH, on the CYVAC platform, and before that a handful of years owning the frontend at BrightBid — an AI ads platform, where the work was making automated bidding decisions legible to the people who had to answer for them.",
+    "I'm a fullstack engineer at Compileit in Stockholm, making web and app products people like using. I design and build, so the handoff happens in my head. This site is mostly the two at once: the icons, the motion, the chat at the bottom of the page.",
+    "A few places before this. Most recently development and design at KTH, on the CYVAC platform, and before that a handful of years owning the frontend at BrightBid, an AI ads platform. The work was making automated bidding decisions legible to the people who had to answer for them.",
     "Off the screen I cook, ski, skate, play games and read, and go to more heavy shows than is strictly reasonable. There's a girlfriend and a cat at home who put up with all of it.",
   ],
 };
