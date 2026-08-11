@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   duration,
@@ -12,6 +12,7 @@ import {
 } from "@/lib/motion";
 import { useWordReveal } from "@/components/use-word-reveal";
 import { DitherDot } from "@/components/dither-dot";
+import { CopyIcon } from "@/components/copy-icon";
 
 /**
  * The chat card in the dock.
@@ -99,6 +100,103 @@ function SendIcon({ busy }: { busy: boolean }) {
 }
 
 /**
+ * Clearing the conversation, as a shredder that actually shreds.
+ *
+ * The sheet slides down into the slot and is clipped away by it, while the
+ * strips draw themselves on underneath — so the paper doesn't vanish, it goes
+ * somewhere. The strips are redrawn from the slot downwards rather than
+ * Lucide's bottom-up, because `pathLength` fills from the start of the path and
+ * the wrong end makes them retract into the machine instead of falling out.
+ *
+ * Scalar targets on a prop flip, like the copy icon — a keyframe array would be
+ * the obvious way to write a one-shot like this and Motion silently refuses to
+ * animate `pathLength` from one.
+ */
+function ShredderIcon({ shredding }: { shredding: boolean }) {
+  // Two copies of this card exist — the real one and the hidden one the dock
+  // measures — so a fixed id would put two identical clip paths in the document
+  // under the same name.
+  const slot = useId();
+
+  return (
+    <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
+      <defs>
+        <clipPath id={slot}>
+          <rect x="0" y="0" width="24" height="12.5" />
+        </clipPath>
+      </defs>
+
+      <g clipPath={`url(#${slot})`}>
+        <motion.g
+          initial={false}
+          animate={{ y: shredding ? 12 : 0 }}
+          transition={{ duration: shredding ? 0.42 : 0, ease: easeInOut }}
+        >
+          <path
+            d="M4 13V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v5"
+            {...stroke}
+          />
+          <path d="M14 2v5a1 1 0 0 0 1 1h5" {...stroke} />
+        </motion.g>
+      </g>
+
+      <path d="M2 13h20" {...stroke} />
+
+      {[
+        { d: "M6 17v3", delay: 0.24 },
+        { d: "M10 17v5", delay: 0.18 },
+        { d: "M14 17v2", delay: 0.3 },
+        { d: "M18 17v3", delay: 0.21 },
+      ].map((strip) => (
+        <motion.path
+          key={strip.d}
+          d={strip.d}
+          {...stroke}
+          initial={false}
+          // At rest these are short, faint stubs rather than nothing: hidden
+          // entirely, the icon reads as a document sitting on a line, and the
+          // thing it is a button for stops being obvious.
+          animate={{
+            pathLength: shredding ? 1 : 0.45,
+            opacity: shredding ? 1 : 0.35,
+          }}
+          transition={
+            shredding
+              ? { duration: 0.34, ease, delay: strip.delay }
+              : { duration: 0.2, ease: easeInOut }
+          }
+        />
+      ))}
+    </svg>
+  );
+}
+
+/** Copies a value and says so, using the same envelope-to-tick as the dock. */
+function CopyButton({ value }: { value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 1600);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  return (
+    <button
+      type="button"
+      aria-label={copied ? "Copied" : `Copy ${value}`}
+      onClick={() => {
+        void navigator.clipboard.writeText(value);
+        setCopied(true);
+      }}
+      className="ml-1 inline-flex translate-y-[0.2em] text-muted transition-colors duration-150 hover:text-foreground"
+    >
+      <CopyIcon copied={copied} />
+    </button>
+  );
+}
+
+/**
  * Waiting on the first word.
  *
  * The site's own dot, the one that sits beside the name in the nav and swoops
@@ -133,18 +231,18 @@ function Reply({
   still: boolean;
   onReveal: () => void;
 }) {
-  const words = useWordReveal(content, !streaming, still);
+  const tokens = useWordReveal(content, !streaming, still);
 
   useEffect(() => {
     onReveal();
-  }, [words, onReveal]);
+  }, [tokens, onReveal]);
 
   // `mode="wait"` so the dot is gone before the first words land in its place —
   // the two crossing over each other in the same spot is what makes a handoff
   // like this read as a glitch.
   return (
     <AnimatePresence mode="wait" initial={false}>
-      {words.length === 0 && streaming ? (
+      {tokens.length === 0 && streaming ? (
         <motion.span
           key="waiting"
           className="block"
@@ -155,7 +253,7 @@ function Reply({
         </motion.span>
       ) : (
         <p key="answer" className="text-[15px] leading-relaxed text-foreground/90">
-          {words.map((word, i) => (
+          {tokens.map((token, i) => (
             <motion.span
               key={i}
               // Deliberately inline, not inline-block. Boxing each word makes
@@ -168,7 +266,26 @@ function Reply({
               animate={{ opacity: 1, filter: "blur(0px)" }}
               transition={wordIn}
             >
-              {word}
+              {token.href ? (
+                // `nowrap` holds the address, its copy button and the full stop
+                // after it together — the three read as one thing and shouldn't
+                // be split across a line break.
+                <span className="whitespace-nowrap">
+                  <a
+                    href={token.href}
+                    {...(token.external
+                      ? { target: "_blank", rel: "noreferrer" }
+                      : {})}
+                    className="underline underline-offset-2 transition-colors duration-150 hover:text-foreground"
+                  >
+                    {token.text}
+                  </a>
+                  {token.copy && <CopyButton value={token.copy} />}
+                  {token.tail}
+                </span>
+              ) : (
+                token.text
+              )}
             </motion.span>
           ))}
         </p>
@@ -184,6 +301,7 @@ export function AskPanel({ open }: { open: boolean }) {
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [shredding, setShredding] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -226,6 +344,32 @@ export function AskPanel({ open }: { open: boolean }) {
   }, [open]);
 
   useEffect(() => () => abort.current?.abort(), []);
+
+  // The sheet has to be seen going into the slot. Clearing on the click would
+  // empty the transcript, unmount the button and take the animation with it —
+  // so the transcript goes a beat later, and the button holds its place until
+  // the strips have finished falling.
+  useEffect(() => {
+    if (!shredding) return;
+
+    const emptied = setTimeout(() => {
+      abort.current?.abort();
+      abort.current = null;
+      setBusy(false);
+      setMessages([]);
+      setError(null);
+    }, 300);
+
+    const settled = setTimeout(() => {
+      setShredding(false);
+      inputRef.current?.focus();
+    }, 900);
+
+    return () => {
+      clearTimeout(emptied);
+      clearTimeout(settled);
+    };
+  }, [shredding]);
 
   const send = useCallback(
     async (text: string) => {
@@ -363,30 +507,25 @@ export function AskPanel({ open }: { open: boolean }) {
 
   return (
     <div className="flex w-[min(23rem,calc(100vw-3.5rem))] select-text flex-col p-4">
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <h2 className="text-[19px] font-medium leading-tight tracking-[-0.02em] text-foreground">
           Ask about Erik
         </h2>
 
         <AnimatePresence initial={false}>
-          {!empty && (
+          {(!empty || shredding) && (
             <motion.button
               type="button"
+              aria-label="Clear the conversation"
               initial={still ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: duration.fast, ease }}
-              onClick={() => {
-                abort.current?.abort();
-                abort.current = null;
-                setBusy(false);
-                setMessages([]);
-                setError(null);
-                inputRef.current?.focus();
-              }}
-              className="shrink-0 text-xs font-light text-muted transition-colors duration-150 hover:text-foreground"
+              onClick={() => setShredding(true)}
+              disabled={shredding}
+              className="shrink-0 text-muted transition-colors duration-150 hover:text-foreground"
             >
-              Clear
+              <ShredderIcon shredding={shredding} />
             </motion.button>
           )}
         </AnimatePresence>

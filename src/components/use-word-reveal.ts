@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { contacts, profile } from "@/lib/data";
 
 /**
  * Hands back the streamed answer a word at a time, so each one can be animated
- * in on its own.
+ * in on its own — and picks out the few words that should be more than text.
  *
  * Revealing character by character is what a terminal does, and at reading size
  * it flickers: every frame changes the last glyph, the line re-wraps mid-word,
@@ -25,18 +26,96 @@ const MAX_SPEED = 140;
 /** How long the reveal aims to take to drain whatever it's currently behind. */
 const CATCH_UP = 0.35;
 
+export type Token = {
+  /** What to render. For a plain word this includes the whitespace after it. */
+  text: string;
+  /** Punctuation and spacing that followed an entity, rendered outside the link. */
+  tail?: string;
+  /** Set when the word is one of the site's own destinations. */
+  href?: string;
+  /** Whether that destination leaves the site. */
+  external?: boolean;
+  /** Set on Erik's address, which gets a copy button as well as a link. */
+  copy?: string;
+};
+
+const contactHref = (label: string) =>
+  contacts.find((c) => c.label === label)?.href ?? "";
+
+/**
+ * The words worth turning into something clickable.
+ *
+ * Deliberately a closed list rather than a general URL or email matcher. The
+ * model is writing this text, and the one thing worse than an address that
+ * isn't clickable is a confidently-linked address that goes somewhere else —
+ * so the only email that ever becomes a link is the one the site already
+ * publishes, and the only destinations are the ones in `contacts`.
+ */
+const ENTITY = new RegExp(
+  `(${profile.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}|\\bLinkedIn\\b|\\bGitHub\\b)`,
+  "gi",
+);
+
+/**
+ * What an entity may absorb after itself: closing punctuation and the spacing
+ * that follows. Kept out of the link — a full stop inside an anchor is a full
+ * stop that underlines — but kept in the same token, so it can't wrap onto a
+ * line of its own.
+ */
+const TAIL = /^[.,;:!?)\]]*\s*/;
+
 /** Each word keeps its own trailing whitespace, so spacing survives reassembly. */
-function toWords(text: string) {
-  return text.match(/\S+\s*/g) ?? [];
+function pushWords(tokens: Token[], text: string) {
+  for (const word of text.match(/\S+\s*/g) ?? []) tokens.push({ text: word });
+}
+
+function toEntity(value: string, tail: string): Token {
+  if (value.toLowerCase() === profile.email.toLowerCase()) {
+    return {
+      text: value,
+      tail,
+      href: `mailto:${profile.email}`,
+      copy: profile.email,
+    };
+  }
+
+  return {
+    text: value,
+    tail,
+    href: contactHref(value.toLowerCase()),
+    external: true,
+  };
+}
+
+export function toTokens(text: string): Token[] {
+  const tokens: Token[] = [];
+  let index = 0;
+
+  for (const match of text.matchAll(ENTITY)) {
+    const at = match.index;
+    pushWords(tokens, text.slice(index, at));
+
+    const value = match[0];
+    const after = text.slice(at + value.length);
+    const tail = TAIL.exec(after)?.[0] ?? "";
+
+    tokens.push(toEntity(value, tail));
+    index = at + value.length + tail.length;
+  }
+
+  pushWords(tokens, text.slice(index));
+
+  return tokens;
 }
 
 export function useWordReveal(text: string, done: boolean, still = false) {
-  const words = useMemo(() => toWords(text), [text]);
+  const tokens = useMemo(() => toTokens(text), [text]);
 
   // While the stream is open the last word is usually half-delivered. Holding it
   // back until the next one arrives is what stops a word appearing as "Compi"
   // and mutating into "Compileit" a frame later, taking the line wrap with it.
-  const ready = done ? words.length : Math.max(0, words.length - 1);
+  // It also gives the entity matcher a whole word to judge.
+  const ready = done ? tokens.length : Math.max(0, tokens.length - 1);
 
   const [count, setCount] = useState(0);
 
@@ -80,5 +159,5 @@ export function useWordReveal(text: string, done: boolean, still = false) {
     return () => cancelAnimationFrame(frame);
   }, [ready, still]);
 
-  return still ? words : words.slice(0, count);
+  return still ? tokens : tokens.slice(0, count);
 }
