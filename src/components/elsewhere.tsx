@@ -116,6 +116,26 @@ export function Elsewhere() {
   const [from, setFrom] = useState<Box | null>(null);
   const [to, setTo] = useState<Box | null>(null);
 
+  /**
+   * The card drawn above the rest: whichever was opened last.
+   *
+   * Without it the photo flies home to a card that is *behind* its neighbours,
+   * so the handover at the end lands on something half-covered and the card
+   * appears to blink into place under the others. Raising it also leaves the
+   * deck showing which one you just looked at, which is what a hand of cards
+   * does when you put one back on top.
+   */
+  const [lifted, setLifted] = useState<number | null>(null);
+
+  /**
+   * The card the viewer is currently holding, hidden while it holds it.
+   *
+   * Cleared when the closing flight finishes rather than when the viewer
+   * closes, so the card comes back in the same frame the photo lands on it and
+   * unmounts. Anything looser shows both at once.
+   */
+  const [held, setHeld] = useState<number | null>(null);
+
   // The portal needs a document, which the server render doesn't have.
   const [ready, setReady] = useState(false);
   useEffect(() => setReady(true), []);
@@ -128,6 +148,8 @@ export function Elsewhere() {
     opener.current = i;
     setFrom(cardBox(deck.current, i));
     setTo(viewerBox());
+    setLifted(i);
+    setHeld(i);
     setOpen(i);
   }, []);
 
@@ -222,7 +244,12 @@ export function Elsewhere() {
                 left: `${(step * i * 100) / SPAN}%`,
                 width: `${(CARD_W * 100) / SPAN}%`,
                 aspectRatio: `${CARD_W} / ${CARD_H}`,
-                zIndex: i,
+                zIndex: lifted === i ? elsewhere.length : i,
+                // Not animated, and deliberately not in `animate`: this is a
+                // handover rather than a fade. The photo covers the card
+                // exactly at both ends of the flight, so switching instantly is
+                // invisible, where a transition would show two of them.
+                opacity: held === i ? 0 : 1,
               }}
               initial={false}
               animate={{ rotate: still ? 0 : leanOf(i), y: "0%" }}
@@ -251,7 +278,7 @@ export function Elsewhere() {
 
       {ready &&
         createPortal(
-          <AnimatePresence>
+          <AnimatePresence onExitComplete={() => setHeld(null)}>
             {photo && to && (
               <div
                 role="dialog"
