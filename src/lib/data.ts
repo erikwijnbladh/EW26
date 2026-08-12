@@ -171,7 +171,7 @@ export type Photo = {
  * The files in `/public/elsewhere` are pre-cropped and pre-desaturated rather
  * than being full-size originals with a `grayscale` class over them: the
  * originals are 11MB of phone camera between them, and colour data nobody will
- * ever see still costs bytes to send. They're 453KB now.
+ * ever see still costs bytes to send. They're 646KB now, sized for the viewer rather than the deck.
  *
  * Captions are the part worth rewriting by hand — they're the only place on
  * the page that gets to be funny.
