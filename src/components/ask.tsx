@@ -567,7 +567,7 @@ export function AskPanel({ open }: { open: boolean }) {
   const empty = messages.length === 0;
 
   return (
-    <div className="flex w-[min(23rem,calc(100vw-3.5rem))] select-text flex-col p-4">
+    <div className="flex w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[19px] font-medium leading-tight tracking-[-0.02em] text-foreground">
           Ask about Erik

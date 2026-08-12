@@ -186,7 +186,9 @@ export function Dock() {
                 id: "say-hi",
                 label: "Say hi",
                 icon: <ChatIcon />,
-                content: <SayHiForm onClose={close} />,
+                content: (
+                  <SayHiForm open={active === "say-hi"} onClose={close} />
+                ),
               },
               {
                 id: "email",

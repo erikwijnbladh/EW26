@@ -33,7 +33,13 @@ const LABEL: Record<Status, string> = {
  * the message only exists in these fields, and dismissing the card over a failed
  * send would throw away something someone just wrote.
  */
-export function SayHiForm({ onClose }: { onClose: () => void }) {
+export function SayHiForm({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   const still = useReducedMotion();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -42,7 +48,14 @@ export function SayHiForm({ onClose }: { onClose: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
+  // Gated on `open`, not on mount: the dock keeps both cards mounted so it can
+  // cross-fade between them, so this component is alive from page load and an
+  // ungated focus would take the caret off the page before anyone clicked
+  // anything. The dock also measures a hidden copy of this card, which would
+  // otherwise install a second Escape handler.
   useEffect(() => {
+    if (!open) return;
+
     // Focus once the surface has finished expanding, so the browser doesn't
     // scroll or repaint mid-morph.
     const focusTimer = setTimeout(() => firstFieldRef.current?.focus(), 320);
@@ -56,7 +69,7 @@ export function SayHiForm({ onClose }: { onClose: () => void }) {
       clearTimeout(focusTimer);
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [onClose]);
+  }, [open, onClose]);
 
   // Only once the send has actually succeeded, and long enough to read the
   // confirmation. Cleared on unmount so a card closed by hand mid-wait doesn't
@@ -105,7 +118,10 @@ export function SayHiForm({ onClose }: { onClose: () => void }) {
   const busy = status === "sending" || status === "sent";
 
   return (
-    <div className="w-[min(22rem,calc(100vw-4rem))] select-text p-4">
+    // Deliberately the same measure as the ask card. The dock morphs its shell
+    // between the two, and matching widths leave only the height to travel —
+    // one axis of movement to read instead of two.
+    <div className="w-[min(23rem,calc(100vw-4rem))] select-text p-4">
       <h2 className="text-[26px] font-medium leading-tight tracking-[-0.02em] text-foreground">
         What&rsquo;s up?
       </h2>
