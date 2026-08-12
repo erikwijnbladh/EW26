@@ -171,7 +171,7 @@ export type Photo = {
  * The files in `/public/elsewhere` are pre-cropped and pre-desaturated rather
  * than being full-size originals with a `grayscale` class over them: the
  * originals are 11MB of phone camera between them, and colour data nobody will
- * ever see still costs bytes to send. They're 477KB now.
+ * ever see still costs bytes to send. They're 453KB now.
  *
  * Captions are the part worth rewriting by hand — they're the only place on
  * the page that gets to be funny.
@@ -180,31 +180,31 @@ export const elsewhere: Photo[] = [
   {
     src: "/elsewhere/skate.webp",
     alt: "Skateboarding across the flat of a concrete park",
-    caption: "The park, on a good afternoon.",
+    caption: "Dare to be terrible at stuff",
     blur: "data:image/webp;base64,UklGRjAAAABXRUJQVlA4ICQAAACwAQCdASoIAAwAA4BaJaQAAqzMnlDgANu9brqr0iFva5hAAAA=",
   },
   {
     src: "/elsewhere/adept.webp",
     alt: "Adept on stage behind a wall of smoke, hands up in the crowd",
-    caption: "Adept, and most of a smoke machine.",
+    caption: "Relaxing v1",
     blur: "data:image/webp;base64,UklGRjYAAABXRUJQVlA4ICoAAACwAQCdASoIAAwAA4BaJaQAApeZYcAAAPlSI9y/anJs7QzzU5+ICgAAAAA=",
   },
   {
-    src: "/elsewhere/kong.webp",
-    alt: "A neon sign of a scowling face above katakana reading Drink Kong",
-    caption: "Drink Kong.",
-    blur: "data:image/webp;base64,UklGRjYAAABXRUJQVlA4ICoAAADQAQCdASoIAAwAA4BaJaQAAxamFICIwAD+wWhj7VT2tpBZJb/i+42gAAA=",
+    src: "/elsewhere/drink.webp",
+    alt: "A cocktail in a coupe beside a negroni over ice with an orange twist",
+    caption: "Relaxing v2",
+    blur: "data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACwAQCdASoIAAwAA4BaJaQAAubyf/QAAP5+i2kciqAhMJcSKNSnst78RIksAAAA",
   },
   {
-    src: "/elsewhere/ceiling.webp",
-    alt: "A painted dome and gilded ceiling above a church altar",
-    caption: "A ceiling worth the neck ache.",
-    blur: "data:image/webp;base64,UklGRjYAAABXRUJQVlA4ICoAAACQAQCdASoIAAwAA4BaJaQAApn5hIAA/oeVpV58hAic/ETVA0dkDraAAAA=",
+    src: "/elsewhere/duomo.webp",
+    alt: "The marble spires of the Duomo di Milano against a cloudy sky",
+    caption: "We used to do marble, now we make purple gradients",
+    blur: "data:image/webp;base64,UklGRjIAAABXRUJQVlA4ICYAAACQAQCdASoIAAwAA4BaJaQAApd6ngAA9reAhnFoMFrpjME8tjAAAA==",
   },
   {
     src: "/elsewhere/tracks.webp",
     alt: "Ski tracks curving down an open snow face below a rocky peak",
-    caption: "Fresh snow, eventually tracked out.",
+    caption: "God bless",
     blur: "data:image/webp;base64,UklGRjAAAABXRUJQVlA4ICQAAACQAQCdASoIAAwAA4BaJaQAAppCQNAA/lhBoayTmkuXzmEAAAA=",
   },
 ];

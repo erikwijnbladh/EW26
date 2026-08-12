@@ -22,8 +22,15 @@ import { duration, ease, springSnappy, springSoft } from "@/lib/motion";
 /** How far the fan leans, end to end, in degrees. */
 const FAN = 5;
 
-/** How much of a card the next one covers. */
-const OVERLAP = 0.46;
+/**
+ * How much of a card the next one covers.
+ *
+ * 0.4 rather than 0.46 because of what the picked card does to its neighbour:
+ * it scales up in place, and at the tighter spacing its right edge finished
+ * within a pixel of the next card's centre — so the most obvious place to click
+ * the card beside the open one hit the open one instead.
+ */
+const OVERLAP = 0.4;
 
 /**
  * Card geometry in arbitrary units, laid out as percentages of the section.
