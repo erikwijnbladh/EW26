@@ -7,7 +7,6 @@ import { Reveal, RevealGroup, RevealItem } from "@/components/reveal";
 import { PlayingSection, PlayingSkeleton } from "@/components/playing-section";
 import { Contributions } from "@/components/contributions";
 import { Prose } from "@/components/mention";
-import { Elsewhere } from "@/components/elsewhere";
 import { BuiltWith } from "@/components/built-with";
 
 export default async function Home() {
@@ -57,11 +56,9 @@ export default async function Home() {
         </div>
       </Reveal>
 
-      <Reveal onMount delay={0.09}>
-        <div className="mt-12 pl-5">
-          <Elsewhere />
-        </div>
-      </Reveal>
+      {/* The photo deck is built and passing, but parked — `Elsewhere` and its
+          images are still here, so putting it back is this block and its
+          import. See src/components/elsewhere.tsx. */}
 
       {contributions && (
         <Reveal onMount delay={0.12}>

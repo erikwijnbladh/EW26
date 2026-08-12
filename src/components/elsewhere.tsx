@@ -174,7 +174,11 @@ export function Elsewhere() {
                 initial={false}
                 animate={{ x: spot.x, scale: spot.scale, rotate: spot.rotate }}
                 whileHover={
-                  still || open !== null ? undefined : { y: "-4%", rotate: leanOf(i) * 0.3 }
+                  still || open !== null
+                    ? undefined
+                    : // Its own timing: the deck's 420ms is right for a card
+                      // growing across the section and sluggish for a lift.
+                      { y: "-4%", rotate: leanOf(i) * 0.3, transition: HOVER }
                 }
                 transition={still ? { duration: 0 } : MOVE}
               >
