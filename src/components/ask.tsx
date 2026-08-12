@@ -275,12 +275,14 @@ function CopyButton({ value }: { value: string }) {
 function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
   return (
     <motion.span
-      // Portrait, because a head is taller than it is wide and the cutout has
-      // to fade out on every side — in a square frame the mask runs off the top
-      // and bottom still opaque, which is a hard edge through hair and neck.
-      // The negative top margin is the transparent headroom above the crown,
-      // taken back so the face sits level with the first line of text.
-      className="relative -mt-1.5 aspect-[1/1.35] w-11 shrink-0"
+      // Portrait, because that is the shape of a head. No frame, no mask and
+      // nothing feathered: the photographs arrived with their own alpha, so the
+      // edge is a real one that follows the hair, and it can be cropped close
+      // and shown large without a margin of nothing around it.
+      // `self-start` because a flex row stretches its children by default, and
+      // a stretched height beats the aspect ratio — which leaves the frame as
+      // tall as the paragraph beside it and the photograph squashed inside it.
+      className="relative aspect-[1/1.3] w-12 shrink-0 self-start"
       aria-hidden
       initial={false}
       // Barely a breath, and the only reason the waiting state reads as active
@@ -306,7 +308,7 @@ function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
           src={src}
           alt=""
           fill
-          sizes="44px"
+          sizes="48px"
           priority
           className="object-contain"
           style={{ opacity: shown ? 1 : 0 }}
