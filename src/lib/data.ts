@@ -155,6 +155,60 @@ export const education: Education[] = [
   },
 ];
 
+export type Photo = {
+  src: string;
+  /** What is in the frame, for anyone who can't see it. */
+  alt: string;
+  /** Shown under the deck when the card is picked. One at a time. */
+  caption: string;
+  /** An 8x12 of the same photo, inlined so the card has something during load. */
+  blur: string;
+};
+
+/**
+ * The photo deck. Portrait, grayscale, five of them.
+ *
+ * The files in `/public/elsewhere` are pre-cropped and pre-desaturated rather
+ * than being full-size originals with a `grayscale` class over them: the
+ * originals are 11MB of phone camera between them, and colour data nobody will
+ * ever see still costs bytes to send. They're 477KB now.
+ *
+ * Captions are the part worth rewriting by hand — they're the only place on
+ * the page that gets to be funny.
+ */
+export const elsewhere: Photo[] = [
+  {
+    src: "/elsewhere/skate.webp",
+    alt: "Skateboarding across the flat of a concrete park",
+    caption: "The park, on a good afternoon.",
+    blur: "data:image/webp;base64,UklGRjAAAABXRUJQVlA4ICQAAACwAQCdASoIAAwAA4BaJaQAAqzMnlDgANu9brqr0iFva5hAAAA=",
+  },
+  {
+    src: "/elsewhere/adept.webp",
+    alt: "Adept on stage behind a wall of smoke, hands up in the crowd",
+    caption: "Adept, and most of a smoke machine.",
+    blur: "data:image/webp;base64,UklGRjYAAABXRUJQVlA4ICoAAACwAQCdASoIAAwAA4BaJaQAApeZYcAAAPlSI9y/anJs7QzzU5+ICgAAAAA=",
+  },
+  {
+    src: "/elsewhere/kong.webp",
+    alt: "A neon sign of a scowling face above katakana reading Drink Kong",
+    caption: "Drink Kong.",
+    blur: "data:image/webp;base64,UklGRjYAAABXRUJQVlA4ICoAAADQAQCdASoIAAwAA4BaJaQAAxamFICIwAD+wWhj7VT2tpBZJb/i+42gAAA=",
+  },
+  {
+    src: "/elsewhere/ceiling.webp",
+    alt: "A painted dome and gilded ceiling above a church altar",
+    caption: "A ceiling worth the neck ache.",
+    blur: "data:image/webp;base64,UklGRjYAAABXRUJQVlA4ICoAAACQAQCdASoIAAwAA4BaJaQAApn5hIAA/oeVpV58hAic/ETVA0dkDraAAAA=",
+  },
+  {
+    src: "/elsewhere/tracks.webp",
+    alt: "Ski tracks curving down an open snow face below a rocky peak",
+    caption: "Fresh snow, eventually tracked out.",
+    blur: "data:image/webp;base64,UklGRjAAAABXRUJQVlA4ICQAAACQAQCdASoIAAwAA4BaJaQAAppCQNAA/lhBoayTmkuXzmEAAAA=",
+  },
+];
+
 export type Mention = {
   /** The words exactly as they appear in `profile.bio`. */
   phrase: string;
