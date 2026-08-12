@@ -15,7 +15,6 @@ import {
   drawOff,
 } from "@/lib/motion";
 import { useWordReveal } from "@/components/use-word-reveal";
-import { DitherDot } from "@/components/dither-dot";
 import { CopyIcon } from "@/components/copy-icon";
 
 /**
@@ -259,6 +258,11 @@ function CopyButton({ value }: { value: string }) {
 /**
  * Whose head the answers are coming out of.
  *
+ * It sits where the waiting indicator used to, beside whatever the assistant is
+ * saying, and it never leaves — so the same thing that tells you an answer is
+ * coming is still there once it has arrived, having changed its expression
+ * rather than been swapped out for text.
+ *
  * Two photographs of the same face — one straight down the lens, one caught
  * mid-thought — cropped so the eyes land in the same place at the same size.
  * That alignment is the whole trick: framed even slightly differently, the
@@ -271,9 +275,18 @@ function CopyButton({ value }: { value: string }) {
  */
 function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
   return (
-    <span
-      className="relative block size-9 shrink-0 overflow-hidden rounded-full bg-surface shadow-ring"
+    <motion.span
+      className="relative mt-0.5 block size-7 shrink-0 overflow-hidden rounded-full bg-surface shadow-ring"
       aria-hidden
+      initial={false}
+      // Barely a breath, and the only reason the waiting state reads as active
+      // rather than stalled now that the dot has gone.
+      animate={thinking && !still ? { scale: [1, 1.055, 1] } : { scale: 1 }}
+      transition={
+        thinking && !still
+          ? { duration: 1.9, repeat: Infinity, ease: "easeInOut" }
+          : { duration: 0.3, ease }
+      }
     >
       {/* Resting face underneath, always solid; the thinking one fades in over
           it. Cross-fading both at once would leave a moment where each is half
@@ -282,7 +295,7 @@ function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
         src="/ask/idle.webp"
         alt=""
         fill
-        sizes="36px"
+        sizes="28px"
         className="object-cover"
         priority
       />
@@ -296,33 +309,14 @@ function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
           src="/ask/thinking.webp"
           alt=""
           fill
-          sizes="36px"
+          sizes="28px"
           className="object-cover"
           // Wanted the instant a question is sent; lazy, the expression would
           // arrive a beat after the thought.
           priority
         />
       </motion.span>
-    </span>
-  );
-}
-
-/**
- * Waiting on the first word.
- *
- * The site's own dot, the one that sits beside the name in the nav and swoops
- * around the lists. It is a dithered sphere on a shader, so it is soft and
- * always moving — which is the whole point here: everything else on this page
- * is grain and soft dither, and a hard-edged widget in the middle of it reads
- * as something that was bolted on.
- */
-function Thinking() {
-  return (
-    <span className="block py-1" role="status" aria-label="Thinking">
-      <span className="block size-4 opacity-70">
-        <DitherDot />
-      </span>
-    </span>
+    </motion.span>
   );
 }
 
@@ -348,22 +342,11 @@ function Reply({
     onReveal();
   }, [tokens, onReveal]);
 
-  // `mode="wait"` so the dot is gone before the first words land in its place —
-  // the two crossing over each other in the same spot is what makes a handoff
-  // like this read as a glitch.
+  // No waiting state of its own any more: the face beside this is what says an
+  // answer is coming, and it stays put once the words arrive. There is nothing
+  // left to hand over to, so nothing left to glitch.
   return (
-    <AnimatePresence mode="wait" initial={false}>
-      {tokens.length === 0 && streaming ? (
-        <motion.span
-          key="waiting"
-          className="block"
-          exit={still ? { opacity: 0 } : { opacity: 0, filter: "blur(4px)" }}
-          transition={{ duration: 0.2, ease }}
-        >
-          <Thinking />
-        </motion.span>
-      ) : (
-        <p key="answer" className="text-[15px] leading-relaxed text-foreground/90">
+    <p className="text-[15px] leading-relaxed text-foreground/90">
           {tokens.map((token, i) => (
             <motion.span
               key={i}
@@ -397,11 +380,9 @@ function Reply({
               ) : (
                 token.text
               )}
-            </motion.span>
-          ))}
-        </p>
-      )}
-    </AnimatePresence>
+        </motion.span>
+      ))}
+    </p>
   );
 }
 
@@ -622,12 +603,9 @@ export function AskPanel({ open }: { open: boolean }) {
   return (
     <div className="flex w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-2.5">
-          <Face thinking={busy} still={Boolean(still)} />
-          <h2 className="text-[19px] font-medium leading-tight tracking-[-0.02em] text-foreground">
-            Ask about Erik
-          </h2>
-        </div>
+        <h2 className="text-[19px] font-medium leading-tight tracking-[-0.02em] text-foreground">
+          Ask about Erik
+        </h2>
 
         <AnimatePresence initial={false}>
           {(!empty || phase !== "idle") && (
@@ -657,10 +635,16 @@ export function AskPanel({ open }: { open: boolean }) {
       >
         {empty ? (
           <div className="flex h-full flex-col justify-end gap-3">
-            <p className="text-[15px] leading-relaxed text-muted">
-              Everything this knows comes from the rest of the site. Ask about
-              the work, the writing, the stack, or how to get hold of him.
-            </p>
+            {/* The face is here before a word is exchanged, so it reads as
+                whoever is about to answer rather than as something that only
+                turns up while you wait. */}
+            <div className="flex gap-2.5">
+              <Face thinking={false} still={Boolean(still)} />
+              <p className="min-w-0 flex-1 text-[15px] leading-relaxed text-muted">
+                Everything this knows comes from the rest of the site. Ask about
+                the work, the writing, the stack, or how to get hold of him.
+              </p>
+            </div>
 
             <div className="flex flex-wrap gap-1.5">
               {PROMPTS.map((prompt, i) => (
@@ -691,7 +675,9 @@ export function AskPanel({ open }: { open: boolean }) {
                 animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                 transition={springSoft}
                 className={
-                  message.role === "user" ? "flex justify-end pl-8" : "pr-2"
+                  message.role === "user"
+                    ? "flex justify-end pl-8"
+                    : "flex gap-2.5 pr-2"
                 }
               >
                 {message.role === "user" ? (
@@ -699,12 +685,20 @@ export function AskPanel({ open }: { open: boolean }) {
                     {message.content}
                   </p>
                 ) : (
-                  <Reply
-                    content={message.content}
-                    streaming={busy && i === messages.length - 1}
-                    still={Boolean(still)}
-                    onReveal={stickToBottom}
-                  />
+                  <>
+                    <Face
+                      thinking={busy && i === messages.length - 1}
+                      still={Boolean(still)}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <Reply
+                        content={message.content}
+                        streaming={busy && i === messages.length - 1}
+                        still={Boolean(still)}
+                        onReveal={stickToBottom}
+                      />
+                    </div>
+                  </>
                 )}
               </motion.div>
             ))}
