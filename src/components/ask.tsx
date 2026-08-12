@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   duration,
   ease,
   easeInOut,
+  instant,
   springSnappy,
   springSoft,
   wordIn,
@@ -251,6 +253,57 @@ function CopyButton({ value }: { value: string }) {
     >
       <CopyIcon copied={copied} />
     </button>
+  );
+}
+
+/**
+ * Whose head the answers are coming out of.
+ *
+ * Two photographs of the same face — one straight down the lens, one caught
+ * mid-thought — cropped so the eyes land in the same place at the same size.
+ * That alignment is the whole trick: framed even slightly differently, the
+ * swap reads as two pictures cutting between each other rather than one face
+ * changing its mind.
+ *
+ * Both stay mounted and take turns on opacity, like every other state on this
+ * site. It also means the second photograph is already in the browser by the
+ * time it is needed, so the expression doesn't arrive a beat after the thought.
+ */
+function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
+  return (
+    <span
+      className="relative block size-9 shrink-0 overflow-hidden rounded-full bg-surface shadow-ring"
+      aria-hidden
+    >
+      {/* Resting face underneath, always solid; the thinking one fades in over
+          it. Cross-fading both at once would leave a moment where each is half
+          transparent and the card shows through the middle of his head. */}
+      <Image
+        src="/ask/idle.webp"
+        alt=""
+        fill
+        sizes="36px"
+        className="object-cover"
+        priority
+      />
+      <motion.span
+        className="absolute inset-0 block"
+        initial={false}
+        animate={{ opacity: thinking ? 1 : 0 }}
+        transition={still ? instant : { duration: 0.22, ease }}
+      >
+        <Image
+          src="/ask/thinking.webp"
+          alt=""
+          fill
+          sizes="36px"
+          className="object-cover"
+          // Wanted the instant a question is sent; lazy, the expression would
+          // arrive a beat after the thought.
+          priority
+        />
+      </motion.span>
+    </span>
   );
 }
 
@@ -569,9 +622,12 @@ export function AskPanel({ open }: { open: boolean }) {
   return (
     <div className="flex w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-4">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[19px] font-medium leading-tight tracking-[-0.02em] text-foreground">
-          Ask about Erik
-        </h2>
+        <div className="flex min-w-0 items-center gap-2.5">
+          <Face thinking={busy} still={Boolean(still)} />
+          <h2 className="text-[19px] font-medium leading-tight tracking-[-0.02em] text-foreground">
+            Ask about Erik
+          </h2>
+        </div>
 
         <AnimatePresence initial={false}>
           {(!empty || phase !== "idle") && (
