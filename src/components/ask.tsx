@@ -7,7 +7,6 @@ import {
   duration,
   ease,
   easeInOut,
-  instant,
   springSnappy,
   springSoft,
   wordIn,
@@ -276,7 +275,12 @@ function CopyButton({ value }: { value: string }) {
 function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
   return (
     <motion.span
-      className="relative mt-0.5 block size-7 shrink-0 overflow-hidden rounded-full bg-surface shadow-ring"
+      // Portrait, because a head is taller than it is wide and the cutout has
+      // to fade out on every side — in a square frame the mask runs off the top
+      // and bottom still opaque, which is a hard edge through hair and neck.
+      // The negative top margin is the transparent headroom above the crown,
+      // taken back so the face sits level with the first line of text.
+      className="relative -mt-1.5 aspect-[1/1.35] w-11 shrink-0"
       aria-hidden
       initial={false}
       // Barely a breath, and the only reason the waiting state reads as active
@@ -288,34 +292,26 @@ function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
           : { duration: 0.3, ease }
       }
     >
-      {/* Resting face underneath, always solid; the thinking one fades in over
-          it. Cross-fading both at once would leave a moment where each is half
-          transparent and the card shows through the middle of his head. */}
-      <Image
-        src="/ask/idle.webp"
-        alt=""
-        fill
-        sizes="28px"
-        className="object-cover"
-        priority
-      />
-      <motion.span
-        className="absolute inset-0 block"
-        initial={false}
-        animate={{ opacity: thinking ? 1 : 0 }}
-        transition={still ? instant : { duration: 0.22, ease }}
-      >
+      {/* One or the other, never a blend. These are the same head in the same
+          place, so any moment with both on screen is a double exposure rather
+          than a transition — the cut is what makes it read as a change of
+          expression. Both stay mounted so neither has to be fetched at the
+          moment it is wanted. */}
+      {[
+        { src: "/ask/idle.webp", shown: !thinking },
+        { src: "/ask/thinking.webp", shown: thinking },
+      ].map(({ src, shown }) => (
         <Image
-          src="/ask/thinking.webp"
+          key={src}
+          src={src}
           alt=""
           fill
-          sizes="28px"
-          className="object-cover"
-          // Wanted the instant a question is sent; lazy, the expression would
-          // arrive a beat after the thought.
+          sizes="44px"
           priority
+          className="object-contain"
+          style={{ opacity: shown ? 1 : 0 }}
         />
-      </motion.span>
+      ))}
     </motion.span>
   );
 }
