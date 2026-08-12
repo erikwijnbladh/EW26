@@ -1,98 +1,137 @@
 "use client";
 
 /**
- * Sending the contact form: the card folds itself up and flies away.
+ * Sending the contact form: the message goes into an envelope, the envelope
+ * becomes a paper plane, and the plane leaves.
  *
- * The message doesn't get a tick and a toast — the thing you wrote squashes
- * flat, folds into a paper plane and leaves. The confirmation *is* the
- * animation, which is why this is worth the machinery.
+ * Drawn, not clipped. An earlier version folded a clone of the card itself into
+ * a plane-shaped `clip-path`, which was a neat trick and the wrong one — it read
+ * as a div being cut into a shape rather than paper being folded. This is the
+ * same vocabulary as every other icon here: one box, nothing unmounts, strokes
+ * draw themselves on and retract off.
  *
- * Two structural decisions carry the whole effect:
+ * The morph is real. The envelope and the plane are the same two paths with the
+ * same point counts throughout — a six-point outline and a three-point inner
+ * line — so the envelope's body becomes the plane's silhouette and its sealed
+ * flap becomes the plane's centre crease. Nothing crossfades into anything.
  *
- * 1. The flier is a `fixed`-position clone appended to the body, not the card
- *    itself. The dock shell is `overflow-hidden` with a 26px radius — anything
- *    animated inside it is cut off at the first corner it reaches, and the
- *    whole point is to leave. Cloning also frees the real card to close behind
- *    the plane instead of waiting for it.
- *
- * 2. The silhouette is a six-point `clip-path` that never changes its point
- *    count, so the browser can interpolate it directly. The card's own box is
- *    what squashes — the plane's proportions come from a flat scale, not from
- *    the polygon — which keeps the clip-path animating over a shape that is
- *    already small by the time it starts.
+ * The flier is `fixed` and lives on the body, because the dock shell is
+ * `overflow-hidden` with a 26px radius: anything animated inside it is cut off
+ * at the first corner it reaches, and the whole point is to leave. It also frees
+ * the real card to close behind the plane instead of waiting for it.
  */
 
-type Point = { x: number; y: number };
+type Point = [number, number];
 
 /**
- * The same six vertices, twice: an open sheet and a folded dart.
+ * Everything below is in the icon's own 100-unit box.
  *
- * The order is the correspondence, and it is the difference between a fold and
- * a scramble. The right edge holds still and becomes the nose; the top and
- * bottom corners pull in to the leading edges; the left edge pinches into the
- * notch between the tails.
+ * The two shapes share their structure so they can be interpolated directly,
+ * and the correspondence is the fold: the envelope's right edge holds still and
+ * becomes the nose, its left edge pinches into the notch between the tails, and
+ * its corners pull in to the leading edges.
  */
-const OPEN: [number, number][] = [
-  [100, 50], // nose        <- right edge, stays put
-  [100, 0], //  leading top <- top-right corner
-  [0, 0], //    tail top    <- top-left corner
-  [0, 50], //   notch       <- left edge, pinches in
-  [0, 100], //  tail bottom <- bottom-left corner
-  [100, 100], // leading bottom
+/**
+ * The envelope sits low in the box on purpose: the top third is the message's
+ * room. Centred, there was nowhere for the sheet to be before it went in, and
+ * the one moment the whole sequence exists to show — a letter going into an
+ * envelope — happened almost entirely off the top of the icon.
+ */
+const ENVELOPE: Point[] = [
+  [88, 68], // right edge  -> nose
+  [88, 46], // top-right   -> leading top
+  [12, 46], // top-left    -> tail top
+  [12, 68], // left edge   -> notch
+  [12, 90], // bottom-left -> tail bottom
+  [88, 90], // bottom-right-> leading bottom
 ];
 
-const DART: [number, number][] = [
-  [100, 50],
-  [52, 22],
-  [0, 4],
-  [34, 50],
-  [0, 96],
-  [52, 78],
+const PLANE: Point[] = [
+  [96, 50],
+  [52, 26],
+  [8, 14],
+  [40, 50],
+  [8, 86],
+  [52, 74],
 ];
-
-const poly = (points: [number, number][]) =>
-  `polygon(${points.map(([x, y]) => `${x}% ${y}%`).join(", ")})`;
 
 /**
- * How flat the card gets.
+ * The flap: open, sealed, and the centre crease it finally becomes.
  *
- * A paper dart is about twice as wide as it is tall, and the card is roughly
- * square — so the squash is what makes the silhouette plausible, and the
- * polygon only has to carve a plane out of a shape that is already the right
- * proportion. Folding a dart out of a square box instead gives a fat, stubby
- * thing no amount of creasing rescues.
+ * One stroke doing three jobs, which is what sells the whole thing — it is
+ * never redrawn, only moved. Sealing is its middle point sweeping down through
+ * the envelope; folding is the same three points sliding out to the plane's
+ * centre line. An envelope whose flap draws on at the end is a rectangle for
+ * most of the sequence, and a rectangle is not an envelope.
  */
-const SMUSHED = { x: 0.42, y: 0.18 };
-const FOLDED = { x: 0.34, y: 0.15 };
+const FLAP_OPEN: Point[] = [
+  [12, 46],
+  [50, 18],
+  [88, 46],
+];
 
-const SMUSH_MS = 380;
-const FOLD_MS = 460;
+const FLAP_SEALED: Point[] = [
+  [12, 46],
+  [50, 74],
+  [88, 46],
+];
+
+const CREASE: Point[] = [
+  [8, 14],
+  [40, 50],
+  [96, 50],
+];
+
+/** The message itself, as a sheet that drops in — sitting clear above the envelope before it does. */
+const SHEET = { x: 27, y: 2, w: 46, h: 36, r: 3 };
+const SHEET_FROM = 0;
+const SHEET_TO = 54;
+
+/** Where the envelope swallows things — the front panel's top edge. */
+const MOUTH = 46;
+
+/** The sequence, in milliseconds from the start. */
+const HAND_OVER = 180; //  card dissolves, envelope and letter draw themselves
+const POST_FROM = 330; //  a beat to read the letter before it moves
+const POST = 720; //       the sheet goes in
+const SEAL = 960; //       the flap swings shut
+const FOLDED = 1380; //    envelope becomes plane
 const FLIGHT_MS = 1750;
 
-/** Expo-out and quint-in-out, matching `lib/motion`. */
-const EASE = "cubic-bezier(0.16, 1, 0.3, 1)";
-const EASE_IN_OUT = "cubic-bezier(0.65, 0, 0.35, 1)";
+/** The plane's size relative to the icon box, once folded. */
+const FOLD_SCALE = 0.72;
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+
+const clamp01 = (t: number) => (t < 0 ? 0 : t > 1 ? 1 : t);
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeInOut = (t: number) =>
+  t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
+/** Progress through one stage of the timeline. */
+const stage = (t: number, from: number, to: number) => clamp01((t - from) / (to - from));
+
+const lerp = (a: number, b: number, k: number) => a + (b - a) * k;
+
+const between = (a: Point[], b: Point[], k: number): Point[] =>
+  a.map(([x, y], i) => [lerp(x, b[i][0], k), lerp(y, b[i][1], k)]);
+
+const line = (points: Point[], close = false) =>
+  `M ${points.map(([x, y]) => `${x} ${y}`).join(" L ")}${close ? " Z" : ""}`;
 
 type Frame = {
   x?: number;
   y?: number;
   rot?: number;
   bank?: number;
-  tilt?: number;
-  sx?: number;
-  sy?: number;
+  scale?: number;
 };
 
-/**
- * `perspective` first so the tilts read as paper turning in space rather than a
- * flat shear, and `scale` last so it doesn't multiply the translation.
- */
-function tf({ x = 0, y = 0, rot = 0, bank = 0, tilt = 0, sx = 1, sy = 1 }: Frame) {
+function tf({ x = 0, y = 0, rot = 0, bank = 0, scale = 1 }: Frame) {
   return (
     `perspective(900px) translate3d(${x}px, ${y}px, 0) ` +
-    `rotate(${rot}deg) rotateX(${bank}deg) rotateY(${tilt}deg) scale(${sx}, ${sy})`
+    `rotate(${rot}deg) rotateX(${bank}deg) scale(${scale})`
   );
 }
 
@@ -101,10 +140,10 @@ function tf({ x = 0, y = 0, rot = 0, bank = 0, tilt = 0, sx = 1, sy = 1 }: Frame
  *
  * Held in unit space — one unit is "as far as there is room to go" — so the
  * same lap works on a phone and on a monitor. It is scaled at launch by the
- * room actually free between the card and each edge, and capped, so a wide
+ * room actually free between the icon and each edge, and capped, so a wide
  * screen gets a tidy lap rather than a trip to the far corner.
  */
-const LAP: Point[] = [
+const LAP: { x: number; y: number }[] = [
   { x: 0, y: 0 },
   { x: 0.62, y: -0.32 },
   { x: 0.98, y: -0.86 },
@@ -117,9 +156,9 @@ const LAP: Point[] = [
 ];
 
 /** Catmull-Rom through every control point, endpoints doubled so it starts and ends where it says. */
-function spline(points: Point[], per = 26): Point[] {
+function spline(points: { x: number; y: number }[], per = 26) {
   const pad = [points[0], ...points, points[points.length - 1]];
-  const out: Point[] = [];
+  const out: { x: number; y: number }[] = [];
 
   for (let i = 0; i + 3 < pad.length; i++) {
     const [p0, p1, p2, p3] = [pad[i], pad[i + 1], pad[i + 2], pad[i + 3]];
@@ -150,8 +189,6 @@ function spline(points: Point[], per = 26): Point[] {
   return out;
 }
 
-const smoothstep = (t: number) => t * t * (3 - 2 * t);
-
 /**
  * Turn a sampled path into keyframes.
  *
@@ -163,11 +200,11 @@ const smoothstep = (t: number) => t * t * (3 - 2 * t);
  * plane would crawl through the corners and lurch down the straights.
  *
  * Heading is the curve's own **tangent**, unwrapped so a bank that passes
- * through 180° carries on turning instead of snapping the long way round. It's
- * blended out of level over the first sixth of the flight, because the plane
- * starts life as a card lying flat and has to leave like one.
+ * through 180° carries on turning instead of snapping the long way round. It is
+ * blended out of level over the first sixth of the flight, because the plane is
+ * lying flat when it launches and has to leave like it.
  */
-function frames(path: Point[], scale: { x: number; y: number }): Keyframe[] {
+function frames(path: { x: number; y: number }[], base: number): Keyframe[] {
   const run = [0];
   for (let i = 1; i < path.length; i++) {
     run.push(run[i - 1] + Math.hypot(path[i].x - path[i - 1].x, path[i].y - path[i - 1].y));
@@ -197,12 +234,10 @@ function frames(path: Point[], scale: { x: number; y: number }): Keyframe[] {
     if (offset <= last) return;
     last = offset;
 
-    const level = smoothstep(Math.min(1, offset / 0.16));
+    const level = smoothstep(clamp01(offset / 0.16));
     const turn =
       heading[Math.min(i + 1, heading.length - 1)] - heading[Math.max(i - 1, 0)];
     const bank = Math.max(-38, Math.min(38, turn * 2.2));
-    // Climbing away, so it reads as getting further off rather than smaller.
-    const away = 1 - 0.45 * offset;
 
     out.push({
       offset,
@@ -212,8 +247,8 @@ function frames(path: Point[], scale: { x: number; y: number }): Keyframe[] {
         y: point.y,
         rot: heading[i] * level,
         bank: bank * level,
-        sx: scale.x * away,
-        sy: scale.y * away,
+        // Climbing away, so it reads as getting further off rather than smaller.
+        scale: base * (1 - 0.45 * offset),
       }),
     });
   });
@@ -221,174 +256,183 @@ function frames(path: Point[], scale: { x: number; y: number }): Keyframe[] {
   return out;
 }
 
-/** An overlay drawn in the flier's own box, so it distorts with the fold. */
-function overlay(): { svg: SVGSVGElement; envelope: SVGGElement; plane: SVGGElement } {
-  const svg = document.createElementNS(SVG_NS, "svg");
-  svg.setAttribute("viewBox", "0 0 100 100");
-  // The box is deliberately not square by the time these show, and the shapes
-  // have to sit exactly on the clip-path — so they stretch with it, and only
-  // the stroke width is held back from stretching with them.
-  svg.setAttribute("preserveAspectRatio", "none");
-  svg.style.cssText =
-    "position:absolute;inset:0;width:100%;height:100%;overflow:visible;color:inherit";
-
-  const draw = (d: string, fill = "none", opacity = "1") => {
-    const path = document.createElementNS(SVG_NS, "path");
-    path.setAttribute("d", d);
-    path.setAttribute("fill", fill);
-    path.setAttribute("stroke", "currentColor");
-    path.setAttribute("stroke-width", "1.25");
-    path.setAttribute("stroke-linejoin", "round");
-    path.setAttribute("stroke-linecap", "round");
-    path.setAttribute("vector-effect", "non-scaling-stroke");
-    path.setAttribute("opacity", opacity);
-    return path;
-  };
-
-  const envelope = document.createElementNS(SVG_NS, "g");
-  envelope.style.opacity = "0";
-  envelope.append(
-    draw("M1 1 H99 V99 H1 Z"),
-    // The flap, which becomes the plane's centre crease — the one stroke both
-    // shapes share, so the envelope reads as folding rather than being swapped.
-    draw("M1 1 L50 52 L99 1"),
-  );
-
-  const plane = document.createElementNS(SVG_NS, "g");
-  plane.style.opacity = "0";
-  const dart = DART.map(([x, y]) => `${x} ${y}`).join(" L ");
-  plane.append(
-    draw(`M ${dart} Z`),
-    // One shaded face. A dart only reads as folded if the two halves catch the
-    // light differently; without this it is a flat arrow.
-    draw("M100 50 L0 4 L34 50 Z", "currentColor", "0.1"),
-  );
-
-  svg.append(envelope, plane);
-  return { svg, envelope, plane };
+/** A stroke that can draw itself on. `pathLength` normalises it so the dash maths doesn't care how long the path actually is — which matters here, because these paths change shape as they draw. */
+function stroke(width = 1.6) {
+  const path = document.createElementNS(SVG_NS, "path");
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", "currentColor");
+  path.setAttribute("stroke-width", String(width));
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  path.setAttribute("pathLength", "1");
+  path.setAttribute("stroke-dasharray", "1");
+  return path;
 }
 
+const drawn = (path: SVGPathElement, k: number) =>
+  path.setAttribute("stroke-dashoffset", String(1 - k));
+
 /**
- * Fold `card` into a paper plane and fly it away.
+ * Fold `card`'s message into a paper plane and fly it away.
  *
- * Resolves when the plane has gone and the clone has been cleaned up. The card
- * itself is hidden for the duration and handed back untouched, so the caller
- * can close and reset it whenever it likes — the flight outlives it.
+ * Resolves once the plane has gone and the flier has been cleaned up. The card
+ * is hidden for the duration and handed back untouched, so the caller can close
+ * and reset it whenever it likes — the flight outlives it.
  */
 export async function sendOff(card: HTMLElement): Promise<void> {
   const rect = card.getBoundingClientRect();
   if (!rect.width || !rect.height) return;
 
+  // Big, as the whole point is that you can see it happen — but never wider
+  // than the card it came out of.
+  const size = Math.min(Math.max(Math.min(rect.width, rect.height) * 0.62, 120), 220);
+  const left = rect.left + (rect.width - size) / 2;
+  const top = rect.top + (rect.height - size) / 2;
+
   const flier = document.createElement("div");
   flier.setAttribute("aria-hidden", "true");
   flier.inert = true;
   flier.style.cssText =
-    `position:fixed;left:${rect.left}px;top:${rect.top}px;` +
-    `width:${rect.width}px;height:${rect.height}px;` +
+    `position:fixed;left:${left}px;top:${top}px;width:${size}px;height:${size}px;` +
     `z-index:60;pointer-events:none;transform-origin:50% 50%;` +
-    `will-change:transform,clip-path,opacity;clip-path:${poly(OPEN)};` +
-    `transform:${tf({})}`;
+    `will-change:transform,opacity;transform:${tf({})}`;
 
-  const copy = card.cloneNode(true) as HTMLElement;
-  // `cloneNode` copies the value *attribute*, not what anyone typed. Without
-  // this the card folds up empty, which rather gives the game away.
-  const written = card.querySelectorAll("input, textarea");
-  copy.querySelectorAll("input, textarea").forEach((field, i) => {
-    const source = written[i];
-    if (source instanceof HTMLInputElement || source instanceof HTMLTextAreaElement) {
-      (field as HTMLInputElement | HTMLTextAreaElement).value = source.value;
-    }
-    field.removeAttribute("id");
+  const svg = document.createElementNS(SVG_NS, "svg");
+  svg.setAttribute("viewBox", "0 0 100 100");
+  svg.style.cssText = "width:100%;height:100%;overflow:visible";
+  // Inherits the card's own ink rather than naming a colour, so it stays right
+  // in both themes.
+  svg.style.color = getComputedStyle(card).color;
+
+  // The sheet disappears behind the envelope's front as it goes in — clipped
+  // at the mouth rather than faded, so it reads as going inside something.
+  const clip = document.createElementNS(SVG_NS, "clipPath");
+  const clipId = `plane-mouth-${Math.random().toString(36).slice(2, 9)}`;
+  clip.setAttribute("id", clipId);
+  const mouth = document.createElementNS(SVG_NS, "rect");
+  mouth.setAttribute("x", "-60");
+  mouth.setAttribute("y", "-120");
+  mouth.setAttribute("width", "220");
+  mouth.setAttribute("height", String(120 + MOUTH));
+  clip.append(mouth);
+
+  const defs = document.createElementNS(SVG_NS, "defs");
+  defs.append(clip);
+
+  const body = stroke();
+  const flap = stroke();
+
+  const post = document.createElementNS(SVG_NS, "g");
+  post.setAttribute("clip-path", `url(#${clipId})`);
+
+  const sheet = document.createElementNS(SVG_NS, "g");
+  const paper = document.createElementNS(SVG_NS, "rect");
+  paper.setAttribute("x", String(SHEET.x));
+  paper.setAttribute("y", String(SHEET.y));
+  paper.setAttribute("width", String(SHEET.w));
+  paper.setAttribute("height", String(SHEET.h));
+  paper.setAttribute("rx", String(SHEET.r));
+  paper.setAttribute("fill", "none");
+  paper.setAttribute("stroke", "currentColor");
+  paper.setAttribute("stroke-width", "1.6");
+
+  sheet.append(paper);
+  // Ragged line lengths, so it reads as writing rather than a barcode.
+  [0.74, 0.86, 0.52].forEach((width, i) => {
+    const rule = document.createElementNS(SVG_NS, "line");
+    const y = SHEET.y + 11 + i * 8;
+    rule.setAttribute("x1", String(SHEET.x + 7));
+    rule.setAttribute("x2", String(SHEET.x + 7 + (SHEET.w - 14) * width));
+    rule.setAttribute("y1", String(y));
+    rule.setAttribute("y2", String(y));
+    rule.setAttribute("stroke", "currentColor");
+    rule.setAttribute("stroke-width", "1.4");
+    rule.setAttribute("stroke-linecap", "round");
+    rule.setAttribute("opacity", "0.45");
+    sheet.append(rule);
   });
-  copy.style.width = "100%";
-  copy.style.height = "100%";
+  post.append(sheet);
 
-  const { svg, envelope, plane } = overlay();
-  flier.append(copy, svg);
+  svg.append(defs, post, body, flap);
+  flier.append(svg);
   document.body.append(flier);
 
-  card.style.opacity = "0";
+  const handOver = card.animate([{ opacity: 1 }, { opacity: 0 }], {
+    duration: HAND_OVER,
+    easing: "cubic-bezier(0.16, 1, 0.3, 1)",
+    fill: "forwards",
+  });
 
-  const run = (el: Element, keyframes: Keyframe[], options: KeyframeAnimationOptions) =>
-    el.animate(keyframes, { fill: "forwards", ...options }).finished;
+  /** The whole pre-flight sequence, as one function of time. */
+  const paint = (t: number) => {
+    const drawing = easeOut(stage(t, 0, HAND_OVER));
+    const posting = easeInOut(stage(t, POST_FROM, POST));
+    const sealing = easeOut(stage(t, POST, SEAL));
+    const folding = easeInOut(stage(t, SEAL, FOLDED));
 
-  // Squashed flat. The card's own box does this, so everything inside it —
-  // the heading, the fields, whatever got typed — compresses together.
-  await Promise.all([
-    run(
-      flier,
-      [
-        { transform: tf({}) },
-        { transform: tf({ sx: SMUSHED.x, sy: SMUSHED.y, tilt: -8 }) },
-      ],
-      { duration: SMUSH_MS, easing: EASE_IN_OUT },
-    ),
-    run(envelope, [{ opacity: 0 }, { opacity: 1 }], {
-      duration: SMUSH_MS * 0.7,
-      delay: SMUSH_MS * 0.3,
-      easing: EASE,
-    }),
-  ]);
+    const outline = folding > 0 ? between(ENVELOPE, PLANE, folding) : ENVELOPE;
+    body.setAttribute("d", line(outline, true));
+    drawn(body, drawing);
 
-  // Folded. The silhouette becomes a dart while the sheet turns through the
-  // fold, and the crisp outline arrives over the back half of it — early
-  // enough to explain the shape, late enough not to precede it.
-  await Promise.all([
-    run(
-      flier,
-      [
-        { clipPath: poly(OPEN), transform: tf({ sx: SMUSHED.x, sy: SMUSHED.y, tilt: -8 }) },
-        {
-          offset: 0.55,
-          clipPath: poly(
-            OPEN.map((p, i) => [
-              p[0] + (DART[i][0] - p[0]) * 0.55,
-              p[1] + (DART[i][1] - p[1]) * 0.55,
-            ]) as [number, number][],
-          ),
-          transform: tf({ sx: 0.38, sy: 0.16, tilt: 26, bank: -14 }),
-        },
-        { clipPath: poly(DART), transform: tf({ sx: FOLDED.x, sy: FOLDED.y }) },
-      ],
-      { duration: FOLD_MS, easing: EASE_IN_OUT },
-    ),
-    run(envelope, [{ opacity: 1 }, { opacity: 0 }], {
-      duration: FOLD_MS * 0.45,
-      easing: EASE,
-    }),
-    run(plane, [{ opacity: 0 }, { opacity: 1 }], {
-      duration: FOLD_MS * 0.5,
-      delay: FOLD_MS * 0.5,
-      easing: EASE,
-    }),
-  ]);
+    // Open, then shut, then unfolded into the crease — one stroke, moved twice,
+    // never redrawn.
+    flap.setAttribute(
+      "d",
+      line(
+        folding > 0
+          ? between(FLAP_SEALED, CREASE, folding)
+          : between(FLAP_OPEN, FLAP_SEALED, sealing),
+      ),
+    );
+    drawn(flap, drawing);
+
+    sheet.setAttribute(
+      "transform",
+      `translate(0 ${lerp(SHEET_FROM, SHEET_TO, posting)})`,
+    );
+
+    // Arrives with the envelope, and once it's a plane there is no sheet
+    // outside it any more.
+    post.setAttribute("opacity", String(drawing * (1 - folding)));
+    flier.style.transform = tf({ scale: lerp(1, FOLD_SCALE, folding) });
+  };
+
+  paint(0);
+
+  await new Promise<void>((resolve) => {
+    const started = performance.now();
+    const step = () => {
+      const t = performance.now() - started;
+      paint(Math.min(t, FOLDED));
+      if (t < FOLDED) requestAnimationFrame(step);
+      else resolve();
+    };
+    requestAnimationFrame(step);
+  });
 
   // Away. The lap is scaled to the room actually available, measured from the
-  // card's centre and capped, and the exit is in pixels because leaving the
+  // icon's centre and capped, and the exit is in pixels because leaving the
   // screen is the one part that mustn't be clamped to fit it.
-  const centreX = rect.left + rect.width / 2;
-  const centreY = rect.top + rect.height / 2;
-  const planeW = rect.width * FOLDED.x;
-  const planeH = rect.height * FOLDED.y;
+  const centreX = left + size / 2;
+  const centreY = top + size / 2;
+  const span = (size * FOLD_SCALE) / 2;
 
-  const room = (free: number, cap: number) =>
-    Math.min(Math.max(60, free), cap);
-  const roomX = room(
-    Math.min(centreX, window.innerWidth - centreX) - planeW / 2 - 8,
-    240,
-  );
-  const roomY = room(centreY - planeH / 2 - 8, 280);
+  const room = (free: number, cap: number) => Math.min(Math.max(60, free), cap);
+  const roomX = room(Math.min(centreX, window.innerWidth - centreX) - span - 8, 240);
+  const roomY = room(centreY - span - 8, 280);
 
   const path = spline([
     ...LAP.map((u) => ({ x: u.x * roomX, y: u.y * roomY })),
-    { x: roomX * 1.35, y: -(centreY + planeH * 1.5) },
+    { x: roomX * 1.35, y: -(centreY + span * 2) },
   ]);
 
-  await run(flier, frames(path, FOLDED), {
+  await flier.animate(frames(path, FOLD_SCALE), {
     duration: FLIGHT_MS,
     easing: "cubic-bezier(0.4, 0, 0.7, 1)",
-  });
+    fill: "forwards",
+  }).finished;
 
   flier.remove();
+  handOver.cancel();
   card.style.opacity = "";
 }
