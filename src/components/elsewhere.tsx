@@ -52,7 +52,7 @@ const OVERLAP = 0.4;
 const CARD_W = 2;
 const CARD_H = 3;
 
-/** Room above the deck for a card to lift into on hover. */
+/** Slack above the cards, for the leaning ones' top corners and their shadows. */
 const HEADROOM = 0.4;
 
 /** How much of the viewport the opened photo may take. */
@@ -149,6 +149,7 @@ export function Elsewhere() {
    * unmounts. Anything looser shows both at once.
    */
   const [held, setHeld] = useState<number | null>(null);
+
 
   // The portal needs a document, which the server render doesn't have.
   const [ready, setReady] = useState(false);
@@ -253,7 +254,16 @@ export function Elsewhere() {
               aria-haspopup="dialog"
               aria-label={`View: ${item.caption}`}
               onClick={() => show(i)}
-              className="absolute bottom-0 block origin-bottom cursor-zoom-in overflow-hidden rounded-lg bg-line shadow-ring outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
+              // Hover is a shadow and nothing else. Lifting the card was the
+              // last thing moving that shouldn't: the pointer is still on the
+              // card you clicked, so the moment the backdrop unmounted the card
+              // rose 5% away from the spot the photo had just landed on, which
+              // is what read as everything snapping back into place. Suppressing
+              // it doesn't work either — the backdrop covering the card fires
+              // pointerleave, which cancels the suppression. A card that reports
+              // the same box hovered or not simply can't disagree with the
+              // photo flying home to it.
+              className="absolute bottom-0 block origin-bottom cursor-zoom-in overflow-hidden rounded-lg bg-line shadow-ring transition-shadow duration-200 ease-out outline-none hover:shadow-ring-raised focus-visible:ring-2 focus-visible:ring-foreground/40"
               style={{
                 left: `${(step * i * 100) / SPAN}%`,
                 width: `${(CARD_W * 100) / SPAN}%`,
@@ -266,11 +276,7 @@ export function Elsewhere() {
                 opacity: held === i ? 0 : 1,
               }}
               initial={false}
-              animate={{ rotate: still ? 0 : leanOf(i), y: "0%" }}
-              whileHover={
-                still ? undefined : { y: "-5%", rotate: leanOf(i) * 0.35 }
-              }
-              whileTap={{ scale: 0.98 }}
+              animate={{ rotate: still ? 0 : leanOf(i) }}
               transition={still ? { duration: 0 } : HOVER}
             >
               <Image
@@ -316,7 +322,12 @@ export function Elsewhere() {
                   className="absolute inset-0 cursor-zoom-out bg-background/92"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
+                  // Leaves on the photo's timing, not its own. AnimatePresence
+                  // holds the whole group until its slowest child is done, so a
+                  // longer fade here left the photo sitting finished on top of
+                  // the card for 170ms before the handover — a dead pause right
+                  // where the movement should end.
+                  exit={{ opacity: 0, transition: still ? { duration: 0 } : SHUT }}
                   transition={still ? { duration: 0 } : OPEN}
                 />
 

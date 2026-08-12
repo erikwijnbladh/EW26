@@ -103,6 +103,16 @@ summary {
     0 6px 20px rgba(21, 20, 15, 0.06);
 }
 
+/* The same surface, lifted — for hover states that must not move anything.
+   A card in the photo deck reports the same box hovered or not, which is what
+   lets the viewer fly back to it and land exactly. */
+.shadow-ring-raised {
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 2px 4px rgba(21, 20, 15, 0.06),
+    0 14px 34px rgba(21, 20, 15, 0.12);
+}
+
 /* Touch devices: a permanently-animating full-screen layer is a composite
    every frame for a texture nobody notices moving. Keep the grain, drop the
    motion — this is the difference between smooth and not while scrolling. */
