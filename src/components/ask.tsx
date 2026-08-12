@@ -44,10 +44,10 @@ class ReplyError extends Error {}
 
 /** Short on purpose — long enough to be a real question, short enough to pair up. */
 const PROMPTS = [
-  "What does he do?",
-  "Where has he worked?",
-  "What has he built?",
-  "How do I reach him?",
+  "What do you do?",
+  "Where have you worked?",
+  "What have you built?",
+  "How do I reach you?",
 ];
 
 const stroke = {
@@ -279,10 +279,10 @@ function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
       // nothing feathered: the photographs arrived with their own alpha, so the
       // edge is a real one that follows the hair, and it can be cropped close
       // and shown large without a margin of nothing around it.
-      // `self-start` because a flex row stretches its children by default, and
-      // a stretched height beats the aspect ratio — which leaves the frame as
-      // tall as the paragraph beside it and the photograph squashed inside it.
-      className="relative aspect-[1/1.3] w-12 shrink-0 self-start"
+      // `block` explicitly: this is a span, and it is no longer a flex child
+      // being blockified for free. Inline, the width and aspect ratio are both
+      // ignored and it collapses to nothing.
+      className="relative block aspect-[1/1.3] w-12"
       aria-hidden
       initial={false}
       // Barely a breath, and the only reason the waiting state reads as active
@@ -602,7 +602,7 @@ export function AskPanel({ open }: { open: boolean }) {
     <div className="flex w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-4">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-[19px] font-medium leading-tight tracking-[-0.02em] text-foreground">
-          Ask about Erik
+          What do you want to know?
         </h2>
 
         <AnimatePresence initial={false}>
@@ -624,84 +624,88 @@ export function AskPanel({ open }: { open: boolean }) {
         </AnimatePresence>
       </div>
 
-      <div
-        ref={scrollRef}
-        onScroll={onScroll}
-        // The mask softens the top edge: scrolled-past text dissolves under the
-        // heading instead of being guillotined by the overflow box.
-        className="no-scrollbar mt-3 h-[min(15rem,40svh)] overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0,black_1.5rem)]"
-      >
-        {empty ? (
-          <div className="flex h-full flex-col justify-end gap-3">
-            {/* The face is here before a word is exchanged, so it reads as
-                whoever is about to answer rather than as something that only
-                turns up while you wait. */}
-            <div className="flex gap-2.5">
-              <Face thinking={false} still={Boolean(still)} />
-              <p className="min-w-0 flex-1 text-[15px] leading-relaxed text-muted">
-                Everything this knows comes from the rest of the site. Ask about
-                the work, the writing, the stack, or how to get hold of him.
+      {/*
+        The face is pinned to the bottom-left of this box rather than living
+        with the answers, so it never scrolls out of the conversation — it is
+        the one thing here that is always on screen. Everything inside the
+        scroller is inset past it; the face itself sits outside the scroller,
+        which is what keeps it still while the transcript moves behind it.
+      */}
+      <div className="relative mt-3">
+        <div
+          ref={scrollRef}
+          onScroll={onScroll}
+          // The mask softens the top edge: scrolled-past text dissolves under
+          // the heading instead of being guillotined by the overflow box.
+          className="no-scrollbar h-[min(15rem,40svh)] overflow-y-auto overscroll-contain pl-14 [mask-image:linear-gradient(to_bottom,transparent_0,black_1.5rem)]"
+        >
+          {empty ? (
+            // `min-h-full`, not `h-full`, and for the same reason the message
+            // column below uses it: pinned to an exact height, anything taller
+            // than the box overflows upward past the top of the scroller, where
+            // it cannot be scrolled back to. It has to be able to grow.
+            <div className="flex min-h-full flex-col justify-end gap-3">
+              {/* Short on purpose. The face takes a column out of this box, so
+                  the prompts below wrap one to a line — and the second sentence
+                  this used to carry ("ask about the work, the stack…") is what
+                  those prompts already are. Together they overflowed and pushed
+                  this off the top of the scroller. */}
+              <p className="text-[15px] leading-relaxed text-muted">
+                It&rsquo;s me, more or less — answering from what&rsquo;s on the
+                rest of the site.
               </p>
-            </div>
 
-            <div className="flex flex-wrap gap-1.5">
-              {PROMPTS.map((prompt, i) => (
-                <motion.button
-                  key={prompt}
-                  type="button"
-                  initial={still ? false : { opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ ...springSoft, delay: 0.08 + i * 0.05 }}
-                  whileTap={still ? undefined : { scale: 0.97 }}
-                  onClick={() => void send(prompt)}
-                  className="rounded-full border border-line bg-surface/50 px-3 py-1.5 text-[13px] text-muted transition-colors duration-150 hover:border-foreground/25 hover:text-foreground"
+              <div className="flex flex-wrap gap-1.5">
+                {PROMPTS.map((prompt, i) => (
+                  <motion.button
+                    key={prompt}
+                    type="button"
+                    initial={still ? false : { opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ ...springSoft, delay: 0.08 + i * 0.05 }}
+                    whileTap={still ? undefined : { scale: 0.97 }}
+                    onClick={() => void send(prompt)}
+                    className="rounded-full border border-line bg-surface/50 px-3 py-1.5 text-[13px] text-muted transition-colors duration-150 hover:border-foreground/25 hover:text-foreground"
+                  >
+                    {prompt}
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            // `justify-end` against a full-height column: the first couple of
+            // turns sit on the composer rather than floating at the top of an
+            // empty box, and the transcript starts scrolling once it outgrows it.
+            <div className="flex min-h-full flex-col justify-end gap-4">
+              {messages.map((message, i) => (
+                <motion.div
+                  key={message.id}
+                  initial={still ? false : { opacity: 0, y: 8, filter: "blur(4px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  transition={springSoft}
+                  className={message.role === "user" ? "flex justify-end" : "pr-2"}
                 >
-                  {prompt}
-                </motion.button>
+                  {message.role === "user" ? (
+                    <p className="rounded-2xl rounded-br-md bg-foreground/[0.07] px-3.5 py-2 text-[15px] leading-relaxed text-foreground">
+                      {message.content}
+                    </p>
+                  ) : (
+                    <Reply
+                      content={message.content}
+                      streaming={busy && i === messages.length - 1}
+                      still={Boolean(still)}
+                      onReveal={stickToBottom}
+                    />
+                  )}
+                </motion.div>
               ))}
             </div>
-          </div>
-        ) : (
-          // `justify-end` against a full-height column: the first couple of
-          // turns sit on the composer rather than floating at the top of an
-          // empty box, and the transcript starts scrolling once it outgrows it.
-          <div className="flex min-h-full flex-col justify-end gap-4">
-            {messages.map((message, i) => (
-              <motion.div
-                key={message.id}
-                initial={still ? false : { opacity: 0, y: 8, filter: "blur(4px)" }}
-                animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                transition={springSoft}
-                className={
-                  message.role === "user"
-                    ? "flex justify-end pl-8"
-                    : "flex gap-2.5 pr-2"
-                }
-              >
-                {message.role === "user" ? (
-                  <p className="rounded-2xl rounded-br-md bg-foreground/[0.07] px-3.5 py-2 text-[15px] leading-relaxed text-foreground">
-                    {message.content}
-                  </p>
-                ) : (
-                  <>
-                    <Face
-                      thinking={busy && i === messages.length - 1}
-                      still={Boolean(still)}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <Reply
-                        content={message.content}
-                        streaming={busy && i === messages.length - 1}
-                        still={Boolean(still)}
-                        onReveal={stickToBottom}
-                      />
-                    </div>
-                  </>
-                )}
-              </motion.div>
-            ))}
-          </div>
-        )}
+          )}
+        </div>
+
+        <span className="pointer-events-none absolute bottom-0 left-0">
+          <Face thinking={busy} still={Boolean(still)} />
+        </span>
       </div>
 
       {/*
@@ -731,7 +735,7 @@ export function AskPanel({ open }: { open: boolean }) {
           onKeyDown={onKeyDown}
           rows={1}
           placeholder="Ask something"
-          aria-label="Ask a question about Erik"
+          aria-label="Ask a question"
           maxLength={1000}
           className="no-scrollbar min-h-[2.75rem] w-full flex-1 resize-none rounded-xl border border-line bg-surface/50 px-3.5 py-3 text-[15px] leading-tight text-foreground outline-none transition-colors duration-150 placeholder:text-muted/70 focus:border-foreground/25 focus:bg-surface/80"
         />
