@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { profile } from "@/lib/data";
 import { drawOff, drawOn, duration, ease, instant, springSnappy } from "@/lib/motion";
-import { sendOff } from "@/lib/paper-plane";
 
 const fieldClass =
   "w-full rounded-xl border border-line bg-surface/50 px-3.5 py-2.5 text-[15px] text-foreground outline-none transition-colors duration-150 placeholder:text-muted/70 focus:border-foreground/25 focus:bg-surface/80";
@@ -125,7 +124,6 @@ export function SayHiForm({
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
 
   // Gated on `open`, not on mount: the dock keeps both cards mounted so it can
   // cross-fade between them, so this component is alive from page load and an
@@ -151,49 +149,28 @@ export function SayHiForm({
   }, [open, onClose]);
 
   /**
-   * The send-off: the card folds into a paper plane and leaves.
+   * Once it has gone: hold the tick long enough to read, close, then clear.
    *
-   * The dock is told to close while the plane is still on its lap rather than
-   * after it — the flier is a fixed clone with no further need of the card, so
-   * waiting would just leave an empty shell sitting open.
-   *
-   * The form is reset at the end because it is never unmounted: the dock keeps
-   * every card alive so it can cross-fade between them, so without this the
-   * next visitor to open it finds the last message still sitting there, sent.
+   * The reset matters because this form is never unmounted — the dock keeps
+   * every card alive so it can cross-fade between them — so without it the next
+   * visitor to open the card finds the last message still sitting there, sent.
+   * It happens after the card has shut, so nobody watches the fields empty.
    */
   useEffect(() => {
     if (status !== "sent") return;
 
-    let gone = false;
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    const timers = [
+      setTimeout(onClose, 1600),
+      setTimeout(() => {
+        setName("");
+        setEmail("");
+        setMessage("");
+        setStatus("idle");
+      }, 2000),
+    ];
 
-    const reset = () => {
-      if (gone) return;
-      setName("");
-      setEmail("");
-      setMessage("");
-      setStatus("idle");
-    };
-
-    if (still || !cardRef.current) {
-      timers.push(setTimeout(onClose, 1600), setTimeout(reset, 2000));
-    } else {
-      // A beat first, so the tick has drawn before the card folds over it.
-      timers.push(
-        setTimeout(() => {
-          const card = cardRef.current;
-          if (!card || gone) return;
-          void sendOff(card).then(reset);
-        }, 260),
-        setTimeout(onClose, 1100),
-      );
-    }
-
-    return () => {
-      gone = true;
-      timers.forEach(clearTimeout);
-    };
-  }, [status, still, onClose]);
+    return () => timers.forEach(clearTimeout);
+  }, [status, onClose]);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -236,7 +213,7 @@ export function SayHiForm({
     // Deliberately the same measure as the ask card. The dock morphs its shell
     // between the two, and matching widths leave only the height to travel —
     // one axis of movement to read instead of two.
-    <div ref={cardRef} className="w-[min(23rem,calc(100vw-4rem))] select-text p-4">
+    <div className="w-[min(23rem,calc(100vw-4rem))] select-text p-4">
       <h2 className="text-[26px] font-medium leading-tight tracking-[-0.02em] text-foreground">
         What&rsquo;s up?
       </h2>
