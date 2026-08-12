@@ -5,7 +5,21 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { elsewhere } from "@/lib/data";
-import { duration, ease, springSnappy, springSurface } from "@/lib/motion";
+import { duration, ease, easeGlide } from "@/lib/motion";
+
+/**
+ * Nothing here is a spring.
+ *
+ * The deck used to run on the shared `springSnappy` and `springSurface`, and
+ * both are underdamped — 32 against a critical 34.3, and 30 against 31 — so
+ * every hover overshot and rocked back, and five cards under a moving cursor
+ * jiggled. Durations with a no-overshoot curve arrive once and stop.
+ */
+const HOVER = { duration: 0.18, ease: easeGlide };
+const OPEN = { duration: 0.42, ease: easeGlide };
+
+/** Leaving is quicker than arriving: you already know what you're going back to. */
+const SHUT = { duration: 0.28, ease: easeGlide };
 
 /**
  * Photographs, dealt out like a hand of cards, and a viewer to open them in.
@@ -257,7 +271,7 @@ export function Elsewhere() {
                 still ? undefined : { y: "-5%", rotate: leanOf(i) * 0.35 }
               }
               whileTap={{ scale: 0.98 }}
-              transition={still ? { duration: 0 } : springSnappy}
+              transition={still ? { duration: 0 } : HOVER}
             >
               <Image
                 src={item.src}
@@ -293,11 +307,17 @@ export function Elsewhere() {
                   type="button"
                   aria-label="Close"
                   onClick={close}
-                  className="absolute inset-0 cursor-zoom-out bg-background/85 backdrop-blur-sm"
+                  // No `backdrop-blur`. It is the single most expensive thing
+                  // this page could do: blurring the whole viewport every frame
+                  // while a large photo scales above it dropped the open to
+                  // 15fps with 400ms frames. Without it the same open holds 60
+                  // with nothing over 17ms, and a scrim this opaque was doing
+                  // all the visible work anyway.
+                  className="absolute inset-0 cursor-zoom-out bg-background/92"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  transition={{ duration: still ? 0 : duration.base, ease }}
+                  transition={still ? { duration: 0 } : OPEN}
                 />
 
                 {/*
@@ -317,8 +337,8 @@ export function Elsewhere() {
                       ? { opacity: 1 }
                       : { x: 0, y: 0, scale: 1, rotate: 0, opacity: 1 }
                   }
-                  exit={still ? { opacity: 0 } : move}
-                  transition={still ? { duration: 0 } : springSurface}
+                  exit={still ? { opacity: 0 } : { ...move, transition: SHUT }}
+                  transition={still ? { duration: 0 } : OPEN}
                 >
                   <Image
                     src={photo.src}

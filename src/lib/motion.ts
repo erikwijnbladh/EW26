@@ -12,6 +12,18 @@ export const ease = [0.16, 1, 0.3, 1] as const;
 /** Quint-in-out, for things that move both ways. */
 export const easeInOut = [0.65, 0, 0.35, 1] as const;
 
+/**
+ * The one for things that travel: a photo growing out of the deck, a card
+ * lifting under the cursor.
+ *
+ * `ease` above is expo-out, which spends most of its time almost stopped. That
+ * reads beautifully on something appearing in place and floaty on something
+ * crossing the screen. This leaves quickly, covers the distance, and arrives
+ * without the long hover at the end — and unlike the springs it has no
+ * overshoot at all, so nothing rocks back into position.
+ */
+export const easeGlide = [0.32, 0.72, 0, 1] as const;
+
 export const duration = {
   /** Hovers, colour changes. */
   fast: 0.15,
