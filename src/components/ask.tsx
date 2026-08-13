@@ -291,7 +291,7 @@ function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
       // `block` explicitly: this is a span, and it is no longer a flex child
       // being blockified for free. Inline, the width and aspect ratio are both
       // ignored and it collapses to nothing.
-      className="relative block aspect-[144/167] w-12"
+      className="relative block aspect-[144/167] w-11"
       aria-hidden
       initial={false}
       // Barely a breath, and the only reason the waiting state reads as active
@@ -317,7 +317,7 @@ function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
           src={src}
           alt=""
           fill
-          sizes="48px"
+          sizes="44px"
           priority
           className="object-contain"
           style={{ opacity: shown ? 1 : 0 }}
@@ -652,7 +652,7 @@ export function AskPanel({ open }: { open: boolean }) {
           onScroll={onScroll}
           // The mask softens the top edge: scrolled-past text dissolves under
           // the heading instead of being guillotined by the overflow box.
-          className="no-scrollbar absolute inset-0 overflow-y-auto overscroll-contain pl-14 [mask-image:linear-gradient(to_bottom,transparent_0,black_1.5rem)]"
+          className="no-scrollbar absolute inset-0 overflow-y-auto overscroll-contain pl-13 [mask-image:linear-gradient(to_bottom,transparent_0,black_1.5rem)]"
         >
           {empty ? (
             // `min-h-full`, not `h-full`, and for the same reason the message
