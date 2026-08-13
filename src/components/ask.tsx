@@ -631,13 +631,19 @@ export function AskPanel({ open }: { open: boolean }) {
         scroller is inset past it; the face itself sits outside the scroller,
         which is what keeps it still while the transcript moves behind it.
       */}
-      <div className="relative mt-3">
+      {/*
+        `grow` with a floor rather than a fixed height: the dock sizes its shell
+        to the taller of its two cards, and this is where that card's extra
+        height goes — into more transcript. The floor is what the height used to
+        be, so the card still measures the same when there is no slack to take.
+      */}
+      <div className="relative mt-3 min-h-[min(15rem,40svh)] grow [@media(max-height:520px)]:min-h-[6.5rem]">
         <div
           ref={scrollRef}
           onScroll={onScroll}
           // The mask softens the top edge: scrolled-past text dissolves under
           // the heading instead of being guillotined by the overflow box.
-          className="no-scrollbar h-[min(15rem,40svh)] overflow-y-auto overscroll-contain pl-14 [mask-image:linear-gradient(to_bottom,transparent_0,black_1.5rem)]"
+          className="no-scrollbar absolute inset-0 overflow-y-auto overscroll-contain pl-14 [mask-image:linear-gradient(to_bottom,transparent_0,black_1.5rem)]"
         >
           {empty ? (
             // `min-h-full`, not `h-full`, and for the same reason the message

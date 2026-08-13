@@ -213,12 +213,16 @@ export function SayHiForm({
     // Deliberately the same measure as the ask card. The dock morphs its shell
     // between the two, and matching widths leave only the height to travel —
     // one axis of movement to read instead of two.
-    <div className="w-[min(23rem,calc(100vw-4rem))] select-text p-4">
+    // A column that can absorb slack. The dock sizes its shell to the taller of
+    // its two cards, and this one is currently the taller — but if that ever
+    // flips, `grow` on the form and the message box is what stops the extra
+    // height landing as a gap under the send button.
+    <div className="flex w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-4">
       <h2 className="text-[26px] font-medium leading-tight tracking-[-0.02em] text-foreground">
         What&rsquo;s up?
       </h2>
 
-      <form onSubmit={onSubmit} className="mt-6 flex flex-col gap-2.5">
+      <form onSubmit={onSubmit} className="mt-6 flex grow flex-col gap-2.5">
         <div className="flex flex-col gap-2.5 sm:flex-row">
           <input
             ref={firstFieldRef}
@@ -260,7 +264,17 @@ export function SayHiForm({
           aria-label="Message"
           maxLength={5000}
           disabled={busy}
-          className={`${fieldClass} resize-none`}
+          // `grow` keeps its natural six rows as the basis and only takes space
+          // that is actually spare.
+          //
+          // The cap keeps this card inside a short viewport — six rows plus two
+          // fields, a heading and a footer is more than a landscape phone has
+          // room for, and the dock now sizes itself to the taller card, so this
+          // one's height is the chat's too. Behind a height query rather than an
+          // svh unit: svh scales linearly, so any value tight enough for a 390px
+          // screen also shrinks the box on a normal one. This changes nothing
+          // above 520px tall.
+          className={`${fieldClass} grow resize-none [@media(max-height:520px)]:max-h-16`}
         />
 
         {/*

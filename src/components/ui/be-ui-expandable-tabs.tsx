@@ -431,17 +431,33 @@ export function ExpandableTabs({
     height: BAR_H + ROOT_BORDER,
   };
 
-  // Sized to the card that is on its way in, not the one on show, so the shell
-  // starts reshaping on the same render as the click rather than a beat later.
-  const sizedFor = visualActiveId ?? renderedId;
-  const measured = sizedFor ? sizes[sizedFor] : null;
+  /**
+   * One size, taken from the tallest card rather than from whichever is open.
+   *
+   * The cards are two views of the same object and there is no reason for the
+   * shell to be a different shape in each — so it isn't. It takes the largest
+   * each axis needs and the cards stretch to fill it, which also means swapping
+   * tabs moves nothing at all: no reshape, because there is nothing to reshape
+   * to.
+   *
+   * Still measured per card and maxed here rather than measured as one union
+   * box, because that is what lets a card ask for a size the others don't have
+   * to share — and it is per width, which a fixed number could not be. The gap
+   * between these two is 17px on a desktop and 83px on a phone, where the name
+   * and email fields stack.
+   */
+  const openSize = tabs.reduce(
+    (largest, item) => {
+      const measured = sizes[item.id];
+      if (!measured) return largest;
 
-  const openSize = measured
-    ? {
-        width: Math.max(measured.width + ROOT_BORDER, closedSize.width),
-        height: Math.max(measured.height + ROOT_BORDER, closedSize.height),
-      }
-    : closedSize;
+      return {
+        width: Math.max(largest.width, measured.width + ROOT_BORDER),
+        height: Math.max(largest.height, measured.height + ROOT_BORDER),
+      };
+    },
+    { ...closedSize },
+  );
 
   // The one value everything else is a function of: 0 closed, 1 open.
   const progress = useMotionValue(0);
@@ -588,7 +604,10 @@ export function ExpandableTabs({
                 <motion.div
                   key={item.id}
                   inert={!isOpen || !current}
-                  className="col-start-1 row-start-1 w-max self-end"
+                  // Stretched, not bottom-aligned: the shell is sized to the
+                  // tallest card, so the others have slack to take up. Sitting
+                  // on the bottom edge instead leaves it as a gap above them.
+                  className="col-start-1 row-start-1 grid w-max"
                   initial={false}
                   animate={{
                     opacity: current ? 1 : 0,
