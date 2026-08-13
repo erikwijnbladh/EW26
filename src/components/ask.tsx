@@ -268,6 +268,12 @@ function CopyButton({ value }: { value: string }) {
  * swap reads as two pictures cutting between each other rather than one face
  * changing its mind.
  *
+ * Cut at the neck, above the shoulders. Both crops are scaled by head width and
+ * end a fixed fraction of it below the eye line, which lands in the pinch on
+ * either photograph — measured off the alpha, ~315px across a 492px skull and
+ * ~378 across a 597px one. A square frame ended 100px lower and took the traps
+ * with it.
+ *
  * Both stay mounted and take turns on opacity, like every other state on this
  * site. It also means the second photograph is already in the browser by the
  * time it is needed, so the expression doesn't arrive a beat after the thought.
@@ -275,14 +281,17 @@ function CopyButton({ value }: { value: string }) {
 function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
   return (
     <motion.span
-      // Portrait, because that is the shape of a head. No frame, no mask and
-      // nothing feathered: the photographs arrived with their own alpha, so the
-      // edge is a real one that follows the hair, and it can be cropped close
-      // and shown large without a margin of nothing around it.
+      // The shape of the crop, exactly: head only, cut at the neck before the
+      // shoulders start. No frame, no mask and nothing feathered — the
+      // photographs arrived with their own alpha, so the edge is a real one
+      // that follows the hair, and it can be cropped close and shown large
+      // without a margin of nothing around it.
+      // The ratio has to match the files or `object-contain` letterboxes the
+      // head inside its own box and quietly shrinks it.
       // `block` explicitly: this is a span, and it is no longer a flex child
       // being blockified for free. Inline, the width and aspect ratio are both
       // ignored and it collapses to nothing.
-      className="relative block aspect-[1/1.3] w-12"
+      className="relative block aspect-[144/167] w-12"
       aria-hidden
       initial={false}
       // Barely a breath, and the only reason the waiting state reads as active
