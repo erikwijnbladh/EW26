@@ -1,12 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
-import Image from "next/image";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   duration,
   ease,
   easeInOut,
+  instant,
   springSnappy,
   springSoft,
   wordIn,
@@ -14,6 +21,7 @@ import {
   drawOff,
 } from "@/lib/motion";
 import { useWordReveal } from "@/components/use-word-reveal";
+import { DitherDot } from "@/components/dither-dot";
 import { CopyIcon } from "@/components/copy-icon";
 
 /**
@@ -255,66 +263,64 @@ function CopyButton({ value }: { value: string }) {
 }
 
 /**
- * Whose head the answers are coming out of.
+ * Who is answering.
  *
- * It sits where the waiting indicator used to, beside whatever the assistant is
- * saying, and it never leaves — so the same thing that tells you an answer is
- * coming is still there once it has arrived, having changed its expression
- * rather than been swapped out for text.
+ * The site's own dot — the one beside the name in the nav and swooping around
+ * the lists — doing duty as the chat's persona. It sits where the waiting
+ * indicator used to and never leaves, so the thing that tells you an answer is
+ * coming is the same thing that is still there once it has arrived. It only
+ * changes pace.
  *
- * Two photographs of the same face — one straight down the lens, one caught
- * mid-thought — cropped so the eyes land in the same place at the same size.
- * That alignment is the whole trick: framed even slightly differently, the
- * swap reads as two pictures cutting between each other rather than one face
- * changing its mind.
+ * A dithered sphere on a shader, so it is soft and always turning: slowly while
+ * it is only an identity, quicker while a reply is on its way. That is the whole
+ * state change — no second element, nothing to swap, and the difference reads
+ * without ever being a face pulling an expression.
  *
- * Both stay mounted and take turns on opacity, like every other state on this
- * site. It also means the second photograph is already in the browser by the
- * time it is needed, so the expression doesn't arrive a beat after the thought.
+ * `awake` is a real cost control, not a nicety. This is a WebGL canvas with its
+ * own animation loop, and the dock keeps every card mounted plus a hidden copy
+ * of each for measuring — so an ungated dot would run two shaders forever,
+ * including for the card nobody has opened. Mounted only while the chat is
+ * open; the box it lives in keeps its size either way, so the measurement the
+ * dock takes never moves.
  */
-function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
+function Persona({
+  thinking,
+  awake,
+  still,
+}: {
+  thinking: boolean;
+  awake: boolean;
+  still: boolean;
+}) {
+  const box = useRef<HTMLSpanElement>(null);
+  const [onScreen, setOnScreen] = useState(false);
+
+  // The dock measures a hidden copy of this card, and that copy would otherwise
+  // run a second shader behind `visibility: hidden` for as long as the chat is
+  // open. It needs the box, which costs nothing; it does not need the canvas.
+  useLayoutEffect(() => {
+    setOnScreen(
+      !!box.current && getComputedStyle(box.current).visibility !== "hidden",
+    );
+  }, []);
+
   return (
-    <motion.span
-      // Portrait, because that is the shape of a head. No frame, no mask and
-      // nothing feathered: the photographs arrived with their own alpha, so the
-      // edge is a real one that follows the hair, and it can be cropped close
-      // and shown large without a margin of nothing around it.
-      // `block` explicitly: this is a span, and it is no longer a flex child
-      // being blockified for free. Inline, the width and aspect ratio are both
-      // ignored and it collapses to nothing.
-      className="relative block aspect-[1/1.3] w-12"
-      aria-hidden
-      initial={false}
-      // Barely a breath, and the only reason the waiting state reads as active
-      // rather than stalled now that the dot has gone.
-      animate={thinking && !still ? { scale: [1, 1.055, 1] } : { scale: 1 }}
-      transition={
-        thinking && !still
-          ? { duration: 1.9, repeat: Infinity, ease: "easeInOut" }
-          : { duration: 0.3, ease }
-      }
-    >
-      {/* One or the other, never a blend. These are the same head in the same
-          place, so any moment with both on screen is a double exposure rather
-          than a transition — the cut is what makes it read as a change of
-          expression. Both stay mounted so neither has to be fetched at the
-          moment it is wanted. */}
-      {[
-        { src: "/ask/idle.webp", shown: !thinking },
-        { src: "/ask/thinking.webp", shown: thinking },
-      ].map(({ src, shown }) => (
-        <Image
-          key={src}
-          src={src}
-          alt=""
-          fill
-          sizes="48px"
-          priority
-          className="object-contain"
-          style={{ opacity: shown ? 1 : 0 }}
-        />
-      ))}
-    </motion.span>
+    <span ref={box} className="relative block size-8 shrink-0" aria-hidden>
+      <motion.span
+        className="absolute inset-0 block"
+        initial={false}
+        animate={{ opacity: thinking ? 1 : 0.55 }}
+        transition={still ? instant : { duration: 0.32, ease }}
+      >
+        {awake && onScreen ? (
+          <DitherDot
+            speed={still ? 0 : thinking ? 3.6 : 1.1}
+            size={0.22}
+            minPixelRatio={3}
+          />
+        ) : null}
+      </motion.span>
+    </span>
   );
 }
 
@@ -643,7 +649,7 @@ export function AskPanel({ open }: { open: boolean }) {
           onScroll={onScroll}
           // The mask softens the top edge: scrolled-past text dissolves under
           // the heading instead of being guillotined by the overflow box.
-          className="no-scrollbar absolute inset-0 overflow-y-auto overscroll-contain pl-14 [mask-image:linear-gradient(to_bottom,transparent_0,black_1.5rem)]"
+          className="no-scrollbar absolute inset-0 overflow-y-auto overscroll-contain pl-11 [mask-image:linear-gradient(to_bottom,transparent_0,black_1.5rem)]"
         >
           {empty ? (
             // `min-h-full`, not `h-full`, and for the same reason the message
@@ -710,7 +716,7 @@ export function AskPanel({ open }: { open: boolean }) {
         </div>
 
         <span className="pointer-events-none absolute bottom-0 left-0">
-          <Face thinking={busy} still={Boolean(still)} />
+          <Persona thinking={busy} awake={open} still={Boolean(still)} />
         </span>
       </div>
 
