@@ -13,7 +13,6 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
-const EASE_IN_OUT = [0.77, 0, 0.175, 1] as const;
 
 const PANEL_GAP = 8;
 const BAR_HEIGHT = 52;
@@ -106,11 +105,9 @@ function usePanelSizes(items: ExpandableTabsItem[]) {
 /**
  * A stable toolbar and one panel above it.
  *
- * The previous component animated width, height, labels, blur and two panel
- * opacities on separate springs. The toolbar now stays put. Opening is a short
- * bottom-up clip, and switching panels is a left-to-right redraw inside the
- * same frame. Nothing shifts under the pointer and no blur is used to hide a
- * double exposure.
+ * The toolbar stays put, and the panel opens from that fixed anchor with one
+ * restrained transition. Switching modes is immediate: the active control
+ * already communicates the change, so the forms do not slide or crossfade.
  */
 export function ExpandableTabs({
   items,
@@ -195,16 +192,14 @@ export function ExpandableTabs({
         initial={false}
         animate={{
           opacity: panelOpen ? 1 : 0,
-          clipPath: panelOpen
-            ? "inset(0% 0% 0% 0% round 20px)"
-            : "inset(100% 0% 0% 0% round 20px)",
+          scale: panelOpen ? 1 : 0.985,
         }}
         transition={
           reduce
             ? { duration: 0 }
             : {
-                duration: panelOpen ? 0.24 : 0.18,
-                ease: panelOpen ? EASE_IN_OUT : EASE_OUT,
+                duration: panelOpen ? 0.16 : 0.12,
+                ease: EASE_OUT,
               }
         }
         className={cn(
@@ -212,32 +207,22 @@ export function ExpandableTabs({
           panelOpen ? "pointer-events-auto" : "pointer-events-none",
           classNames?.panel,
         )}
-        style={{ height: panelSize.height }}
+        style={{ height: panelSize.height, transformOrigin: "bottom center" }}
       >
         {panels.map((item) => {
           const current = item.id === shownId;
           return (
-            <motion.div
+            <div
               key={item.id}
               inert={!panelOpen || !current}
-              initial={false}
-              animate={{
-                opacity: current ? 1 : 0,
-                clipPath: current
-                  ? "inset(0% 0% 0% 0%)"
-                  : "inset(0% 100% 0% 0%)",
-              }}
-              transition={
-                reduce
-                  ? { duration: 0 }
-                  : current
-                    ? { duration: 0.22, delay: 0.035, ease: EASE_IN_OUT }
-                    : { duration: 0.14, ease: EASE_OUT }
-              }
-              className="col-start-1 row-start-1 h-full min-h-0 w-full"
+              aria-hidden={!current}
+              className={cn(
+                "col-start-1 row-start-1 h-full min-h-0 w-full",
+                current ? "visible" : "invisible",
+              )}
             >
               {item.content}
-            </motion.div>
+            </div>
           );
         })}
       </motion.div>
