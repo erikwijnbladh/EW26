@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
 import {
   duration,
@@ -285,6 +286,31 @@ function CopyButton({ value }: { value: string }) {
     >
       <CopyIcon copied={copied} />
     </button>
+  );
+}
+
+/** One fixed speaker slot; only the expression changes while a reply arrives. */
+function AssistantAvatar({ thinking }: { thinking: boolean }) {
+  return (
+    <span
+      className="relative mt-0.5 block aspect-[144/167] w-8 shrink-0"
+      aria-hidden
+    >
+      {[
+        { src: "/ask/idle.webp", shown: !thinking },
+        { src: "/ask/thinking.webp", shown: thinking },
+      ].map(({ src, shown }) => (
+        <Image
+          key={src}
+          src={src}
+          alt=""
+          fill
+          sizes="32px"
+          priority
+          className={shown ? "object-contain" : "invisible object-contain"}
+        />
+      ))}
+    </span>
   );
 }
 
@@ -666,20 +692,28 @@ export function AskPanel({
                   className={
                     message.role === "user"
                       ? "flex justify-end"
-                      : "border-l border-line pl-3 pr-2"
+                      : "grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-2.5 pr-2"
                   }
+                  {...(message.role === "assistant"
+                    ? { role: "group", "aria-label": "Erik" }
+                    : {})}
                 >
                   {message.role === "user" ? (
-                    <p className="max-w-[85%] border-r border-line pr-3 text-right text-base leading-6 text-foreground/85">
+                    <p className="max-w-[85%] rounded-2xl rounded-br-md bg-foreground/[0.065] px-3.5 py-2.5 text-left text-base leading-6 text-foreground/90">
                       {message.content}
                     </p>
                   ) : (
-                    <Reply
-                      content={message.content}
-                      streaming={busy && i === messages.length - 1}
-                      still={Boolean(still)}
-                      onReveal={stickToBottom}
-                    />
+                    <>
+                      <AssistantAvatar
+                        thinking={busy && i === messages.length - 1}
+                      />
+                      <Reply
+                        content={message.content}
+                        streaming={busy && i === messages.length - 1}
+                        still={Boolean(still)}
+                        onReveal={stickToBottom}
+                      />
+                    </>
                   )}
                 </div>
               ))}
