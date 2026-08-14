@@ -10,11 +10,11 @@ import { Resend } from "resend";
  * way for everyone.
  *
  * Three env vars, none of them optional in production:
- *   RESEND_API_KEY  — from the Resend dashboard.
- *   CONTACT_FROM    — an address on a domain verified in Resend.
- *   CONTACT_TO      — wherever the mail should actually land.
+ *   RESEND_API_KEY — from the Resend dashboard.
+ *   PUBLIC_EMAIL   — the site's public address, on a verified Resend domain.
+ *   FORWARD_TO     — the private inbox where messages should actually land.
  *
- * `CONTACT_FROM` cannot be the visitor's address, tempting as that is. Resend
+ * `PUBLIC_EMAIL` cannot be the visitor's address, tempting as that is. Resend
  * signs outgoing mail with the sending domain's DKIM key, and a From header
  * pointing somewhere else is precisely what SPF and DMARC exist to reject — the
  * message would be dropped or junked rather than delivered. The visitor goes in
@@ -113,14 +113,14 @@ export type SendResult = { ok: true } | { ok: false; error: string };
  */
 export async function send(input: ContactInput): Promise<SendResult> {
   const key = process.env.RESEND_API_KEY;
-  const from = process.env.CONTACT_FROM;
-  const to = process.env.CONTACT_TO;
+  const publicEmail = process.env.PUBLIC_EMAIL;
+  const forwardTo = process.env.FORWARD_TO;
 
-  if (!key || !from || !to) {
+  if (!key || !publicEmail || !forwardTo) {
     // A deployment missing these is a configuration mistake, not a visitor
     // error, and it is invisible from the outside — so say so loudly here.
     console.error(
-      "[contact] not configured: RESEND_API_KEY, CONTACT_FROM and CONTACT_TO are all required.",
+      "[contact] not configured: RESEND_API_KEY, PUBLIC_EMAIL and FORWARD_TO are all required.",
     );
     return { ok: false, error: "Sending isn't configured right now." };
   }
@@ -129,8 +129,8 @@ export async function send(input: ContactInput): Promise<SendResult> {
 
   try {
     const { error } = await new Resend(key).emails.send({
-      from,
-      to,
+      from: `Portfolio <${publicEmail}>`,
+      to: forwardTo,
       // Hitting Reply goes to whoever wrote in, not to the sending domain.
       replyTo: oneLine(input.email),
       subject: oneLine(`Hey Erik — ${who}`),
