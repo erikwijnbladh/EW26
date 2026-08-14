@@ -13,6 +13,7 @@ import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
+const EASE_IN_OUT = [0.77, 0, 0.175, 1] as const;
 
 const PANEL_GAP = 8;
 const BAR_HEIGHT = 52;
@@ -43,6 +44,8 @@ export type ExpandableTabsClassNames = {
 
 export interface ExpandableTabsProps {
   items: ExpandableTabsItem[];
+  immersiveId?: string;
+  immersiveBarId?: string;
   value?: string | null;
   defaultValue?: string | null;
   onValueChange?: (id: string | null) => void;
@@ -103,14 +106,17 @@ function usePanelSizes(items: ExpandableTabsItem[]) {
 }
 
 /**
- * A stable toolbar and one panel above it.
+ * A toolbar and one panel above it.
  *
- * The toolbar stays put, and the panel opens from that fixed anchor with one
- * restrained transition. Switching modes is immediate: the active control
- * already communicates the change, so the forms do not slide or crossfade.
+ * Regular panels leave the compact toolbar untouched. An immersive panel can
+ * take the bar over: its control moves to the edge while the remaining space
+ * becomes a supplied interaction slot. Panel switching itself is immediate,
+ * so forms never slide or crossfade.
  */
 export function ExpandableTabs({
   items,
+  immersiveId,
+  immersiveBarId,
   value,
   defaultValue = null,
   onValueChange,
@@ -124,6 +130,7 @@ export function ExpandableTabs({
   const activeId = controlled ? value : internal;
   const panels = items.filter((item) => item.content);
   const active = panels.find((item) => item.id === activeId) ?? null;
+  const immersiveOpen = Boolean(immersiveId && active?.id === immersiveId);
   const { setRef, sizes } = usePanelSizes(panels);
 
   const [shownId, setShownId] = useState<string | null>(
@@ -177,6 +184,8 @@ export function ExpandableTabs({
 
   const panelReady = panelSize.height > 0;
   const panelOpen = Boolean(active && panelReady);
+  const closedInset = Math.max(0, (panelSize.width - toolbarWidth) / 2);
+  const closedScale = panelSize.width > 0 ? toolbarWidth / panelSize.width : 1;
 
   return (
     <div
@@ -192,7 +201,7 @@ export function ExpandableTabs({
         initial={false}
         animate={{
           opacity: panelOpen ? 1 : 0,
-          scale: panelOpen ? 1 : 0.985,
+          transform: panelOpen ? "scale(1)" : "scale(0.985)",
         }}
         transition={
           reduce
@@ -228,25 +237,44 @@ export function ExpandableTabs({
       </motion.div>
 
       <div
-        role="tablist"
-        aria-label="Contact and navigation"
-        aria-orientation="horizontal"
+        role={immersiveOpen ? undefined : "tablist"}
+        aria-label={immersiveOpen ? "Ask Erik" : "Contact and navigation"}
+        aria-orientation={immersiveOpen ? undefined : "horizontal"}
         className={cn(
-          "dock pointer-events-auto absolute bottom-0 left-1/2 flex -translate-x-1/2 items-center gap-1 p-2",
+          "pointer-events-auto absolute inset-x-0 bottom-0 h-[52px]",
           classNames?.root,
           classNames?.bar,
         )}
-        style={{ height: BAR_HEIGHT, width: toolbarWidth }}
       >
-        {items.map((item) => {
+        <motion.div
+          aria-hidden
+          initial={false}
+          animate={{
+            transform: immersiveOpen
+              ? "scaleX(1)"
+              : `scaleX(${closedScale})`,
+          }}
+          transition={
+            reduce
+              ? { duration: 0 }
+              : { duration: 0.2, ease: EASE_IN_OUT }
+          }
+          className="dock absolute inset-0"
+        />
+
+        {items.map((item, itemIndex) => {
           const isPanel = Boolean(item.content);
           const isActive = isPanel && item.id === active?.id;
+          const isImmersiveControl = item.id === immersiveId;
+          const itemLeft = BAR_PADDING + itemIndex * (TAB_WIDTH + BAR_GAP);
+          const restingX = closedInset;
+          const activeX = isImmersiveControl ? BAR_PADDING - itemLeft : restingX;
           const baseClass = cn(
-            "relative isolate grid size-9 shrink-0 place-items-center rounded-full text-muted outline-none",
-            "transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
+            "group absolute top-2 isolate grid size-9 place-items-center rounded-full text-muted outline-none",
+            "transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
             "focus-visible:ring-1 focus-visible:ring-foreground/35",
-            "active:scale-[0.96] motion-reduce:active:scale-100",
             isActive && "text-foreground",
+            immersiveOpen && !isImmersiveControl && "pointer-events-none",
             classNames?.tab,
             isActive && classNames?.activeTab,
           );
@@ -262,7 +290,12 @@ export function ExpandableTabs({
                   )}
                 />
               )}
-              <span className={cn("grid place-items-center", classNames?.icon)}>
+              <span
+                className={cn(
+                  "grid place-items-center transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] group-active:scale-[0.96] motion-reduce:group-active:scale-100",
+                  classNames?.icon,
+                )}
+              >
                 {item.icon}
               </span>
             </>
@@ -270,28 +303,63 @@ export function ExpandableTabs({
 
           if (item.href) {
             return (
-              <a
+              <motion.a
                 key={item.id}
                 href={item.href}
                 aria-label={item.label}
+                aria-hidden={immersiveOpen}
+                tabIndex={immersiveOpen ? -1 : undefined}
+                initial={false}
+                animate={{
+                  opacity: immersiveOpen ? 0 : 1,
+                  transform: `translateX(${restingX}px)`,
+                }}
+                transition={
+                  reduce
+                    ? { duration: 0 }
+                    : { duration: immersiveOpen ? 0.1 : 0.14, ease: EASE_OUT }
+                }
                 className={baseClass}
+                style={{ left: itemLeft }}
                 {...(item.external
                   ? { target: "_blank", rel: "noopener noreferrer" }
                   : {})}
               >
                 {icon}
-              </a>
+              </motion.a>
             );
           }
 
           return (
-            <button
+            <motion.button
               key={item.id}
               type="button"
-              role={isPanel ? "tab" : undefined}
-              aria-selected={isPanel ? isActive : undefined}
-              aria-label={item.label}
+              role={isPanel && !immersiveOpen ? "tab" : undefined}
+              aria-selected={isPanel && !immersiveOpen ? isActive : undefined}
+              aria-label={
+                immersiveOpen && isImmersiveControl
+                  ? `Close ${item.label}`
+                  : item.label
+              }
+              aria-hidden={immersiveOpen && !isImmersiveControl}
+              tabIndex={immersiveOpen && !isImmersiveControl ? -1 : undefined}
+              initial={false}
+              animate={{
+                opacity: immersiveOpen && !isImmersiveControl ? 0 : 1,
+                transform: `translateX(${immersiveOpen ? activeX : restingX}px)`,
+              }}
+              transition={
+                reduce
+                  ? { duration: 0 }
+                  : isImmersiveControl
+                    ? { duration: 0.2, ease: EASE_IN_OUT }
+                    : {
+                        duration: immersiveOpen ? 0.1 : 0.14,
+                        ease: EASE_OUT,
+                      }
+              }
               className={baseClass}
+              style={{ left: itemLeft }}
               onClick={
                 isPanel
                   ? () => setActive(isActive ? null : item.id)
@@ -299,13 +367,36 @@ export function ExpandableTabs({
               }
             >
               {icon}
-            </button>
+            </motion.button>
           );
         })}
+
+        {immersiveBarId && (
+          <motion.div
+            id={immersiveBarId}
+            inert={!immersiveOpen}
+            aria-hidden={!immersiveOpen}
+            initial={false}
+            animate={{ opacity: immersiveOpen ? 1 : 0 }}
+            transition={
+              reduce
+                ? { duration: 0 }
+                : immersiveOpen
+                  ? { duration: 0.12, delay: 0.07, ease: EASE_OUT }
+                  : { duration: 0.08, ease: EASE_OUT }
+            }
+            className={cn(
+              "absolute inset-y-2 left-12 right-2",
+              immersiveOpen ? "pointer-events-auto" : "pointer-events-none",
+            )}
+          />
+        )}
       </div>
 
       <div
         aria-hidden
+        inert
+        data-panel-measurement
         className="pointer-events-none fixed left-0 top-0 -z-10 grid w-max items-start opacity-0"
       >
         {panels.map((item) => (

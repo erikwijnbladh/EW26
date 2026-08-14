@@ -18,7 +18,7 @@ const stroke = {
   strokeLinejoin: "round" as const,
 };
 
-/** A quiet state change, not an idle animation: opening Ask wakes the face. */
+/** A quiet state change, not an idle animation: opening Ask wakes the bot. */
 function BotIcon({ awake }: { awake: boolean }) {
   const still = useReducedMotion();
   const transition = still ? { duration: 0 } : { duration: 0.2, ease };
@@ -89,8 +89,8 @@ function LinkedinIcon() {
 }
 
 /**
- * The floating bar: one expanding tab (the form) and three plain icon actions,
- * all inside the ExpandableTabs shell so they share its styling and timing.
+ * The floating bar. Ask takes the bar over and turns its unused navigation
+ * space into the composer; Say hi keeps the bar as navigation beneath its form.
  */
 export function Dock() {
   const [active, setActive] = useState<string | null>(null);
@@ -123,6 +123,8 @@ export function Dock() {
           <ExpandableTabs
             value={active}
             onValueChange={setActive}
+            immersiveId="ask"
+            immersiveBarId="dock-chat-composer"
             classNames={{
               pill: "bg-foreground/[0.08]",
             }}
@@ -131,7 +133,12 @@ export function Dock() {
                 id: "ask",
                 label: "Ask",
                 icon: <BotIcon awake={active === "ask"} />,
-                content: <AskPanel open={active === "ask"} />,
+                content: (
+                  <AskPanel
+                    open={active === "ask"}
+                    composerTargetId="dock-chat-composer"
+                  />
+                ),
               },
               {
                 id: "say-hi",

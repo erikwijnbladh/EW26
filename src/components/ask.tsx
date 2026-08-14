@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, useReducedMotion } from "motion/react";
 import {
   duration,
@@ -350,7 +351,13 @@ function Reply({
   );
 }
 
-export function AskPanel({ open }: { open: boolean }) {
+export function AskPanel({
+  open,
+  composerTargetId,
+}: {
+  open: boolean;
+  composerTargetId: string;
+}) {
   const still = useReducedMotion();
 
   const [messages, setMessages] = useState<Message[]>([]);
@@ -360,9 +367,11 @@ export function AskPanel({ open }: { open: boolean }) {
   const [phase, setPhase] = useState<Phase>("idle");
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const abort = useRef<AbortController | null>(null);
   const nextId = useRef(0);
+  const [composerHost, setComposerHost] = useState<HTMLElement | null>(null);
 
   /** Whether the transcript is at the bottom — i.e. whether to keep it there. */
   const pinned = useRef(true);
@@ -386,9 +395,22 @@ export function AskPanel({ open }: { open: boolean }) {
   // closed it.
   useEffect(stickToBottom, [messages, open, stickToBottom]);
 
+  // The real chat owns the dock's composer slot. The dock also mounts an inert
+  // copy of this panel for measurement; keeping that copy out of the portal is
+  // what prevents two independent inputs from competing for the same bar.
+  useEffect(() => {
+    const measuring = panelRef.current?.closest("[data-panel-measurement]");
+    if (!open || measuring) {
+      setComposerHost(null);
+      return;
+    }
+
+    setComposerHost(document.getElementById(composerTargetId));
+  }, [composerTargetId, open]);
+
   // Focus once the dock has finished expanding, so the browser doesn't scroll
-  // or repaint mid-morph. The measuring copy of this card is `visibility:
-  // hidden`, which isn't focusable, so only the real one takes the caret.
+  // or repaint mid-morph. The measuring copy of this card is inert and never
+  // receives a composer portal, so only the real one can take the caret.
   useEffect(() => {
     if (!open) return;
     const timer = setTimeout(() => inputRef.current?.focus(), 320);
@@ -566,16 +588,14 @@ export function AskPanel({ open }: { open: boolean }) {
   const clearAvailable = !empty || phase !== "idle";
 
   return (
-    <div className="flex h-full w-[min(24rem,calc(100vw-4rem))] select-text flex-col p-5">
-      <div className="grid grid-cols-[minmax(0,1fr)_2rem] items-center gap-3">
-        <div className="min-w-0">
-          <h2 className="text-[22px] font-medium leading-tight tracking-[-0.025em] text-foreground">
-            Ask Erik
-          </h2>
-          <p className="mt-1 text-sm leading-5 text-muted">
-            Work, projects, and this site.
-          </p>
-        </div>
+    <div
+      ref={panelRef}
+      className="flex h-full w-[min(24rem,calc(100vw-4rem))] select-text flex-col p-5"
+    >
+      <div className="grid min-h-8 grid-cols-[minmax(0,1fr)_2rem] items-center gap-3">
+        <h2 className="text-sm font-medium leading-5 text-foreground/85">
+          Ask Erik
+        </h2>
 
         {/* This slot never enters or leaves the grid. Only its affordance is
             revealed, so starting and clearing a chat cannot reflow the title. */}
@@ -604,13 +624,13 @@ export function AskPanel({ open }: { open: boolean }) {
         height goes — into more transcript. The floor is what the height used to
         be, so the card still measures the same when there is no slack to take.
       */}
-      <div className="relative mt-4 min-h-[min(15rem,40svh)] grow border-y border-line py-3 [@media(max-height:520px)]:min-h-[6.5rem]">
+      <div className="relative mt-3 min-h-[min(15rem,40svh)] grow border-t border-line pt-3 [@media(max-height:520px)]:min-h-[6.5rem]">
         <div
           ref={scrollRef}
           onScroll={onScroll}
           // The mask softens the top edge: scrolled-past text dissolves under
           // the heading instead of being guillotined by the overflow box.
-          className="no-scrollbar absolute inset-y-3 inset-x-0 overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0,black_1rem)]"
+          className="no-scrollbar absolute inset-x-0 bottom-0 top-3 overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0,black_1rem)]"
         >
           {empty ? (
             // `min-h-full`, not `h-full`, and for the same reason the message
@@ -619,7 +639,7 @@ export function AskPanel({ open }: { open: boolean }) {
             // it cannot be scrolled back to. It has to be able to grow.
             <div className="flex min-h-full flex-col justify-start gap-4">
               <p className="text-base leading-6 text-foreground/80">
-                Ask a question, or start here.
+                Work, projects, and this site.
               </p>
 
               <div className="border-t border-line">
@@ -674,37 +694,38 @@ export function AskPanel({ open }: { open: boolean }) {
       */}
       <p
         role={error ? "alert" : undefined}
-        className="mt-2 min-h-5 text-sm font-light leading-5 text-foreground/80 transition-opacity duration-150"
+        className="mt-3 min-h-5 text-sm font-light leading-5 text-foreground/80 transition-opacity duration-150"
         style={{ opacity: error ? 1 : 0 }}
       >
         {error ?? "\u00a0"}
       </p>
 
-      <form
-        onSubmit={onSubmit}
-        className="mt-2 flex items-stretch overflow-hidden rounded-xl border border-line bg-transparent transition-colors duration-150 focus-within:border-foreground/30"
-      >
-        <textarea
-          ref={inputRef}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={onKeyDown}
-          rows={1}
-          placeholder="Ask a question"
-          aria-label="Ask a question"
-          maxLength={1000}
-          className="no-scrollbar min-h-11 w-full flex-1 resize-none bg-transparent px-3.5 py-3 text-base leading-tight text-foreground outline-none placeholder:text-muted/65"
-        />
+      {composerHost &&
+        createPortal(
+          <form onSubmit={onSubmit} className="flex h-full w-full items-stretch">
+            <textarea
+              ref={inputRef}
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={onKeyDown}
+              rows={1}
+              placeholder="Ask a question"
+              aria-label="Ask a question"
+              maxLength={1000}
+              className="no-scrollbar h-9 min-w-0 flex-1 resize-none bg-transparent px-2.5 py-2 text-base leading-5 text-foreground outline-none placeholder:text-muted/65"
+            />
 
-        <button
-          type="submit"
-          aria-label={busy ? "Stop" : "Send"}
-          disabled={!busy && !draft.trim()}
-          className="grid w-11 shrink-0 place-items-center border-l border-foreground bg-foreground text-background transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:opacity-90 active:scale-[0.97] disabled:opacity-30 motion-reduce:active:scale-100"
-        >
-          <SendIcon busy={busy} still={Boolean(still)} />
-        </button>
-      </form>
+            <button
+              type="submit"
+              aria-label={busy ? "Stop" : "Send"}
+              disabled={!busy && !draft.trim()}
+              className="grid size-9 shrink-0 place-items-center rounded-full bg-foreground text-background transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:opacity-90 active:scale-[0.97] disabled:opacity-25 motion-reduce:active:scale-100"
+            >
+              <SendIcon busy={busy} still={Boolean(still)} />
+            </button>
+          </form>,
+          composerHost,
+        )}
     </div>
   );
 }
