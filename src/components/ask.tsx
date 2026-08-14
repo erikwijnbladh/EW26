@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
-import Image from "next/image";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import {
   duration,
   ease,
@@ -43,10 +42,9 @@ class ReplyError extends Error {}
 
 /** Short on purpose — long enough to be a real question, short enough to pair up. */
 const PROMPTS = [
-  "What do you do?",
-  "Where have you worked?",
-  "What have you built?",
-  "How do I reach you?",
+  "What are you working on?",
+  "Which project should I look at?",
+  "How can I reach you?",
 ];
 
 const stroke = {
@@ -290,70 +288,6 @@ function CopyButton({ value }: { value: string }) {
 }
 
 /**
- * Whose head the answers are coming out of.
- *
- * It sits where the waiting indicator used to, beside whatever the assistant is
- * saying, and it never leaves — so the same thing that tells you an answer is
- * coming is still there once it has arrived, having changed its expression
- * rather than been swapped out for text.
- *
- * Two photographs of the same face — one straight down the lens, one caught
- * mid-thought — cropped so the eyes land in the same place at the same size.
- * That alignment is the whole trick: framed even slightly differently, the
- * swap reads as two pictures cutting between each other rather than one face
- * changing its mind.
- *
- * Cut at the neck, above the shoulders. Both crops are scaled by head width and
- * end a fixed fraction of it below the eye line, which lands in the pinch on
- * either photograph — measured off the alpha, ~315px across a 492px skull and
- * ~378 across a 597px one. A square frame ended 100px lower and took the traps
- * with it.
- *
- * Both stay mounted and take turns on opacity, like every other state on this
- * site. It also means the second photograph is already in the browser by the
- * time it is needed, so the expression doesn't arrive a beat after the thought.
- */
-function Face({ thinking }: { thinking: boolean }) {
-  return (
-    <span
-      // The shape of the crop, exactly: head only, cut at the neck before the
-      // shoulders start. No frame, no mask and nothing feathered — the
-      // photographs arrived with their own alpha, so the edge is a real one
-      // that follows the hair, and it can be cropped close and shown large
-      // without a margin of nothing around it.
-      // The ratio has to match the files or `object-contain` letterboxes the
-      // head inside its own box and quietly shrinks it.
-      // `block` explicitly: this is a span, and it is no longer a flex child
-      // being blockified for free. Inline, the width and aspect ratio are both
-      // ignored and it collapses to nothing.
-      className="relative block aspect-[144/167] w-9"
-      aria-hidden
-    >
-      {/* One or the other, never a blend. These are the same head in the same
-          place, so any moment with both on screen is a double exposure rather
-          than a transition — the cut is what makes it read as a change of
-          expression. Both stay mounted so neither has to be fetched at the
-          moment it is wanted. */}
-      {[
-        { src: "/ask/idle.webp", shown: !thinking },
-        { src: "/ask/thinking.webp", shown: thinking },
-      ].map(({ src, shown }) => (
-        <Image
-          key={src}
-          src={src}
-          alt=""
-          fill
-          sizes="36px"
-          priority
-          className="object-contain transition-opacity duration-150"
-          style={{ opacity: shown ? 1 : 0 }}
-        />
-      ))}
-    </span>
-  );
-}
-
-/**
  * One assistant turn. Separate component so the reveal re-renders this and not
  * the whole card — and so each reply gets its own reveal state, since the hook
  * is keyed by mount.
@@ -375,35 +309,41 @@ function Reply({
     onReveal();
   }, [tokens, onReveal]);
 
-  // No waiting state of its own any more: the face beside this is what says an
-  // answer is coming, and it stays put once the words arrive. There is nothing
-  // left to hand over to, so nothing left to glitch.
+  // The placeholder owns the same line the answer will begin on. It is static:
+  // sending already has a stop state, and another animation would only make a
+  // frequently used reading surface feel busy.
+  if (tokens.length === 0 && streaming) {
+    return (
+      <p className="text-base leading-7 text-muted" aria-live="polite">
+        Thinking…
+      </p>
+    );
+  }
+
   return (
-    <p className="text-[15px] leading-relaxed text-foreground/90">
-          {tokens.map((token, i) => (
-            <span
-              key={i}
-            >
-              {token.href ? (
-                // `nowrap` holds the address, its copy button and the full stop
-                // after it together — the three read as one thing and shouldn't
-                // be split across a line break.
-                <span className="whitespace-nowrap">
-                  <a
-                    href={token.href}
-                    {...(token.external
-                      ? { target: "_blank", rel: "noreferrer" }
-                      : {})}
-                    className="underline underline-offset-2 transition-colors duration-150 hover:text-foreground"
-                  >
-                    {token.text}
-                  </a>
-                  {token.copy && <CopyButton value={token.copy} />}
-                  {token.tail}
-                </span>
-              ) : (
-                token.text
-              )}
+    <p className="text-base leading-7 text-foreground/90">
+      {tokens.map((token, i) => (
+        <span key={i}>
+          {token.href ? (
+            // `nowrap` holds the address, its copy button and the full stop
+            // after it together — the three read as one thing and shouldn't
+            // be split across a line break.
+            <span className="whitespace-nowrap">
+              <a
+                href={token.href}
+                {...(token.external
+                  ? { target: "_blank", rel: "noreferrer" }
+                  : {})}
+                className="underline underline-offset-2 transition-colors duration-150 hover:text-foreground"
+              >
+                {token.text}
+              </a>
+              {token.copy && <CopyButton value={token.copy} />}
+              {token.tail}
+            </span>
+          ) : (
+            token.text
+          )}
         </span>
       ))}
     </p>
@@ -623,49 +563,41 @@ export function AskPanel({ open }: { open: boolean }) {
   }
 
   const empty = messages.length === 0;
+  const clearAvailable = !empty || phase !== "idle";
 
   return (
-    <div className="flex h-full w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-xl font-medium leading-tight tracking-[-0.025em] text-foreground">
+    <div className="flex h-full w-[min(24rem,calc(100vw-4rem))] select-text flex-col p-5">
+      <div className="grid grid-cols-[minmax(0,1fr)_2rem] items-center gap-3">
+        <div className="min-w-0">
+          <h2 className="text-[22px] font-medium leading-tight tracking-[-0.025em] text-foreground">
             Ask Erik
           </h2>
-          <p className="mt-1 text-xs leading-relaxed text-muted">
-            Work, experience, side projects — the useful version.
+          <p className="mt-1 text-sm leading-5 text-muted">
+            Work, projects, and this site.
           </p>
         </div>
 
-        <AnimatePresence initial={false}>
-          {(!empty || phase !== "idle") && (
-            <motion.button
-              type="button"
-              aria-label="Clear the conversation"
-              initial={
-                still
-                  ? false
-                  : { opacity: 0, transform: "scale(0.97)" }
-              }
-              animate={{ opacity: 1, transform: "scale(1)" }}
-              exit={{ opacity: 0, transform: "scale(0.97)" }}
-              transition={{ duration: duration.fast, ease }}
-              onClick={() => setPhase("shredding")}
-              disabled={phase !== "idle"}
-              className="grid size-8 shrink-0 place-items-center rounded-full text-muted shadow-[inset_0_0_0_0.5px_var(--line)] transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:text-foreground active:scale-[0.96] motion-reduce:active:scale-100"
-            >
-              <ShredderIcon phase={phase} still={Boolean(still)} />
-            </motion.button>
-          )}
-        </AnimatePresence>
+        {/* This slot never enters or leaves the grid. Only its affordance is
+            revealed, so starting and clearing a chat cannot reflow the title. */}
+        <motion.button
+          type="button"
+          aria-label="Clear the conversation"
+          aria-hidden={!clearAvailable}
+          tabIndex={clearAvailable ? 0 : -1}
+          initial={false}
+          animate={{
+            opacity: clearAvailable ? 1 : 0,
+            transform: clearAvailable ? "scale(1)" : "scale(0.97)",
+          }}
+          transition={still ? instant : { duration: duration.fast, ease }}
+          onClick={() => setPhase("shredding")}
+          disabled={!clearAvailable || phase !== "idle"}
+          className="grid size-8 shrink-0 place-items-center rounded-full text-muted shadow-[inset_0_0_0_0.5px_var(--line)] transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:text-foreground active:scale-[0.96] disabled:pointer-events-none motion-reduce:active:scale-100"
+        >
+          <ShredderIcon phase={phase} still={Boolean(still)} />
+        </motion.button>
       </div>
 
-      {/*
-        The face is pinned to the bottom-left of this box rather than living
-        with the answers, so it never scrolls out of the conversation — it is
-        the one thing here that is always on screen. Everything inside the
-        scroller is inset past it; the face itself sits outside the scroller,
-        which is what keeps it still while the transcript moves behind it.
-      */}
       {/*
         `grow` with a floor rather than a fixed height: the dock sizes its shell
         to the taller of its two cards, and this is where that card's extra
@@ -678,7 +610,7 @@ export function AskPanel({ open }: { open: boolean }) {
           onScroll={onScroll}
           // The mask softens the top edge: scrolled-past text dissolves under
           // the heading instead of being guillotined by the overflow box.
-          className={`no-scrollbar absolute inset-y-3 inset-x-0 overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0,black_1rem)] ${empty ? "" : "pl-11"}`}
+          className="no-scrollbar absolute inset-y-3 inset-x-0 overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0,black_1rem)]"
         >
           {empty ? (
             // `min-h-full`, not `h-full`, and for the same reason the message
@@ -686,22 +618,17 @@ export function AskPanel({ open }: { open: boolean }) {
             // than the box overflows upward past the top of the scroller, where
             // it cannot be scrolled back to. It has to be able to grow.
             <div className="flex min-h-full flex-col justify-start gap-4">
-              {/* Short on purpose. The face takes a column out of this box, so
-                  the prompts below wrap one to a line — and the second sentence
-                  this used to carry ("ask about the work, the stack…") is what
-                  those prompts already are. Together they overflowed and pushed
-                  this off the top of the scroller. */}
-              <p className="text-sm leading-relaxed text-muted">
-                A small, site-bound version of me. Pick a thread or ask your own.
+              <p className="text-base leading-6 text-foreground/80">
+                Ask a question, or start here.
               </p>
 
-              <div className="grid grid-cols-2 border-t border-line">
+              <div className="border-t border-line">
                 {PROMPTS.map((prompt) => (
                   <button
                     key={prompt}
                     type="button"
                     onClick={() => void send(prompt)}
-                    className="border-b border-line px-2 py-2 text-left text-xs leading-snug text-muted transition-[color,background-color] duration-150 odd:border-r hover:bg-foreground/[0.025] hover:text-foreground"
+                    className="block w-full border-b border-line px-1 py-2.5 text-left text-sm leading-5 text-muted transition-[color,background-color] duration-150 hover:bg-foreground/[0.025] hover:text-foreground"
                   >
                     {prompt}
                   </button>
@@ -716,10 +643,14 @@ export function AskPanel({ open }: { open: boolean }) {
               {messages.map((message, i) => (
                 <div
                   key={message.id}
-                  className={message.role === "user" ? "flex justify-end" : "pr-2"}
+                  className={
+                    message.role === "user"
+                      ? "flex justify-end"
+                      : "border-l border-line pl-3 pr-2"
+                  }
                 >
                   {message.role === "user" ? (
-                    <p className="max-w-[85%] border-r border-line pr-3 text-right text-[15px] leading-relaxed text-foreground/85">
+                    <p className="max-w-[85%] border-r border-line pr-3 text-right text-base leading-6 text-foreground/85">
                       {message.content}
                     </p>
                   ) : (
@@ -735,12 +666,6 @@ export function AskPanel({ open }: { open: boolean }) {
             </div>
           )}
         </div>
-
-        {!empty && (
-          <span className="pointer-events-none absolute bottom-3 left-0">
-            <Face thinking={busy} />
-          </span>
-        )}
       </div>
 
       {/*
@@ -749,7 +674,7 @@ export function AskPanel({ open }: { open: boolean }) {
       */}
       <p
         role={error ? "alert" : undefined}
-        className="mt-2 min-h-4 text-xs font-light text-foreground/80 transition-opacity duration-150"
+        className="mt-2 min-h-5 text-sm font-light leading-5 text-foreground/80 transition-opacity duration-150"
         style={{ opacity: error ? 1 : 0 }}
       >
         {error ?? "\u00a0"}
@@ -765,10 +690,10 @@ export function AskPanel({ open }: { open: boolean }) {
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={onKeyDown}
           rows={1}
-          placeholder="Ask something"
+          placeholder="Ask a question"
           aria-label="Ask a question"
           maxLength={1000}
-          className="no-scrollbar min-h-11 w-full flex-1 resize-none bg-transparent px-3.5 py-3 text-[15px] leading-tight text-foreground outline-none placeholder:text-muted/65"
+          className="no-scrollbar min-h-11 w-full flex-1 resize-none bg-transparent px-3.5 py-3 text-base leading-tight text-foreground outline-none placeholder:text-muted/65"
         />
 
         <button
