@@ -103,6 +103,16 @@ summary {
     0 6px 20px rgba(21, 20, 15, 0.06);
 }
 
+/* The same surface, lifted — for hover states that must not move anything.
+   A card in the photo deck reports the same box hovered or not, which is what
+   lets the viewer fly back to it and land exactly. */
+.shadow-ring-raised {
+  box-shadow:
+    0 0 0 1px var(--line),
+    0 2px 4px rgba(21, 20, 15, 0.06),
+    0 14px 34px rgba(21, 20, 15, 0.12);
+}
+
 /* Touch devices: a permanently-animating full-screen layer is a composite
    every frame for a texture nobody notices moving. Keep the grain, drop the
    motion — this is the difference between smooth and not while scrolling. */
@@ -214,5 +224,31 @@ summary {
   }
   html {
     scroll-behavior: auto;
+  }
+}
+
+/*
+ * Stop iOS zooming the page in when a field takes focus.
+ *
+ * Safari zooms whenever the focused control's text is smaller than 16px — and
+ * it does not zoom back out afterwards, so one tap on the chat box leaves the
+ * whole page magnified and scrolled sideways. The cards are set in 15px, which
+ * is one pixel into that rule.
+ *
+ * The fix has to be the font size. The other common answer is `maximum-scale=1`
+ * on the viewport, which works by taking pinch-zoom away from everybody — a
+ * real accessibility loss traded for a one-pixel difference nobody can see.
+ *
+ * Only on coarse pointers, so the measure the cards are designed around
+ * survives on a desktop, where nothing zooms in the first place. Unlayered on
+ * purpose: Tailwind's utilities live in a layer, and unlayered rules beat
+ * layered ones whatever their specificity, so this lands over `text-[15px]`
+ * without an `!important`.
+ */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: 16px;
   }
 }

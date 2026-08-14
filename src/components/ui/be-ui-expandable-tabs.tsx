@@ -1,14 +1,12 @@
 "use client";
 
 import {
-  AnimatePresence,
   animate,
   motion,
   useMotionTemplate,
   useMotionValue,
   useReducedMotion,
   useTransform,
-  type Variants,
 } from "motion/react";
 import {
   useCallback,
@@ -90,6 +88,19 @@ export function cn(...inputs: ClassValue[]) {
  *    The shell reaches full width while it's still short, which means the panel
  *    is uncovered bottom-up at its final width — a curtain — instead of the
  *    content being clipped side-to-side on the way out of the bar.
+ *
+ * 4. Every tab's content stays mounted, stacked, and the open one is chosen by
+ *    opacity — there is no AnimatePresence here. Swapping tabs used to mount the
+ *    new card at full opacity on its first frame (`initial={false}` cancelled
+ *    the enter variant) while the old one spent 110ms fading out on top of it
+ *    and sliding 8px down. Two near-identical forms double-exposed on each
+ *    other, and the only thing actually moving was the card that was leaving.
+ *
+ * 5. The shell is measured per tab rather than once around all of them. The
+ *    sizer stacked every card in one grid cell, so the open shell was the union
+ *    of all of them — a box no card was the size of. Now the shell springs
+ *    between one card's size and the next, which is what carries the swap:
+ *    the container changes shape, and the cards themselves never travel.
  */
 export type ExpandableTabsItem = {
   id: string;
@@ -170,58 +181,30 @@ const ACTIVE_RIGHT_PAD = 16;
 const LABEL_GAP = 7;
 const PANEL_DOCK_GAP = 4;
 
-const CONTENT_VARIANTS: Variants = {
-  enter: {
-    y: -8,
-    scale: 0.98,
-    opacity: 0,
-    filter: "blur(4px)",
-  },
-  center: {
-    y: 0,
-    scale: 1,
-    opacity: 1,
-    filter: "blur(0px)",
-  },
-  exit: {
-    y: -6,
-    scale: 0.98,
-    opacity: 0,
-    filter: "blur(4px)",
-    transition: {
-      duration: 0.08,
-      ease: EASE_OUT,
-    },
-  },
-};
+/**
+ * Swapping one open card for another. Opacity and blur only — no offset, no
+ * scale. The travel is the shell reshaping around them; a card that also slides
+ * is a second thing moving on a second curve, and between two cards this alike
+ * it reads as one smeared form rather than two distinct ones.
+ *
+ * The arriving card is held back a frame or two so the two aren't both half
+ * visible at once, which is what makes a straight cross-fade look muddy.
+ */
+const CARD_IN = { duration: 0.26, delay: 0.06, ease: EASE_OUT } as const;
+const CARD_OUT = { duration: 0.16, ease: EASE_OUT } as const;
 
-const REDUCED_CONTENT_VARIANTS: Variants = {
-  enter: {
-    opacity: 0,
-    filter: "blur(0px)",
-  },
-  center: {
-    opacity: 1,
-    filter: "blur(0px)",
-  },
-  exit: {
-    opacity: 0,
-    filter: "blur(0px)",
-    transition: {
-      duration: 0.08,
-      ease: EASE_OUT,
-    },
-  },
-};
-
-const CONTENT_SPRING = {
-  type: "spring",
-  duration: 0.46,
-  bounce: 0.08,
-} as const;
+const INSTANT = { duration: 0 } as const;
 
 function sameSize(a: Size | null | undefined, b: Size | null | undefined) {
   return a?.width === b?.width && a?.height === b?.height;
+}
+
+function sameSizes(a: Record<string, Size>, b: Record<string, Size>) {
+  const aKeys = Object.keys(a);
+
+  if (aKeys.length !== Object.keys(b).length) return false;
+
+  return aKeys.every((key) => sameSize(a[key], b[key]));
 }
 
 function sameWidths(a: Record<string, number>, b: Record<string, number>) {
@@ -235,40 +218,62 @@ function sameWidths(a: Record<string, number>, b: Record<string, number>) {
   return aKeys.every((key) => a[key] === b[key]);
 }
 
-function useContentSize() {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const [size, setSize] = useState<Size | null>(null);
+/**
+ * The size each tab's card wants, measured from a hidden copy of it.
+ *
+ * Per tab, not once around the lot: the shell has to be able to spring from one
+ * card's size to the next, and a single measurement of all of them stacked can
+ * only ever produce the union — a box that fits every card and matches none.
+ */
+function useContentSizes(items: ExpandableTabsItem[]) {
+  const refs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [sizes, setSizes] = useState<Record<string, Size>>({});
+
+  const setCellRef = useCallback(
+    (id: string) => (node: HTMLDivElement | null) => {
+      refs.current[id] = node;
+    },
+    [],
+  );
 
   const measure = useCallback(() => {
-    const el = ref.current;
+    const next: Record<string, Size> = {};
 
-    if (!el) return;
+    for (const item of items) {
+      const node = refs.current[item.id];
 
-    const next = {
-      width: el.offsetWidth,
-      height: el.offsetHeight,
-    };
+      if (node) {
+        next[item.id] = {
+          width: node.offsetWidth,
+          height: node.offsetHeight,
+        };
+      }
+    }
 
-    setSize((current) => (sameSize(current, next) ? current : next));
-  }, []);
+    setSizes((current) => (sameSizes(current, next) ? current : next));
+  }, [items]);
 
   useLayoutEffect(() => {
     measure();
   }, [measure]);
 
   useEffect(() => {
-    const el = ref.current;
-
-    if (!el || typeof ResizeObserver === "undefined") return;
+    if (typeof ResizeObserver === "undefined") return;
 
     const observer = new ResizeObserver(measure);
 
-    observer.observe(el);
+    for (const item of items) {
+      const node = refs.current[item.id];
+
+      if (node) {
+        observer.observe(node);
+      }
+    }
 
     return () => observer.disconnect();
-  }, [measure]);
+  }, [items, measure]);
 
-  return [ref, size] as const;
+  return { setCellRef, sizes };
 }
 
 function useLabelWidths(items: ExpandableTabsItem[]) {
@@ -334,7 +339,6 @@ export function ExpandableTabs({
 }: ExpandableTabsProps) {
   const reduce = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
-  const [sizerRef, size] = useContentSize();
   const { setLabelMeasureRef, widths: labelWidths } = useLabelWidths(items);
 
   const controlled = value !== undefined;
@@ -344,17 +348,47 @@ export function ExpandableTabs({
     items.find((item) => item.id === activeId && item.content) ?? null;
   const tabs = items.filter((item) => item.content);
   const visualActiveId = active?.id ?? null;
+  const { setCellRef, sizes } = useContentSizes(tabs);
 
-  // The last tab to have been open stays mounted, clipped to nothing behind the
-  // bar. Unmounting it on close is what left the shell deflating around empty
-  // space; keeping it costs one hidden subtree, which the sizer already pays.
-  const [renderedId, setRenderedId] = useState<string | null>(visualActiveId);
-  const rendered =
-    tabs.find((item) => item.id === renderedId) ?? null;
+  const isOpen = active !== null;
 
-  useEffect(() => {
-    if (visualActiveId) setRenderedId(visualActiveId);
-  }, [visualActiveId]);
+  /**
+   * Which card is on show, and whether it should get there instantly.
+   *
+   * On close it stays on the last card rather than going blank — the shell
+   * shrinks over it, and there is nothing behind it to see.
+   *
+   * Adjusted during render rather than in an effect. In an effect it trailed
+   * the click by a commit, and the shell spent that commit springing toward the
+   * size of the card it was leaving; React re-runs the component immediately on
+   * a render-phase update, so this lands before anything is painted.
+   *
+   * `snap` records, at the moment the target changes, whether the card and the
+   * shell's size should simply *be* at their new values instead of travelling
+   * there — true for everything except a swap between two open cards. It has to
+   * be decided here rather than derived afterwards: once `from` has moved on,
+   * whether the shell was shut a moment ago is no longer knowable.
+   *
+   * Opening and closing are the shell's own spring, and a second animation
+   * running underneath it shows the previously-open card dissolving inside a
+   * box that is still growing.
+   */
+  const [shown, setShown] = useState({
+    id: visualActiveId,
+    from: visualActiveId,
+    snap: true,
+  });
+
+  if (shown.from !== visualActiveId) {
+    setShown({
+      id: visualActiveId ?? shown.id,
+      from: visualActiveId,
+      snap: visualActiveId === null || shown.from === null,
+    });
+  }
+
+  const renderedId = shown.id;
+  const snap = shown.snap || Boolean(reduce);
 
   const setActive = useCallback(
     (next: string | null) => {
@@ -397,15 +431,35 @@ export function ExpandableTabs({
     height: BAR_H + ROOT_BORDER,
   };
 
-  const openSize = size
-    ? {
-        width: Math.max(size.width + ROOT_BORDER, closedSize.width),
-        height: Math.max(size.height + ROOT_BORDER, closedSize.height),
-      }
-    : closedSize;
+  /**
+   * One size, taken from the tallest card rather than from whichever is open.
+   *
+   * The cards are two views of the same object and there is no reason for the
+   * shell to be a different shape in each — so it isn't. It takes the largest
+   * each axis needs and the cards stretch to fill it, which also means swapping
+   * tabs moves nothing at all: no reshape, because there is nothing to reshape
+   * to.
+   *
+   * Still measured per card and maxed here rather than measured as one union
+   * box, because that is what lets a card ask for a size the others don't have
+   * to share — and it is per width, which a fixed number could not be. The gap
+   * between these two is 17px on a desktop and 83px on a phone, where the name
+   * and email fields stack.
+   */
+  const openSize = tabs.reduce(
+    (largest, item) => {
+      const measured = sizes[item.id];
+      if (!measured) return largest;
+
+      return {
+        width: Math.max(largest.width, measured.width + ROOT_BORDER),
+        height: Math.max(largest.height, measured.height + ROOT_BORDER),
+      };
+    },
+    { ...closedSize },
+  );
 
   // The one value everything else is a function of: 0 closed, 1 open.
-  const isOpen = active !== null;
   const progress = useMotionValue(0);
 
   useEffect(() => {
@@ -419,15 +473,38 @@ export function ExpandableTabs({
     return () => controls.stop();
   }, [isOpen, reduce, progress]);
 
-  const width = useTransform(
-    progress,
-    [0, WIDTH_LEAD],
-    [closedSize.width, openSize.width],
+  /**
+   * What the shell is opening *to*. Its own pair of values rather than a
+   * constant, because swapping tabs changes the target while `progress` is
+   * pinned at 1 — the open size has to be able to travel on its own.
+   */
+  const openW = useMotionValue(closedSize.width);
+  const openH = useMotionValue(closedSize.height);
+
+  useEffect(() => {
+    if (snap) {
+      openW.jump(openSize.width);
+      openH.jump(openSize.height);
+      return;
+    }
+
+    const w = animate(openW, openSize.width, SHELL_SPRING);
+    const h = animate(openH, openSize.height, SHELL_SPRING);
+
+    return () => {
+      w.stop();
+      h.stop();
+    };
+  }, [openSize.width, openSize.height, snap, openW, openH]);
+
+  const between = (from: number, to: number, t: number) =>
+    from + (to - from) * (t < 0 ? 0 : t > 1 ? 1 : t);
+
+  const width = useTransform([progress, openW], ([p, w]: number[]) =>
+    between(closedSize.width, w, p / WIDTH_LEAD),
   );
-  const height = useTransform(
-    progress,
-    [0, 1],
-    [closedSize.height, openSize.height],
+  const height = useTransform([progress, openH], ([p, h]: number[]) =>
+    between(closedSize.height, h, p),
   );
 
   const contentOpacity = useTransform(progress, [0, CONTENT_FADE], [0, 1]);
@@ -462,19 +539,26 @@ export function ExpandableTabs({
           classNames?.root,
         )}
       >
+        {/* The padding rides on each cell rather than the grid around them, so
+            what gets measured is one card plus the room the shell has to leave
+            for it — the number the shell is actually animating to. */}
         <div
-          ref={sizerRef}
           aria-hidden
           className={cn(
-            "pointer-events-none invisible absolute left-0 top-0 grid w-max px-2 pt-2",
+            // `items-start`, because a grid stretches its children by default
+            // and stacked cells share one row — without it every card measures
+            // as tall as the tallest, which is the union this is here to avoid.
+            "pointer-events-none invisible absolute left-0 top-0 grid w-max items-start",
             classNames?.panel,
           )}
-          style={{
-            paddingBottom: BAR_H + PANEL_DOCK_GAP,
-          }}
         >
           {tabs.map((item) => (
-            <div key={item.id} className="col-start-1 row-start-1 w-max">
+            <div
+              key={item.id}
+              ref={setCellRef(item.id)}
+              className="col-start-1 row-start-1 w-max px-2 pt-2"
+              style={{ paddingBottom: BAR_H + PANEL_DOCK_GAP }}
+            >
               {item.content}
             </div>
           ))}
@@ -494,44 +578,47 @@ export function ExpandableTabs({
               item falls back to start alignment, which puts it back on the
               moving edge. */}
           <motion.div
-            inert={!isOpen}
             style={{
               opacity: contentOpacity,
               filter: contentFilter,
               willChange: "opacity, filter",
             }}
             className={cn(
-              "absolute inset-x-0 bottom-0 flex justify-center px-2",
+              "absolute inset-x-0 bottom-0 grid justify-items-center px-2",
               !isOpen && "pointer-events-none",
             )}
           >
-            {/* Only fires when swapping between two open tabs — opening and
-                closing are the shell's job, not a mount/unmount. */}
-            <AnimatePresence mode="popLayout" initial={false}>
-              {rendered ? (
+            {/* Every card, stacked in one cell and sitting on the bottom edge,
+                with opacity deciding which one you're looking at. Nothing
+                mounts, unmounts or moves on a swap — so there is no moment
+                where one card is being laid out and the other is being removed
+                from the layout, which is where the old version got its lurch.
+
+                Sat on the bottom because that edge doesn't move: the shell is
+                docked there, so the top edge does all the travelling and the
+                cards stay where they are while it passes over them. */}
+            {tabs.map((item) => {
+              const current = item.id === renderedId;
+
+              return (
                 <motion.div
-                  key={rendered.id}
-                  variants={
-                    reduce ? REDUCED_CONTENT_VARIANTS : CONTENT_VARIANTS
-                  }
+                  key={item.id}
+                  inert={!isOpen || !current}
+                  // Stretched, not bottom-aligned: the shell is sized to the
+                  // tallest card, so the others have slack to take up. Sitting
+                  // on the bottom edge instead leaves it as a gap above them.
+                  className="col-start-1 row-start-1 grid w-max"
                   initial={false}
-                  animate="center"
-                  exit="exit"
-                  transition={
-                    reduce
-                      ? {
-                          duration: 0.15,
-                          ease: EASE_OUT,
-                        }
-                      : CONTENT_SPRING
-                  }
-                  className="w-max"
-                  style={{ transformOrigin: "bottom center" }}
+                  animate={{
+                    opacity: current ? 1 : 0,
+                    filter: current ? "blur(0px)" : "blur(3px)",
+                  }}
+                  transition={snap ? INSTANT : current ? CARD_IN : CARD_OUT}
                 >
-                  {rendered.content}
+                  {item.content}
                 </motion.div>
-              ) : null}
-            </AnimatePresence>
+              );
+            })}
           </motion.div>
         </div>
 

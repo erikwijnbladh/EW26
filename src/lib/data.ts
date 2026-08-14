@@ -1,8 +1,10 @@
 /**
  * Facts about Erik, checked against his CV.
  *
- * `intro` is the short version on the home page. `bio` is the About page: still
- * personal, but with enough detail to make the experience list mean something.
+ * `bio` is the site. There is no other page and no summary above it, so it has
+ * to do the whole job in three paragraphs: what he does now, what he did before,
+ * and what he's like. Everything longer than that lives in the chat, which reads
+ * from the same file — the page is the pitch, the dossier is the detail.
  *
  * ⚠️ Written for publication in or after September 2026, when Compileit starts.
  * Everything here speaks about that role in the present tense, which is true on
@@ -10,18 +12,16 @@
  */
 export const profile = {
   name: "Erik Wijnbladh",
-  role: "Design engineer",
+  // How he describes himself in the bio's first line. The dossier opens with
+  // it, so the chat introduces him the same way the page does.
+  role: "Developer and designer",
   location: "Stockholm, Sweden",
   email: "hello@erikwijnbladh.com",
   tagline: "Currently building products people love to use at Compileit.",
-  intro:
-    "I build digital products and care a lot about the parts people actually use. How they look, move and feel.",
   bio: [
-    "I'm a fullstack developer at Compileit in Stockholm, building web and app products for clients. I started out in frontend and never really stopped caring about the design side of it. I like figuring out how something should work and then building it.",
-    "Before Compileit I had a short stint at KTH building the CYVAC platform. Prior to that I spent the better part of three years at BrightBid, on an AI bidding product where I built the interface people actually used it through — the login, the endpoints, the tables that had to flex correctly. I worked closely with designers the whole time.",
-    "I studied Informatics at Örebro and later Human–Computer Interaction at Uppsala, which gives me a multidisciplinary way of building things and designing them.",
-    "On the side I build experiments with AI, design and tech, usually because I want to see what happens.",
-    "When I'm not at a screen I listen to heavy music, ski, play games and skateboard.",
+    "I'm Erik, developer and designer based in Stockholm.",
+    "Currently fullstack at Compileit, building products people love. Before that, development and design at KTH, and three years owning the frontend at BrightBid, an AI ads platform, where the job was making automated bidding decisions legible to the people who had to answer for them. A few other places further back.",
+    "Away from the screen I cook, ski, skateboard, game and read, and spend a lot of time in small rooms watching heavy bands. Home is my girlfriend and our cat.",
   ],
 };
 
@@ -39,6 +39,19 @@ export const contacts = [
     external: true,
   },
 ];
+
+/**
+ * A contact's href by label, matched case-insensitively.
+ *
+ * The labels are display strings — they read "GitHub" because that is how it is
+ * written, not because anything keys off the capitals. Matching exactly meant a
+ * label being retitled silently emptied every href built from it, which is a
+ * link that looks fine and reloads the page.
+ */
+export function contactHref(label: string) {
+  const wanted = label.toLowerCase();
+  return contacts.find((item) => item.label.toLowerCase() === wanted)?.href ?? "";
+}
 
 export type Track = {
   title: string;
@@ -125,10 +138,13 @@ export type Education = {
 /** Education, from the CV. */
 export const education: Education[] = [
   {
-    year: "2025 – 2027",
+    // Not a span. An end year is a promise about finishing, and this one is
+    // started and set down — the note carries the state instead, everywhere the
+    // year is shown.
+    year: "2025",
     org: "Uppsala University",
     degree: "MSc Human–Computer Interaction",
-    note: "In progress",
+    note: "started, paused",
     href: "https://www.uu.se/en/study/programme/masters-programme-human-computer-interaction",
   },
   {
@@ -139,104 +155,142 @@ export const education: Education[] = [
   },
 ];
 
-export type Work = {
-  id: string;
-  title: string;
-  year: string;
-  kind: string;
-  /**
-   * One short line. This renders as a row subtitle in a half-width column, so
-   * anything past about eight words wraps into a paragraph and the list stops
-   * scanning as a list.
-   */
-  blurb: string;
-  /** Named PostShader scene, drawn in the hover preview. */
-  shader?: string;
-  /** Set when the project has a case page at `/{id}`. */
-  page?: boolean;
-  /** Repository or live link, shown on the case page. */
-  href?: string;
-  /**
-   * The artifact shown when the row is opened. A still or a looping clip in
-   * `/public/work/`, which is the only place colour enters the page. Videos
-   * give `src` without an extension — both `.webm` and `.mp4` are offered.
-   *
-   * Until a real one is dropped in, the row opens onto an empty frame rather
-   * than a stand-in gradient: a placeholder that looks like art would make the
-   * colour rule read as decoration, which is exactly what it isn't.
-   */
-  media?: { src: string; type: "image" | "video"; alt: string };
-};
-
-/** Projects with something to show. Employment lives on the About page. */
-export const work: Work[] = [
-  {
-    id: "pane",
-    title: "Pane",
-    year: "2026",
-    kind: "Tool",
-    blurb: "Change one class, five usages move as you type.",
-    shader: "prism",
-    page: true,
-    href: "https://github.com/erikwijnbladh/pane",
-    media: {
-      src: "/work/pane",
-      type: "video",
-      alt: "Editing ButtonRoot in Pane while five buttons across two panes update at once",
-    },
-  },
-  {
-    id: "gptdnd",
-    title: "gptdnd",
-    year: "2026",
-    kind: "System",
-    blurb: "A campaign generator that checks its own work.",
-    shader: "ember",
-    page: true,
-    href: "https://github.com/erikwijnbladh/gptdnd",
-  },
-];
-
-export type HomeRow = {
-  id: string;
-  title: string;
-  blurb?: string;
-  /** Absent = rendered as plain text rather than a link. */
-  href?: string;
-  external?: boolean;
-  /** Opens a gap above the row, to group what follows. */
-  separated?: boolean;
-  /** Named PostShader scene for the hover preview. */
-  shader?: string;
-  media?: Work["media"];
+export type Photo = {
+  src: string;
+  /** What is in the frame, for anyone who can't see it. */
+  alt: string;
+  /** Shown under the deck when the card is picked. One at a time. */
+  caption: string;
+  /** An 8x12 of the same photo, inlined so the card has something during load. */
+  blur: string;
 };
 
 /**
- * The home page list, top to bottom: where Erik works, then what he's built,
- * then the page with the long version.
+ * The photo deck. Portrait, grayscale, five of them.
  *
- * Compileit sits at the head as the current role — see the publish-date note
- * at the top of this file. The rest of the history lives on the About page.
+ * The files in `/public/elsewhere` are pre-cropped and pre-desaturated rather
+ * than being full-size originals with a `grayscale` class over them: the
+ * originals are 11MB of phone camera between them, and colour data nobody will
+ * ever see still costs bytes to send. They're 646KB now, sized for the viewer rather than the deck.
+ *
+ * Captions are the part worth rewriting by hand — they're the only place on
+ * the page that gets to be funny.
  */
-export const homeRows: HomeRow[] = [
+export const elsewhere: Photo[] = [
   {
-    id: "compileit",
-    title: "Compileit",
-    blurb: "Building products people love and businesses grow with.",
+    src: "/elsewhere/skate.webp",
+    alt: "Skateboarding across the flat of a concrete park",
+    caption: "Dare to be terrible at stuff",
+    blur: "data:image/webp;base64,UklGRjAAAABXRUJQVlA4ICQAAACwAQCdASoIAAwAA4BaJaQAAqzMnlDgANu9brqr0iFva5hAAAA=",
   },
-  ...work.map((item) => ({
-    id: item.id,
-    title: item.title,
-    blurb: item.blurb,
-    href: item.page ? `/${item.id}` : item.href,
-    external: !item.page,
-    shader: item.shader,
-    media: item.media,
-  })),
   {
-    id: "about",
-    title: "About",
-    href: "/about",
-    separated: true,
+    src: "/elsewhere/adept.webp",
+    alt: "Adept on stage behind a wall of smoke, hands up in the crowd",
+    caption: "Relaxing v1",
+    blur: "data:image/webp;base64,UklGRjYAAABXRUJQVlA4ICoAAACwAQCdASoIAAwAA4BaJaQAApeZYcAAAPlSI9y/anJs7QzzU5+ICgAAAAA=",
+  },
+  {
+    src: "/elsewhere/drink.webp",
+    alt: "A cocktail in a coupe beside a negroni over ice with an orange twist",
+    caption: "Relaxing v2",
+    blur: "data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACwAQCdASoIAAwAA4BaJaQAAubyf/QAAP5+i2kciqAhMJcSKNSnst78RIksAAAA",
+  },
+  {
+    src: "/elsewhere/duomo.webp",
+    alt: "The marble spires of the Duomo di Milano against a cloudy sky",
+    caption: "We used to do marble, now we make purple gradients",
+    blur: "data:image/webp;base64,UklGRjIAAABXRUJQVlA4ICYAAACQAQCdASoIAAwAA4BaJaQAApd6ngAA9reAhnFoMFrpjME8tjAAAA==",
+  },
+  {
+    src: "/elsewhere/tracks.webp",
+    alt: "Ski tracks curving down an open snow face below a rocky peak",
+    caption: "God bless",
+    blur: "data:image/webp;base64,UklGRjAAAABXRUJQVlA4ICQAAACQAQCdASoIAAwAA4BaJaQAAppCQNAA/lhBoayTmkuXzmEAAAA=",
   },
 ];
+
+export type Mention = {
+  /** The words exactly as they appear in `profile.bio`. */
+  phrase: string;
+  /** Whose entry in `experience` or `education` carries the link. */
+  org: string;
+  /**
+   * The gradient behind the thumbnails — and all you see until there are any.
+   * Deliberately abstract: a stand-in that looked like a screenshot would be
+   * claiming something about a company that hasn't been shown.
+   */
+  tone: string;
+  /** Up to two, fanned out on hover. Drop files in `/public/mentions/`. */
+  images?: { src: string; alt: string }[];
+};
+
+/**
+ * The words in the bio that are worth hovering.
+ *
+ * Keyed to the prose rather than the other way round: the paragraph is written
+ * as a paragraph, and this says which of its words happen to be places. Nothing
+ * here holds a URL — that lives once, on the `experience` and `education` entry
+ * the `org` names, so a company changing address can't leave the prose pointing
+ * somewhere the CV doesn't.
+ *
+ * Only the places the bio actually names. The earlier roles and both degrees
+ * are still in `experience` and `education` above, and the chat answers from
+ * them — an entry here for a word the prose doesn't say would just be a flare
+ * nobody can reach.
+ */
+export const mentions: Mention[] = [
+  {
+    phrase: "Compileit",
+    org: "Compileit",
+    tone: "linear-gradient(150deg, #1b1a16 0%, #4a4842 55%, #cbc7bf 100%)",
+  },
+  {
+    phrase: "KTH",
+    org: "KTH Royal Institute of Technology",
+    tone: "linear-gradient(150deg, #1a1f2b 0%, #3f4a63 55%, #b9c2d4 100%)",
+  },
+  {
+    phrase: "BrightBid",
+    org: "BrightBid",
+    tone: "linear-gradient(150deg, #21180f 0%, #6b4a22 55%, #e0cbaa 100%)",
+  },
+];
+
+/**
+ * What an organisation was, in the two lines a card has room for.
+ *
+ * The cards used to be waiting on thumbnails, which meant hovering a place got
+ * you a gradient and nothing else. This is the detail that left the page with
+ * the About route — the role and the span — put back where it is actually
+ * being asked for. Images layer on top of it when there are any.
+ */
+export function orgDetail(org: string) {
+  const role = experience.find((item) => item.org === org);
+  if (role) return { title: role.role, year: role.year };
+
+  // Education carries a state the jobs don't — a degree can be finished, or
+  // started and set down. The card has two lines and the second one is the
+  // dates, so the state rides along with them rather than going unsaid.
+  const study = education.find((item) => item.org === org);
+  if (study) {
+    return {
+      title: study.degree,
+      year: study.note ? `${study.year} · ${study.note}` : study.year,
+    };
+  }
+
+  return null;
+}
+
+/**
+ * Where an organisation's link lives, wherever it lives.
+ *
+ * The bio says "KTH" and the CV says "KTH Royal Institute of Technology"; this
+ * is the one place that knows they're the same place.
+ */
+export function orgHref(org: string) {
+  const match = (item: { org: string; href?: string }) => item.org === org;
+  return (
+    experience.find(match)?.href ?? education.find(match)?.href ?? ""
+  );
+}

@@ -11,9 +11,12 @@
     "spotify:check": "node scripts/spotify-check.mjs"
   },
   "dependencies": {
+    "@langchain/anthropic": "^1.5.4",
+    "@langchain/core": "^1.2.5",
     "@paper-design/shaders-react": "^0.0.76",
     "clsx": "^2.1.1",
     "gray-matter": "^4.0.3",
+    "langchain": "^1.5.5",
     "motion": "^12.42.0",
     "next": "16.2.9",
     "next-mdx-remote": "^6.0.0",
