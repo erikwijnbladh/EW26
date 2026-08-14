@@ -123,25 +123,27 @@ summary {
   }
 }
 
-/* Floating dock: a hairline inset ring, an inner glow and a wide soft drop
-   shadow so the pill reads as glass sitting above the page. */
+/* Floating controls use the same paper and ink as the page. The half-pixel
+   hairline is enough separation; glass blur made a tiny toolbar feel heavier
+   than the content it belongs to. */
 .dock {
-  background: color-mix(in srgb, var(--background) 70%, transparent);
-  backdrop-filter: blur(8px);
-  transition: background-color 220ms ease;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--background) 94%, white 6%);
   box-shadow:
-    inset 0 0 0 0.5px rgba(21, 20, 15, 0.14),
-    inset 0 1px 12px rgba(255, 255, 255, 0.5),
-    0 1px 2px rgba(21, 20, 15, 0.06),
-    0 8px 30px 6px rgba(21, 20, 15, 0.1);
+    inset 0 0 0 0.5px color-mix(in srgb, var(--foreground) 18%, transparent),
+    0 1px 2px rgba(21, 20, 15, 0.05),
+    0 8px 24px rgba(21, 20, 15, 0.08);
 }
 
-/* Expanded into a card, the surface goes opaque: glass reads as muddy at that
-   size, and blurring a card-sized region is wasted work when nothing shows
-   through it anyway. */
-.dock-open {
-  background: var(--background);
-  backdrop-filter: none;
+/* The forms share this one fixed frame. Because the frame never changes size,
+   switching form is a content transition rather than a layout animation. */
+.dock-panel {
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--background) 97%, white 3%);
+  box-shadow:
+    inset 0 0 0 0.5px color-mix(in srgb, var(--foreground) 18%, transparent),
+    0 2px 5px rgba(21, 20, 15, 0.04),
+    0 16px 40px rgba(21, 20, 15, 0.09);
 }
 
 /* Track cards. Slightly lighter than the page with a hairline ring and a low,

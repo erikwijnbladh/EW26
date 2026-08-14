@@ -47,12 +47,12 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">
+      <body className="flex min-h-full min-w-0 flex-col overflow-x-clip font-sans">
         <ScrollReset />
         <div className="grain" aria-hidden />
         <IndicatorProvider>
           <Nav />
-          <main className="flex-1 pt-24 sm:pt-28">{children}</main>
+          <main className="min-w-0 flex-1 pt-24 sm:pt-28">{children}</main>
           <Dock />
         </IndicatorProvider>
       </body>

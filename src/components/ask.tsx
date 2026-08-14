@@ -7,14 +7,13 @@ import {
   duration,
   ease,
   easeInOut,
-  springSnappy,
-  springSoft,
-  wordIn,
   drawOn,
   drawOff,
+  instant,
 } from "@/lib/motion";
 import { useWordReveal } from "@/components/use-word-reveal";
 import { CopyIcon } from "@/components/copy-icon";
+import { copyText } from "@/lib/clipboard";
 
 /**
  * The chat card in the dock.
@@ -63,7 +62,7 @@ const stroke = {
  * envelope and tick do — the arrow retracts as the square scales in, so the
  * button changes meaning without anything popping.
  */
-function SendIcon({ busy }: { busy: boolean }) {
+function SendIcon({ busy, still }: { busy: boolean; still: boolean }) {
   return (
     <span className="relative block size-4" aria-hidden>
       <svg viewBox="0 0 24 24" className="absolute inset-0 size-4">
@@ -72,14 +71,26 @@ function SendIcon({ busy }: { busy: boolean }) {
           {...stroke}
           initial={false}
           animate={{ pathLength: busy ? 0 : 1, opacity: busy ? 0 : 1 }}
-          transition={{ duration: busy ? 0.2 : 0.34, ease: busy ? easeInOut : ease }}
+          transition={
+            still
+              ? instant
+              : { duration: busy ? 0.18 : 0.24, ease: busy ? easeInOut : ease }
+          }
         />
         <motion.path
           d="M5.5 12 12 5.5 18.5 12"
           {...stroke}
           initial={false}
           animate={{ pathLength: busy ? 0 : 1, opacity: busy ? 0 : 1 }}
-          transition={{ duration: busy ? 0.2 : 0.34, ease: busy ? easeInOut : ease, delay: busy ? 0 : 0.06 }}
+          transition={
+            still
+              ? instant
+              : {
+                  duration: busy ? 0.18 : 0.24,
+                  ease: busy ? easeInOut : ease,
+                  delay: busy ? 0 : 0.04,
+                }
+          }
         />
       </svg>
 
@@ -92,9 +103,11 @@ function SendIcon({ busy }: { busy: boolean }) {
           rx="2"
           fill="currentColor"
           initial={false}
-          animate={{ scale: busy ? 1 : 0.2, opacity: busy ? 1 : 0 }}
-          transition={springSnappy}
-          style={{ transformOrigin: "center" }}
+          animate={{
+            pathLength: busy ? 1 : 0,
+            opacity: busy ? 1 : 0,
+          }}
+          transition={{ duration: 0.18, ease: easeInOut }}
         />
       </svg>
     </span>
@@ -126,7 +139,7 @@ type Phase = "idle" | "shredding" | "vanishing";
  * shreddings pull back up into the slot and the slot itself unspools, so the
  * button leaves the way it arrived.
  */
-function ShredderIcon({ phase }: { phase: Phase }) {
+function ShredderIcon({ phase, still }: { phase: Phase; still: boolean }) {
   // Two copies of this card exist — the real one and the hidden one the dock
   // measures — so a fixed id would put two identical clip paths in the document
   // under the same name.
@@ -154,33 +167,40 @@ function ShredderIcon({ phase }: { phase: Phase }) {
           {...stroke}
           initial={false}
           animate={{ pathLength: machine ? 0 : 1, opacity: machine ? 0 : 1 }}
-          transition={machine ? drawOff() : drawOn(0.26)}
+          transition={still ? instant : machine ? drawOff() : drawOn(0.26)}
         />
 
         <motion.g
           initial={false}
           // Held down through `vanishing` — snapping the sheet back up while it
           // still had any opacity left would flash it through the slot.
-          animate={{ y: phase === "idle" ? 0 : 12 }}
-          transition={{
-            duration: shredding ? 0.34 : 0,
-            ease: easeInOut,
-            delay: shredding ? 0.58 : 0,
+          animate={{
+            transform:
+              phase === "idle" ? "translateY(0px)" : "translateY(12px)",
           }}
+          transition={
+            still
+              ? instant
+              : {
+                  duration: shredding ? 0.34 : 0,
+                  ease: easeInOut,
+                  delay: shredding ? 0.58 : 0,
+                }
+          }
         >
           <motion.path
             d="M4 13V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.706.706l3.588 3.588A2.4 2.4 0 0 1 20 8v5"
             {...stroke}
             initial={false}
             animate={{ pathLength: shredding ? 1 : 0, opacity: shredding ? 1 : 0 }}
-            transition={shredding ? drawOn(0.2) : drawOff()}
+            transition={still ? instant : shredding ? drawOn(0.2) : drawOff()}
           />
           <motion.path
             d="M14 2v5a1 1 0 0 0 1 1h5"
             {...stroke}
             initial={false}
             animate={{ pathLength: shredding ? 1 : 0, opacity: shredding ? 1 : 0 }}
-            transition={shredding ? drawOn(0.3) : drawOff()}
+            transition={still ? instant : shredding ? drawOn(0.3) : drawOff()}
           />
         </motion.g>
       </g>
@@ -192,14 +212,22 @@ function ShredderIcon({ phase }: { phase: Phase }) {
         {...stroke}
         initial={false}
         animate={{
-          y: machine ? 7 : 0,
+          transform: machine ? "translateY(7px)" : "translateY(0px)",
           pathLength: gone ? 0 : 1,
           opacity: gone ? 0 : 1,
         }}
-        transition={{
-          ...(gone ? drawOff(0.14) : drawOn()),
-          y: { duration: 0.36, ease: easeInOut, delay: shredding ? 0.06 : 0 },
-        }}
+        transition={
+          still
+            ? instant
+            : {
+                ...(gone ? drawOff(0.14) : drawOn()),
+                transform: {
+                  duration: 0.36,
+                  ease: easeInOut,
+                  delay: shredding ? 0.06 : 0,
+                },
+              }
+        }
       />
 
       {/* The bin, in the same place the shreddings will be. */}
@@ -208,7 +236,7 @@ function ShredderIcon({ phase }: { phase: Phase }) {
         {...stroke}
         initial={false}
         animate={{ pathLength: machine ? 0 : 1, opacity: machine ? 0 : 1 }}
-        transition={machine ? drawOff(0.03) : drawOn(0.3)}
+        transition={still ? instant : machine ? drawOff(0.03) : drawOn(0.3)}
       />
 
       {/* Drawn top-down rather than Lucide's bottom-up: `pathLength` fills from
@@ -222,7 +250,13 @@ function ShredderIcon({ phase }: { phase: Phase }) {
           {...stroke}
           initial={false}
           animate={{ pathLength: shredding ? 1 : 0, opacity: shredding ? 1 : 0 }}
-          transition={shredding ? drawOn(0.66 + i * 0.05) : drawOff(i * 0.03)}
+          transition={
+            still
+              ? instant
+              : shredding
+                ? drawOn(0.66 + i * 0.05)
+                : drawOff(i * 0.03)
+          }
         />
       ))}
     </svg>
@@ -244,8 +278,9 @@ function CopyButton({ value }: { value: string }) {
       type="button"
       aria-label={copied ? "Copied" : `Copy ${value}`}
       onClick={() => {
-        void navigator.clipboard.writeText(value);
-        setCopied(true);
+        void copyText(value).then((success) => {
+          if (success) setCopied(true);
+        });
       }}
       className="ml-1 inline-flex translate-y-[0.2em] text-muted transition-colors duration-150 hover:text-foreground"
     >
@@ -278,9 +313,9 @@ function CopyButton({ value }: { value: string }) {
  * site. It also means the second photograph is already in the browser by the
  * time it is needed, so the expression doesn't arrive a beat after the thought.
  */
-function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
+function Face({ thinking }: { thinking: boolean }) {
   return (
-    <motion.span
+    <span
       // The shape of the crop, exactly: head only, cut at the neck before the
       // shoulders start. No frame, no mask and nothing feathered — the
       // photographs arrived with their own alpha, so the edge is a real one
@@ -293,15 +328,6 @@ function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
       // ignored and it collapses to nothing.
       className="relative block aspect-[144/167] w-9"
       aria-hidden
-      initial={false}
-      // Barely a breath, and the only reason the waiting state reads as active
-      // rather than stalled now that the dot has gone.
-      animate={thinking && !still ? { scale: [1, 1.055, 1] } : { scale: 1 }}
-      transition={
-        thinking && !still
-          ? { duration: 1.9, repeat: Infinity, ease: "easeInOut" }
-          : { duration: 0.3, ease }
-      }
     >
       {/* One or the other, never a blend. These are the same head in the same
           place, so any moment with both on screen is a double exposure rather
@@ -319,11 +345,11 @@ function Face({ thinking, still }: { thinking: boolean; still: boolean }) {
           fill
           sizes="36px"
           priority
-          className="object-contain"
+          className="object-contain transition-opacity duration-150"
           style={{ opacity: shown ? 1 : 0 }}
         />
       ))}
-    </motion.span>
+    </span>
   );
 }
 
@@ -355,17 +381,8 @@ function Reply({
   return (
     <p className="text-[15px] leading-relaxed text-foreground/90">
           {tokens.map((token, i) => (
-            <motion.span
+            <span
               key={i}
-              // Deliberately inline, not inline-block. Boxing each word makes
-              // its width round on its own, and the accumulated error shows up
-              // as uneven word spacing that outlives the animation — a
-              // permanent typographic cost for a half-second effect. Blur and
-              // opacity apply to inline boxes; only a transform would have
-              // needed the block, which is why there isn't one.
-              initial={still ? false : { opacity: 0, filter: "blur(2.5px)" }}
-              animate={{ opacity: 1, filter: "blur(0px)" }}
-              transition={wordIn}
             >
               {token.href ? (
                 // `nowrap` holds the address, its copy button and the full stop
@@ -387,7 +404,7 @@ function Reply({
               ) : (
                 token.text
               )}
-        </motion.span>
+        </span>
       ))}
     </p>
   );
@@ -608,26 +625,35 @@ export function AskPanel({ open }: { open: boolean }) {
   const empty = messages.length === 0;
 
   return (
-    <div className="flex w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-4">
+    <div className="flex h-full w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-5">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-[19px] font-medium leading-tight tracking-[-0.02em] text-foreground">
-          What do you want to know?
-        </h2>
+        <div>
+          <h2 className="text-xl font-medium leading-tight tracking-[-0.025em] text-foreground">
+            Ask Erik
+          </h2>
+          <p className="mt-1 text-xs leading-relaxed text-muted">
+            Work, experience, side projects — the useful version.
+          </p>
+        </div>
 
         <AnimatePresence initial={false}>
           {(!empty || phase !== "idle") && (
             <motion.button
               type="button"
               aria-label="Clear the conversation"
-              initial={still ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
+              initial={
+                still
+                  ? false
+                  : { opacity: 0, transform: "scale(0.97)" }
+              }
+              animate={{ opacity: 1, transform: "scale(1)" }}
+              exit={{ opacity: 0, transform: "scale(0.97)" }}
               transition={{ duration: duration.fast, ease }}
               onClick={() => setPhase("shredding")}
               disabled={phase !== "idle"}
-              className="shrink-0 text-muted transition-colors duration-150 hover:text-foreground"
+              className="grid size-8 shrink-0 place-items-center rounded-full text-muted shadow-[inset_0_0_0_0.5px_var(--line)] transition-[color,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:text-foreground active:scale-[0.96] motion-reduce:active:scale-100"
             >
-              <ShredderIcon phase={phase} />
+              <ShredderIcon phase={phase} still={Boolean(still)} />
             </motion.button>
           )}
         </AnimatePresence>
@@ -646,44 +672,39 @@ export function AskPanel({ open }: { open: boolean }) {
         height goes — into more transcript. The floor is what the height used to
         be, so the card still measures the same when there is no slack to take.
       */}
-      <div className="relative mt-3 min-h-[min(15rem,40svh)] grow [@media(max-height:520px)]:min-h-[6.5rem]">
+      <div className="relative mt-4 min-h-[min(15rem,40svh)] grow border-y border-line py-3 [@media(max-height:520px)]:min-h-[6.5rem]">
         <div
           ref={scrollRef}
           onScroll={onScroll}
           // The mask softens the top edge: scrolled-past text dissolves under
           // the heading instead of being guillotined by the overflow box.
-          className="no-scrollbar absolute inset-0 overflow-y-auto overscroll-contain pl-11 [mask-image:linear-gradient(to_bottom,transparent_0,black_1.5rem)]"
+          className={`no-scrollbar absolute inset-y-3 inset-x-0 overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0,black_1rem)] ${empty ? "" : "pl-11"}`}
         >
           {empty ? (
             // `min-h-full`, not `h-full`, and for the same reason the message
             // column below uses it: pinned to an exact height, anything taller
             // than the box overflows upward past the top of the scroller, where
             // it cannot be scrolled back to. It has to be able to grow.
-            <div className="flex min-h-full flex-col justify-end gap-3">
+            <div className="flex min-h-full flex-col justify-start gap-4">
               {/* Short on purpose. The face takes a column out of this box, so
                   the prompts below wrap one to a line — and the second sentence
                   this used to carry ("ask about the work, the stack…") is what
                   those prompts already are. Together they overflowed and pushed
                   this off the top of the scroller. */}
-              <p className="text-[15px] leading-relaxed text-muted">
-                It&rsquo;s me, more or less — answering from what&rsquo;s on the
-                rest of the site.
+              <p className="text-sm leading-relaxed text-muted">
+                A small, site-bound version of me. Pick a thread or ask your own.
               </p>
 
-              <div className="flex flex-wrap gap-1.5">
-                {PROMPTS.map((prompt, i) => (
-                  <motion.button
+              <div className="grid grid-cols-2 border-t border-line">
+                {PROMPTS.map((prompt) => (
+                  <button
                     key={prompt}
                     type="button"
-                    initial={still ? false : { opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ ...springSoft, delay: 0.08 + i * 0.05 }}
-                    whileTap={still ? undefined : { scale: 0.97 }}
                     onClick={() => void send(prompt)}
-                    className="rounded-full border border-line bg-surface/50 px-3 py-1.5 text-[13px] text-muted transition-colors duration-150 hover:border-foreground/25 hover:text-foreground"
+                    className="border-b border-line px-2 py-2 text-left text-xs leading-snug text-muted transition-[color,background-color] duration-150 odd:border-r hover:bg-foreground/[0.025] hover:text-foreground"
                   >
                     {prompt}
-                  </motion.button>
+                  </button>
                 ))}
               </div>
             </div>
@@ -693,15 +714,12 @@ export function AskPanel({ open }: { open: boolean }) {
             // empty box, and the transcript starts scrolling once it outgrows it.
             <div className="flex min-h-full flex-col justify-end gap-4">
               {messages.map((message, i) => (
-                <motion.div
+                <div
                   key={message.id}
-                  initial={still ? false : { opacity: 0, y: 8, filter: "blur(4px)" }}
-                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  transition={springSoft}
                   className={message.role === "user" ? "flex justify-end" : "pr-2"}
                 >
                   {message.role === "user" ? (
-                    <p className="rounded-2xl rounded-br-md bg-foreground/[0.07] px-3.5 py-2 text-[15px] leading-relaxed text-foreground">
+                    <p className="max-w-[85%] border-r border-line pr-3 text-right text-[15px] leading-relaxed text-foreground/85">
                       {message.content}
                     </p>
                   ) : (
@@ -712,37 +730,35 @@ export function AskPanel({ open }: { open: boolean }) {
                       onReveal={stickToBottom}
                     />
                   )}
-                </motion.div>
+                </div>
               ))}
             </div>
           )}
         </div>
 
-        <span className="pointer-events-none absolute bottom-0 left-0">
-          <Face thinking={busy} still={Boolean(still)} />
-        </span>
+        {!empty && (
+          <span className="pointer-events-none absolute bottom-3 left-0">
+            <Face thinking={busy} />
+          </span>
+        )}
       </div>
 
       {/*
         `role="alert"` so it's announced rather than silently appearing — the
         answer simply stopping is easy to miss, and the reason lives here.
       */}
-      <AnimatePresence>
-        {error && (
-          <motion.p
-            role="alert"
-            initial={still ? false : { opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={still ? { opacity: 0 } : { opacity: 0, height: 0 }}
-            transition={{ duration: duration.fast, ease }}
-            className="overflow-hidden text-xs font-light text-foreground/80"
-          >
-            <span className="mt-2 block">{error}</span>
-          </motion.p>
-        )}
-      </AnimatePresence>
+      <p
+        role={error ? "alert" : undefined}
+        className="mt-2 min-h-4 text-xs font-light text-foreground/80 transition-opacity duration-150"
+        style={{ opacity: error ? 1 : 0 }}
+      >
+        {error ?? "\u00a0"}
+      </p>
 
-      <form onSubmit={onSubmit} className="mt-3 flex items-end gap-2">
+      <form
+        onSubmit={onSubmit}
+        className="mt-2 flex items-stretch overflow-hidden rounded-xl border border-line bg-transparent transition-colors duration-150 focus-within:border-foreground/30"
+      >
         <textarea
           ref={inputRef}
           value={draft}
@@ -752,20 +768,17 @@ export function AskPanel({ open }: { open: boolean }) {
           placeholder="Ask something"
           aria-label="Ask a question"
           maxLength={1000}
-          className="no-scrollbar min-h-[2.75rem] w-full flex-1 resize-none rounded-xl border border-line bg-surface/50 px-3.5 py-3 text-[15px] leading-tight text-foreground outline-none transition-colors duration-150 placeholder:text-muted/70 focus:border-foreground/25 focus:bg-surface/80"
+          className="no-scrollbar min-h-11 w-full flex-1 resize-none bg-transparent px-3.5 py-3 text-[15px] leading-tight text-foreground outline-none placeholder:text-muted/65"
         />
 
-        <motion.button
+        <button
           type="submit"
           aria-label={busy ? "Stop" : "Send"}
           disabled={!busy && !draft.trim()}
-          whileHover={still ? undefined : { scale: 1.04 }}
-          whileTap={still ? undefined : { scale: 0.94 }}
-          transition={springSnappy}
-          className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background transition-opacity duration-150 hover:opacity-90 disabled:opacity-30"
+          className="grid w-11 shrink-0 place-items-center border-l border-foreground bg-foreground text-background transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:opacity-90 active:scale-[0.97] disabled:opacity-30 motion-reduce:active:scale-100"
         >
-          <SendIcon busy={busy} />
-        </motion.button>
+          <SendIcon busy={busy} still={Boolean(still)} />
+        </button>
       </form>
     </div>
   );

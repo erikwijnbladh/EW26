@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "motion/react";
-import { drawOff, drawOn } from "@/lib/motion";
+import { motion, useReducedMotion } from "motion/react";
+import { drawOff, drawOn, instant } from "@/lib/motion";
 
 /**
  * The site's copy affordance, shared by the dock's email button and the chat's
@@ -23,6 +23,8 @@ const stroke = {
 const svgClass = "absolute inset-0 size-full";
 
 export function CopyIcon({ copied }: { copied: boolean }) {
+  const still = useReducedMotion();
+
   return (
     <span className="relative block size-4" aria-hidden>
       <svg viewBox="0 0 24 24" className={svgClass}>
@@ -35,14 +37,14 @@ export function CopyIcon({ copied }: { copied: boolean }) {
           {...stroke}
           initial={false}
           animate={{ pathLength: copied ? 0 : 1, opacity: copied ? 0 : 1 }}
-          transition={copied ? drawOff() : drawOn(0.2)}
+          transition={still ? instant : copied ? drawOff() : drawOn(0.2)}
         />
         <motion.path
           d="M3.5 7.5 10.9 12.6a2 2 0 0 0 2.2 0L20.5 7.5"
           {...stroke}
           initial={false}
           animate={{ pathLength: copied ? 0 : 1, opacity: copied ? 0 : 1 }}
-          transition={copied ? drawOff(0.04) : drawOn(0.3)}
+          transition={still ? instant : copied ? drawOff(0.04) : drawOn(0.3)}
         />
       </svg>
 
@@ -52,7 +54,7 @@ export function CopyIcon({ copied }: { copied: boolean }) {
           {...stroke}
           initial={false}
           animate={{ pathLength: copied ? 1 : 0, opacity: copied ? 1 : 0 }}
-          transition={copied ? drawOn(0.16) : drawOff()}
+          transition={still ? instant : copied ? drawOn(0.16) : drawOff()}
         />
       </svg>
     </span>
