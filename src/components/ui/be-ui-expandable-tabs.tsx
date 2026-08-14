@@ -185,6 +185,13 @@ export function ExpandableTabs({
   const panelReady = panelSize.height > 0;
   const panelOpen = Boolean(active && panelReady);
   const closedInset = Math.max(0, (panelSize.width - toolbarWidth) / 2);
+  const closedBodyWidth = toolbarWidth - BAR_HEIGHT;
+  const openBodyWidth = panelSize.width - BAR_HEIGHT;
+  const openBodyScale =
+    closedBodyWidth > 0 ? openBodyWidth / closedBodyWidth : 1;
+  const shellTransition = reduce
+    ? { duration: 0 }
+    : { duration: 0.2, ease: EASE_IN_OUT };
 
   return (
     <div
@@ -245,29 +252,46 @@ export function ExpandableTabs({
           classNames?.bar,
         )}
       >
-        <motion.div
-          aria-hidden
-          initial={false}
-          animate={{ opacity: immersiveOpen ? 0 : 1 }}
-          transition={
-            reduce
-              ? { duration: 0 }
-              : { duration: immersiveOpen ? 0.08 : 0.12, ease: EASE_OUT }
-          }
-          className="dock absolute inset-y-0 left-1/2 -translate-x-1/2"
-          style={{ width: toolbarWidth }}
-        />
-        <motion.div
-          aria-hidden
-          initial={false}
-          animate={{ opacity: immersiveOpen ? 1 : 0 }}
-          transition={
-            reduce
-              ? { duration: 0 }
-              : { duration: immersiveOpen ? 0.12 : 0.08, ease: EASE_OUT }
-          }
-          className="dock absolute inset-0"
-        />
+        <div aria-hidden className="dock-shell absolute inset-0">
+          <motion.span
+            initial={false}
+            animate={{
+              transform: immersiveOpen
+                ? `scaleX(${openBodyScale})`
+                : "scaleX(1)",
+            }}
+            transition={shellTransition}
+            className="dock-shell-piece dock-shell-body absolute inset-y-0"
+            style={{
+              left: `calc(50% - ${closedBodyWidth / 2}px)`,
+              width: closedBodyWidth,
+            }}
+          />
+          <motion.span
+            initial={false}
+            animate={{
+              transform: immersiveOpen
+                ? `translateX(${-closedInset}px)`
+                : "translateX(0px)",
+            }}
+            transition={shellTransition}
+            className="dock-shell-piece dock-shell-cap dock-shell-cap-left absolute inset-y-0 size-[52px] rounded-full"
+            style={{ left: `calc(50% - ${toolbarWidth / 2}px)` }}
+          />
+          <motion.span
+            initial={false}
+            animate={{
+              transform: immersiveOpen
+                ? `translateX(${closedInset}px)`
+                : "translateX(0px)",
+            }}
+            transition={shellTransition}
+            className="dock-shell-piece dock-shell-cap dock-shell-cap-right absolute inset-y-0 size-[52px] rounded-full"
+            style={{
+              left: `calc(50% + ${toolbarWidth / 2 - BAR_HEIGHT}px)`,
+            }}
+          />
+        </div>
 
         {items.map((item, itemIndex) => {
           const isPanel = Boolean(item.content);

@@ -135,6 +135,38 @@ summary {
     0 8px 24px rgba(21, 20, 15, 0.08);
 }
 
+/* The immersive dock is one visual pill assembled from three transform-only
+   pieces. Circular caps preserve true round ends while the rectangular middle
+   stretches; a filter on their union supplies one continuous outer shadow. */
+.dock-shell {
+  filter:
+    drop-shadow(0 1px 2px rgba(21, 20, 15, 0.05))
+    drop-shadow(0 8px 24px rgba(21, 20, 15, 0.08));
+}
+
+.dock-shell-piece {
+  background: color-mix(in srgb, var(--background) 94%, white 6%);
+}
+
+.dock-shell-body {
+  box-shadow:
+    inset 0 0.5px 0 color-mix(in srgb, var(--foreground) 18%, transparent),
+    inset 0 -0.5px 0 color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+
+.dock-shell-cap {
+  box-shadow: inset 0 0 0 0.5px
+    color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+
+.dock-shell-cap-left {
+  clip-path: inset(0 50% 0 0);
+}
+
+.dock-shell-cap-right {
+  clip-path: inset(0 0 0 50%);
+}
+
 /* The forms share this one fixed frame. Because the frame never changes size,
    switching form is a content transition rather than a layout animation. */
 .dock-panel {
