@@ -13,7 +13,7 @@ import {
  * Deliberately derived rather than hand-written. A second copy of the bio would
  * drift from the first the moment either changed, and the failure mode is the
  * worst kind: a chat that confidently describes a job you left. Edit
- * `src/lib/data.ts` or a post in `content/`, and the answers follow.
+ * `src/lib/data.ts` and the answers follow.
  *
  * It now carries more than the page does. The site is one column of prose; the
  * CV behind it — every role, every date, both degrees — lives here and comes
@@ -27,7 +27,7 @@ import {
  * inference time. `profile.bio` is already first person; the rest follows it.
  */
 
-/** Built once per instance. The content directory doesn't change under us. */
+/** Built once per instance. Its source is a module and cannot change under us. */
 let cached: string | null = null;
 
 function bulletList(lines: string[]) {

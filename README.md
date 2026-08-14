@@ -33,7 +33,7 @@ else. Four files:
 
 | File | What it does |
 | --- | --- |
-| `src/lib/dossier.ts` | Assembles everything the chat is allowed to know, out of `src/lib/data.ts` and `content/*.mdx` |
+| `src/lib/dossier.ts` | Assembles everything the chat is allowed to know, out of `src/lib/data.ts` |
 | `src/lib/chat.ts` | The LangChain chain — prompt, scope rules, history trimming, model |
 | `src/app/api/chat/route.ts` | Rate limit, validation, and the NDJSON token stream |
 | `src/components/ask.tsx` | The card: transcript, composer, and the paced reveal |
@@ -49,5 +49,14 @@ LangChain tool (`now_playing`) the model calls when a question is actually about
 music — it reads the same live Spotify response the listening strip does, so the
 chat answers with what's on rather than pointing you up the page.
 
-Nothing hard-codes the answers. Edit `src/lib/data.ts` or add a post to
-`content/`, and the chat knows about it on the next boot.
+Nothing hard-codes the answers. Edit `src/lib/data.ts` and the chat knows about
+it on the next boot.
+
+## Dock
+
+The bar at the bottom holds two cards — the chat and the contact form — and
+morphs its shell between them. It sizes itself from a hidden, always-idle copy
+of each card and takes the larger of the two on each axis, so both open at one
+height and switching tabs moves nothing but the contents. Anything that grows a
+card after the shell has opened is clipped, which is why the transcript scrolls
+and the form's error copy sits in reserved space.
