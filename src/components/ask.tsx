@@ -124,6 +124,10 @@ function SendIcon({ busy, still }: { busy: boolean; still: boolean }) {
  */
 type Phase = "idle" | "shredding" | "vanishing";
 
+/** The feed completes before state changes; the reset is deliberately quick. */
+const SHRED_CLEAR_DELAY = 740;
+const SHRED_RESET_DELAY = 280;
+
 /**
  * Clearing the conversation: a bin that becomes a shredder and eats the paper.
  *
@@ -182,9 +186,9 @@ function ShredderIcon({ phase, still }: { phase: Phase; still: boolean }) {
             still
               ? instant
               : {
-                  duration: shredding ? 0.34 : 0,
+                  duration: shredding ? 0.24 : 0,
                   ease: easeInOut,
-                  delay: shredding ? 0.58 : 0,
+                  delay: shredding ? 0.28 : 0,
                 }
           }
         >
@@ -193,14 +197,14 @@ function ShredderIcon({ phase, still }: { phase: Phase; still: boolean }) {
             {...stroke}
             initial={false}
             animate={{ pathLength: shredding ? 1 : 0, opacity: shredding ? 1 : 0 }}
-            transition={still ? instant : shredding ? drawOn(0.2) : drawOff()}
+            transition={still ? instant : shredding ? drawOn(0.08) : drawOff()}
           />
           <motion.path
             d="M14 2v5a1 1 0 0 0 1 1h5"
             {...stroke}
             initial={false}
             animate={{ pathLength: shredding ? 1 : 0, opacity: shredding ? 1 : 0 }}
-            transition={still ? instant : shredding ? drawOn(0.3) : drawOff()}
+            transition={still ? instant : shredding ? drawOn(0.12) : drawOff()}
           />
         </motion.g>
       </g>
@@ -222,9 +226,9 @@ function ShredderIcon({ phase, still }: { phase: Phase; still: boolean }) {
             : {
                 ...(gone ? drawOff(0.14) : drawOn()),
                 transform: {
-                  duration: 0.36,
+                  duration: 0.22,
                   ease: easeInOut,
-                  delay: shredding ? 0.06 : 0,
+                  delay: shredding ? 0.02 : 0,
                 },
               }
         }
@@ -254,8 +258,16 @@ function ShredderIcon({ phase, still }: { phase: Phase; still: boolean }) {
             still
               ? instant
               : shredding
-                ? drawOn(0.66 + i * 0.05)
-                : drawOff(i * 0.03)
+                ? {
+                    duration: 0.22,
+                    ease,
+                    delay: 0.42 + i * 0.025,
+                    opacity: {
+                      duration: 0.08,
+                      delay: 0.42 + i * 0.025,
+                    },
+                  }
+                : { duration: 0.18, ease: easeInOut }
           }
         />
       ))}
@@ -293,7 +305,7 @@ function CopyButton({ value }: { value: string }) {
 function AssistantAvatar({ thinking }: { thinking: boolean }) {
   return (
     <span
-      className="relative mt-0.5 block aspect-[144/167] w-8 shrink-0"
+      className="relative block aspect-[144/167] w-8 shrink-0 self-end"
       aria-hidden
     >
       {[
@@ -465,7 +477,7 @@ export function AskPanel({
         setMessages([]);
         setError(null);
         setPhase("vanishing");
-      }, 1100);
+      }, SHRED_CLEAR_DELAY);
 
       return () => clearTimeout(shredded);
     }
@@ -473,7 +485,7 @@ export function AskPanel({
     const away = setTimeout(() => {
       setPhase("idle");
       inputRef.current?.focus();
-    }, 520);
+    }, SHRED_RESET_DELAY);
 
     return () => clearTimeout(away);
   }, [phase]);
@@ -658,67 +670,86 @@ export function AskPanel({
           // the heading instead of being guillotined by the overflow box.
           className="no-scrollbar absolute inset-x-0 bottom-0 top-3 overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0,black_1rem)]"
         >
-          {empty ? (
-            // `min-h-full`, not `h-full`, and for the same reason the message
-            // column below uses it: pinned to an exact height, anything taller
-            // than the box overflows upward past the top of the scroller, where
-            // it cannot be scrolled back to. It has to be able to grow.
-            <div className="flex min-h-full flex-col justify-start gap-4">
-              <p className="text-base leading-6 text-foreground/80">
-                Work, projects, and this site.
-              </p>
+          <motion.div
+            initial={false}
+            animate={{
+              opacity: phase === "idle" ? 1 : 0,
+              transform:
+                phase === "idle" ? "translateY(0px)" : "translateY(-4px)",
+            }}
+            transition={
+              still
+                ? instant
+                : {
+                    duration: 0.18,
+                    ease,
+                    delay: phase === "shredding" ? 0.48 : 0,
+                  }
+            }
+            className="min-h-full"
+          >
+            {empty ? (
+              // `min-h-full`, not `h-full`, and for the same reason the message
+              // column below uses it: pinned to an exact height, anything taller
+              // than the box overflows upward past the top of the scroller, where
+              // it cannot be scrolled back to. It has to be able to grow.
+              <div className="flex min-h-full flex-col justify-start gap-4">
+                <p className="text-base leading-6 text-foreground/80">
+                  Work, projects, and this site.
+                </p>
 
-              <div className="border-t border-line">
-                {PROMPTS.map((prompt) => (
-                  <button
-                    key={prompt}
-                    type="button"
-                    onClick={() => void send(prompt)}
-                    className="block w-full border-b border-line px-1 py-2.5 text-left text-sm leading-5 text-muted transition-[color,background-color] duration-150 hover:bg-foreground/[0.025] hover:text-foreground"
+                <div className="border-t border-line">
+                  {PROMPTS.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => void send(prompt)}
+                      className="block w-full border-b border-line px-1 py-2.5 text-left text-sm leading-5 text-muted transition-[color,background-color] duration-150 hover:bg-foreground/[0.025] hover:text-foreground"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              // `justify-end` against a full-height column: the first couple of
+              // turns sit on the composer rather than floating at the top of an
+              // empty box, and the transcript starts scrolling once it outgrows it.
+              <div className="flex min-h-full flex-col justify-end gap-4">
+                {messages.map((message, i) => (
+                  <div
+                    key={message.id}
+                    className={
+                      message.role === "user"
+                        ? "flex justify-end"
+                        : "grid grid-cols-[2rem_minmax(0,1fr)] items-end gap-2.5 pr-2"
+                    }
+                    {...(message.role === "assistant"
+                      ? { role: "group", "aria-label": "Erik" }
+                      : {})}
                   >
-                    {prompt}
-                  </button>
+                    {message.role === "user" ? (
+                      <p className="max-w-[85%] rounded-2xl rounded-br-md bg-foreground/[0.065] px-3.5 py-2.5 text-left text-base leading-6 text-foreground/90">
+                        {message.content}
+                      </p>
+                    ) : (
+                      <>
+                        <AssistantAvatar
+                          thinking={busy && i === messages.length - 1}
+                        />
+                        <Reply
+                          content={message.content}
+                          streaming={busy && i === messages.length - 1}
+                          still={Boolean(still)}
+                          onReveal={stickToBottom}
+                        />
+                      </>
+                    )}
+                  </div>
                 ))}
               </div>
-            </div>
-          ) : (
-            // `justify-end` against a full-height column: the first couple of
-            // turns sit on the composer rather than floating at the top of an
-            // empty box, and the transcript starts scrolling once it outgrows it.
-            <div className="flex min-h-full flex-col justify-end gap-4">
-              {messages.map((message, i) => (
-                <div
-                  key={message.id}
-                  className={
-                    message.role === "user"
-                      ? "flex justify-end"
-                      : "grid grid-cols-[2rem_minmax(0,1fr)] items-start gap-2.5 pr-2"
-                  }
-                  {...(message.role === "assistant"
-                    ? { role: "group", "aria-label": "Erik" }
-                    : {})}
-                >
-                  {message.role === "user" ? (
-                    <p className="max-w-[85%] rounded-2xl rounded-br-md bg-foreground/[0.065] px-3.5 py-2.5 text-left text-base leading-6 text-foreground/90">
-                      {message.content}
-                    </p>
-                  ) : (
-                    <>
-                      <AssistantAvatar
-                        thinking={busy && i === messages.length - 1}
-                      />
-                      <Reply
-                        content={message.content}
-                        streaming={busy && i === messages.length - 1}
-                        still={Boolean(still)}
-                        onReveal={stickToBottom}
-                      />
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+            )}
+          </motion.div>
         </div>
       </div>
 
