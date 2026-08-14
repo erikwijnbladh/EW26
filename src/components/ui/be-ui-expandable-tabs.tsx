@@ -185,7 +185,6 @@ export function ExpandableTabs({
   const panelReady = panelSize.height > 0;
   const panelOpen = Boolean(active && panelReady);
   const closedInset = Math.max(0, (panelSize.width - toolbarWidth) / 2);
-  const closedScale = panelSize.width > 0 ? toolbarWidth / panelSize.width : 1;
 
   return (
     <div
@@ -249,15 +248,23 @@ export function ExpandableTabs({
         <motion.div
           aria-hidden
           initial={false}
-          animate={{
-            transform: immersiveOpen
-              ? "scaleX(1)"
-              : `scaleX(${closedScale})`,
-          }}
+          animate={{ opacity: immersiveOpen ? 0 : 1 }}
           transition={
             reduce
               ? { duration: 0 }
-              : { duration: 0.2, ease: EASE_IN_OUT }
+              : { duration: immersiveOpen ? 0.08 : 0.12, ease: EASE_OUT }
+          }
+          className="dock absolute inset-y-0 left-1/2 -translate-x-1/2"
+          style={{ width: toolbarWidth }}
+        />
+        <motion.div
+          aria-hidden
+          initial={false}
+          animate={{ opacity: immersiveOpen ? 1 : 0 }}
+          transition={
+            reduce
+              ? { duration: 0 }
+              : { duration: immersiveOpen ? 0.12 : 0.08, ease: EASE_OUT }
           }
           className="dock absolute inset-0"
         />
@@ -267,8 +274,10 @@ export function ExpandableTabs({
           const isActive = isPanel && item.id === active?.id;
           const isImmersiveControl = item.id === immersiveId;
           const itemLeft = BAR_PADDING + itemIndex * (TAB_WIDTH + BAR_GAP);
-          const restingX = closedInset;
-          const activeX = isImmersiveControl ? BAR_PADDING - itemLeft : restingX;
+          const centeredLeft = itemLeft - toolbarWidth / 2;
+          const activeX = isImmersiveControl
+            ? -closedInset - itemIndex * (TAB_WIDTH + BAR_GAP)
+            : 0;
           const baseClass = cn(
             "group absolute top-2 isolate grid size-9 place-items-center rounded-full text-muted outline-none",
             "transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
@@ -312,7 +321,6 @@ export function ExpandableTabs({
                 initial={false}
                 animate={{
                   opacity: immersiveOpen ? 0 : 1,
-                  transform: `translateX(${restingX}px)`,
                 }}
                 transition={
                   reduce
@@ -320,7 +328,7 @@ export function ExpandableTabs({
                     : { duration: immersiveOpen ? 0.1 : 0.14, ease: EASE_OUT }
                 }
                 className={baseClass}
-                style={{ left: itemLeft }}
+                style={{ left: `calc(50% + ${centeredLeft}px)` }}
                 {...(item.external
                   ? { target: "_blank", rel: "noopener noreferrer" }
                   : {})}
@@ -346,7 +354,7 @@ export function ExpandableTabs({
               initial={false}
               animate={{
                 opacity: immersiveOpen && !isImmersiveControl ? 0 : 1,
-                transform: `translateX(${immersiveOpen ? activeX : restingX}px)`,
+                transform: `translateX(${immersiveOpen ? activeX : 0}px)`,
               }}
               transition={
                 reduce
@@ -359,7 +367,7 @@ export function ExpandableTabs({
                       }
               }
               className={baseClass}
-              style={{ left: itemLeft }}
+              style={{ left: `calc(50% + ${centeredLeft}px)` }}
               onClick={
                 isPanel
                   ? () => setActive(isActive ? null : item.id)
