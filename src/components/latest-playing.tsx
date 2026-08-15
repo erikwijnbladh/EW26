@@ -291,8 +291,8 @@ export function LatestPlaying({
                 <span className="min-w-0 flex-1 truncate text-left">
                   {log[0].title}
                 </span>
-                <span className="shrink-0 text-xs tabular-nums text-muted/65">
-                  {log.length}
+                <span className="shrink-0 text-xs text-muted/65">
+                  Show
                 </span>
               </>
             )}
