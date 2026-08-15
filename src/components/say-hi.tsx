@@ -225,7 +225,7 @@ export function SayHiForm({
           Say hi
         </h2>
         <p className="mt-1 text-xs leading-relaxed text-muted">
-          A direct note. It lands in my inbox, not a CRM.
+          Reach out, pls don&rsquo;t try to sell me anything.
         </p>
       </div>
 
@@ -280,7 +280,7 @@ export function SayHiForm({
         <div className="mt-3 flex min-h-11 items-end gap-3">
           <div className="flex-1 text-xs font-light leading-relaxed">
             <AnimatePresence mode="wait" initial={false}>
-              {status === "error" && error ? (
+              {status === "error" && error && (
                 <motion.p
                   key="error"
                   role="alert"
@@ -297,17 +297,6 @@ export function SayHiForm({
                   >
                     Email instead.
                   </a>
-                </motion.p>
-              ) : (
-                <motion.p
-                  key="note"
-                  initial={still ? false : { opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: duration.fast, ease }}
-                  className="text-muted"
-                >
-                  No pitches, please. Good weird ideas welcome.
                 </motion.p>
               )}
             </AnimatePresence>
