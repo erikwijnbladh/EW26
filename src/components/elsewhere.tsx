@@ -10,6 +10,19 @@ import { easeGlide, springSnappy } from "@/lib/motion";
 
 const viewerTransition = { duration: 0.34, ease: easeGlide };
 
+/**
+ * The 21st.dev Image Tiles composition, stretched across five portrait cards.
+ * Each card keeps a deliberately imperfect resting angle, then lifts and
+ * nearly straightens under the pointer.
+ */
+const tilePositions = [
+  { left: "0%", y: 12, rotate: -8, hoverRotate: 1 },
+  { left: "17%", y: 2, rotate: 5, hoverRotate: -1 },
+  { left: "34%", y: -8, rotate: -3, hoverRotate: 0 },
+  { left: "51%", y: 4, rotate: 6, hoverRotate: 1 },
+  { left: "68%", y: 14, rotate: -6, hoverRotate: 2 },
+] as const;
+
 function Viewer({
   open,
   onClose,
@@ -179,42 +192,72 @@ export function Elsewhere() {
         <p className="text-[11px] text-muted/50">Tap to expand</p>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        {elsewhere.map((item, index) => (
-          <motion.button
-            key={item.src}
-            ref={(node) => {
-              tiles.current[index] = node;
-            }}
-            type="button"
-            aria-label={`Expand: ${item.caption}`}
-            onClick={() => {
-              openedFrom.current = index;
-              setOpen(index);
-            }}
-            className="group relative aspect-[2/3] overflow-hidden rounded-xl bg-surface shadow-ring outline-none focus-visible:ring-2 focus-visible:ring-foreground/40"
-            initial={still ? false : { opacity: 0, y: 12 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-5%" }}
-            transition={{ duration: still ? 0 : 0.45, delay: still ? 0 : index * 0.045, ease: easeGlide }}
-            whileHover={still ? undefined : { y: -3, scale: 1.015 }}
-            whileTap={still ? undefined : { scale: 0.985 }}
-          >
-            <Image
-              src={item.src}
-              alt={item.alt}
-              fill
-              sizes="(max-width: 640px) 30vw, 150px"
-              placeholder="blur"
-              blurDataURL={item.blur}
-              className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.035]"
-            />
-            <span
-              aria-hidden
-              className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-            />
-          </motion.button>
-        ))}
+      <div className="relative aspect-[3/2] w-full">
+        {elsewhere.map((item, index) => {
+          const position = tilePositions[index];
+
+          return (
+            <motion.button
+              key={item.src}
+              ref={(node) => {
+                tiles.current[index] = node;
+              }}
+              type="button"
+              aria-label={`Expand: ${item.caption}`}
+              onClick={() => {
+                openedFrom.current = index;
+                setOpen(index);
+              }}
+              className="group absolute top-[14%] aspect-[2/3] w-[32%] origin-bottom overflow-hidden rounded-xl bg-surface shadow-ring outline-none focus-visible:z-[60] focus-visible:ring-2 focus-visible:ring-foreground/40"
+              style={{
+                left: position.left,
+                zIndex: elsewhere.length - index,
+              }}
+              initial={
+                still
+                  ? false
+                  : { opacity: 0, y: position.y + 12, rotate: position.rotate }
+              }
+              whileInView={{
+                opacity: 1,
+                y: position.y,
+                rotate: still ? 0 : position.rotate,
+              }}
+              viewport={{ once: true, margin: "-5%" }}
+              transition={
+                still
+                  ? { duration: 0 }
+                  : {
+                      ...springSnappy,
+                      delay: index * 0.045,
+                    }
+              }
+              whileHover={
+                still
+                  ? undefined
+                  : {
+                      y: position.y - 10,
+                      rotate: position.hoverRotate,
+                    }
+              }
+              whileTap={still ? undefined : { scale: 0.985 }}
+            >
+              <Image
+                src={item.src}
+                alt={item.alt}
+                fill
+                sizes="(max-width: 640px) 32vw, 150px"
+                placeholder="blur"
+                blurDataURL={item.blur}
+                className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.035]"
+              />
+              <span
+                aria-hidden
+                className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+              />
+            </motion.button>
+          );
+        })}
       </div>
 
       <AnimatePresence>
