@@ -224,9 +224,6 @@ export function SayHiForm({
         <h2 className="text-xl font-medium leading-tight tracking-[-0.025em] text-foreground">
           Say hi
         </h2>
-        <p className="mt-1 text-xs leading-relaxed text-muted">
-          Reach out, pls don&rsquo;t try to sell me anything.
-        </p>
       </div>
 
       <form onSubmit={onSubmit} className="mt-4 flex grow flex-col">
@@ -280,7 +277,7 @@ export function SayHiForm({
         <div className="mt-3 flex min-h-11 items-end gap-3">
           <div className="flex-1 text-xs font-light leading-relaxed">
             <AnimatePresence mode="wait" initial={false}>
-              {status === "error" && error && (
+              {status === "error" && error ? (
                 <motion.p
                   key="error"
                   role="alert"
@@ -297,6 +294,17 @@ export function SayHiForm({
                   >
                     Email instead.
                   </a>
+                </motion.p>
+              ) : (
+                <motion.p
+                  key="note"
+                  initial={still ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: duration.fast, ease }}
+                  className="text-muted"
+                >
+                  Pls don&rsquo;t try to sell me anything.
                 </motion.p>
               )}
             </AnimatePresence>
