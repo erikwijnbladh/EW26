@@ -60,19 +60,19 @@ export type Track = {
   url?: string;
   /** Album art. Absent on the hand-written fallback list. */
   image?: string;
+  /** When Spotify logged the completed play. Absent for the live track. */
+  playedAt?: string;
 };
 
 /**
- * How many tracks the list keeps, and how many of those it shows before you
- * ask for the rest. Spotify is asked for `NOW_PLAYING_COUNT`, the first
- * `NOW_PLAYING_PREVIEW` render, and "view more" opens onto the full set.
+ * How many listening facts the widget keeps in total. The current player state
+ * leads when present; the remaining slots hold Spotify's recent-play log.
  *
  * The count used to be read off `nowPlaying.length` below, which tied how much
  * listening history the site fetches to how many songs happened to be typed
  * out by hand — editing the fallback silently changed the live widget.
  */
 export const NOW_PLAYING_COUNT = 10;
-export const NOW_PLAYING_PREVIEW = 5;
 
 /**
  * The fallback list, newest first. Edit by hand. Shown only when Spotify is

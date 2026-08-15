@@ -323,7 +323,7 @@ async function getRecent(token: string): Promise<Track[] | null> {
     if (seen.has(key)) continue;
 
     seen.add(key);
-    tracks.push(track);
+    tracks.push({ ...track, playedAt: item.played_at });
   }
 
   return tracks;

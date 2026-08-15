@@ -93,42 +93,6 @@ export const labelOpen: Transition = {
 export const labelClose: Transition = { duration: 0.16, ease };
 
 /**
- * The song drawer. Bounce is zero on purpose: the drawer clips its contents, so
- * any overshoot would briefly reveal empty space past the last row. Closing is
- * a little quicker than opening — there's less to take in on the way out.
- *
- * The drawer height, the cards' tuck and their blur all run on this one pair,
- * so the stack unfolds as a single movement instead of three that nearly agree.
- */
-export const curtainOpen: Transition = {
-  type: "spring",
-  duration: 0.62,
-  bounce: 0,
-};
-
-export const curtainClose: Transition = {
-  type: "spring",
-  duration: 0.5,
-  bounce: 0,
-};
-
-/**
- * A new song arriving at the top of the list, pushing everything down a place.
- *
- * Longer than the drawer and just barely underdamped: the movement is small —
- * one card's worth — and at that distance a critically damped spring reads as a
- * slide rather than something settling into place.
- */
-export const trackShift: Transition = {
-  type: "spring",
-  duration: 0.7,
-  bounce: 0.14,
-};
-
-/** The card falling off the end. Out of sight, so it only has to not snap. */
-export const trackLeave: Transition = { duration: 0.32, ease };
-
-/**
  * A word of a streamed answer resolving out of blur.
  *
  * Long, and expo-out, because the settle is the whole point — several of these

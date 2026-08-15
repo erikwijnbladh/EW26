@@ -1,90 +1,66 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
 import Image from "next/image";
-import {
-  AnimatePresence,
-  animate,
-  motion,
-  useMotionTemplate,
-  useMotionValue,
-  useReducedMotion,
-  useTransform,
-  type Transition,
-} from "motion/react";
-import {
-  NOW_PLAYING_COUNT,
-  NOW_PLAYING_PREVIEW,
-  type Track,
-} from "@/lib/data";
-import {
-  FADE,
-  FLAT,
-  FLAT_CONTENT,
-  GAP,
-  PAD,
-  PEEK,
-  STATIC_MASK,
-  TUCK,
-  stacked,
-  stackedContent,
-} from "@/lib/deck";
-import {
-  curtainClose,
-  curtainOpen,
-  instant,
-  springSnappy,
-  trackLeave,
-  trackShift,
-} from "@/lib/motion";
+import { useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { NOW_PLAYING_COUNT, type Track } from "@/lib/data";
+import { duration, ease, instant } from "@/lib/motion";
 import type { Playing } from "@/lib/spotify";
 import { usePlaying } from "@/components/use-playing";
 
-/**
- * Only the two numbers the drawer needs, resolved at measure time. Deliberately
- * not the card array: indexing it later is how a list shorter than the preview
- * took the whole page down.
- */
-type Metrics = { collapsed: number; full: number };
+const timeFormatter = new Intl.DateTimeFormat("sv-SE", {
+  hour: "2-digit",
+  minute: "2-digit",
+  hour12: false,
+  timeZone: "Europe/Stockholm",
+});
 
-/** Further down than the section can get, for a mask that must hide nothing. */
-const OPAQUE = 100_000;
+const revealTransition = {
+  height: { duration: 0.28, ease },
+  opacity: { duration: 0.18, ease },
+};
 
-/**
- * Stable per-card keys, so a poll that prepends a song moves the existing cards
- * rather than re-mounting all of them one place down.
- *
- * The server de-duplicates by title and artist, so the pair is already an
- * identity. Repeats still get a suffix: a hand-written fallback or a change
- * upstream must not be able to collide two cards onto one key.
- */
-function keysFor(tracks: Track[]) {
-  const seen = new Map<string, number>();
-
-  return tracks.map((track) => {
-    const base = `${track.title}::${track.artist}`;
-    const n = seen.get(base) ?? 0;
-    seen.set(base, n + 1);
-    return n ? `${base}::${n}` : base;
-  });
+function keyFor(track: Track, index: number) {
+  return (
+    track.playedAt ??
+    track.url ??
+    `${track.title}::${track.artist}::${index}`
+  );
 }
 
-/**
- * Audio lines: the inner four bars breathe between two heights on loops of
- * different lengths, so they never sync up. Sits beside the heading to mark
- * that something is playing right now.
- */
-function AudioLines() {
-  const still = useReducedMotion();
+function playedAt(track: Track, index: number) {
+  if (!track.playedAt) return String(index + 2).padStart(2, "0");
 
-  const bar = (rest: string, peak: string, duration: number) => (
+  const date = new Date(track.playedAt);
+  return Number.isNaN(date.getTime())
+    ? String(index + 2).padStart(2, "0")
+    : timeFormatter.format(date);
+}
+
+/** A quiet fallback that still reads as intentional when artwork is absent. */
+function RecordMark() {
+  return (
+    <span className="flex size-full items-center justify-center bg-foreground/[0.055] text-muted/75">
+      <svg
+        viewBox="0 0 24 24"
+        className="size-4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.5}
+        aria-hidden
+      >
+        <circle cx="12" cy="12" r="7.5" />
+        <circle cx="12" cy="12" r="2" />
+      </svg>
+    </span>
+  );
+}
+
+/** The player is advancing. Reduced motion leaves the equaliser still. */
+function AudioLines() {
+  const still = !!useReducedMotion();
+
+  const bar = (rest: string, peak: string, barDuration: number) => (
     <motion.path
       key={rest}
       d={rest}
@@ -92,8 +68,8 @@ function AudioLines() {
       animate={still ? { d: rest } : { d: [rest, peak, rest] }}
       transition={
         still
-          ? { duration: 0 }
-          : { duration, repeat: Infinity, ease: "easeInOut" }
+          ? instant
+          : { duration: barDuration, repeat: Infinity, ease: "easeInOut" }
       }
     />
   );
@@ -119,7 +95,6 @@ function AudioLines() {
   );
 }
 
-/** Not advancing — the player is paused, or there's nothing loaded at all. */
 function PlayOff() {
   return (
     <svg
@@ -139,149 +114,129 @@ function PlayOff() {
   );
 }
 
-/**
- * The contents of one card: art, title, artist.
- *
- * An anchor when Spotify gave the track a URL and the card is reachable, a plain
- * div otherwise — the hand-written fallback has no links, and a row that looks
- * clickable and isn't is worse than one that never claimed to be. The hover and
- * press states are on the same element as the link for that reason: they exist
- * only where there is something to press.
- *
- * Hover is gated behind `(hover: hover)` in CSS rather than here, so a tap on a
- * touch device doesn't leave a card stuck in its hover state after the finger
- * has gone.
- */
-function TrackRow({
-  track,
-  hasArt,
-  live,
-  interactive,
-  still,
-  content,
-  contentTransition,
-}: {
-  track: Track;
-  hasArt: boolean;
-  live: boolean;
-  interactive: boolean;
-  still: boolean;
-  content: { opacity: number };
-  contentTransition: Transition;
-}) {
-  const inner = (
+function Chevron({ expanded, still }: { expanded: boolean; still: boolean }) {
+  return (
     <motion.span
-      className="flex min-w-0 flex-1 items-center gap-3"
+      className="inline-flex size-3.5 items-center justify-center"
       initial={false}
-      animate={content}
-      transition={contentTransition}
+      animate={{ rotate: expanded ? 180 : 0 }}
+      transition={still ? instant : { duration: duration.fast, ease }}
+      aria-hidden
     >
-      {hasArt && (
-        <span className="relative size-8 shrink-0 overflow-hidden rounded-[3px] bg-foreground/[0.06]">
-          {track.image && (
-            <Image
-              src={track.image}
-              alt=""
-              fill
-              sizes="64px"
-              className="object-cover"
-            />
-          )}
-        </span>
-      )}
-
-      {/*
-        The live card trades its art tile for the equaliser. Without art there's
-        no tile to put a badge on, and "playing" is the one thing worth a glyph
-        of its own — the heading says it for the section, this says it for the
-        row, which is what makes the top card look like the current one rather
-        than merely the first.
-      */}
-      {!hasArt && live && (
-        <span className="shrink-0 text-foreground/70">
-          <AudioLines />
-        </span>
-      )}
-
-      <span className="min-w-0 truncate text-[15px] text-foreground">
-        {track.title}
-      </span>
-      <span className="ml-auto shrink-0 truncate pl-4 text-[15px] font-light text-muted">
-        {track.artist}
-      </span>
+      <svg
+        viewBox="0 0 24 24"
+        className="size-3.5"
+        fill="none"
+      >
+        <path
+          d="m7 10 5 5 5-5"
+          stroke="currentColor"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
     </motion.span>
   );
+}
 
-  const className = `track-row flex items-center gap-3 rounded-xl px-3 ${
-    hasArt ? "py-2" : "py-2.5"
-  }`;
+function Artwork({ track }: { track: Track }) {
+  return (
+    <span className="relative size-8 shrink-0 overflow-hidden rounded-[3px]">
+      {track.image ? (
+        <Image
+          src={track.image}
+          alt=""
+          fill
+          sizes="64px"
+          className="object-cover"
+        />
+      ) : (
+        <RecordMark />
+      )}
+    </span>
+  );
+}
 
-  if (!track.url || !interactive) {
-    return <div className={className}>{inner}</div>;
-  }
+/**
+ * The one stable surface in the widget. It never participates in the history
+ * animation, so polling, opening, and closing cannot change its geometry.
+ */
+function FeaturedTrack({ track }: { track: Track }) {
+  const contents = (
+    <>
+      <Artwork track={track} />
+      <span className="min-w-0 truncate text-[15px] leading-5 text-foreground">
+        {track.title}
+      </span>
+      <span className="min-w-0 truncate text-right text-sm font-light leading-5 text-muted">
+        {track.artist}
+      </span>
+    </>
+  );
+
+  const className =
+    "listening-link -mx-2 grid h-12 grid-cols-[2rem_minmax(0,1fr)_minmax(0,0.58fr)] items-center gap-3 rounded-md px-2 outline-none focus-visible:ring-2 focus-visible:ring-foreground/25";
+
+  if (!track.url) return <div className={className}>{contents}</div>;
 
   return (
-    <motion.a
+    <a
       href={track.url}
       target="_blank"
       rel="noreferrer noopener"
-      // The visible text is the title and the artist, which out of context reads
-      // as neither a link nor a destination.
       aria-label={`${track.title} by ${track.artist} — open in Spotify`}
-      whileTap={still ? undefined : { scale: 0.985 }}
-      transition={springSnappy}
-      className={`${className} outline-none focus-visible:ring-2 focus-visible:ring-foreground/30`}
+      className={className}
     >
-      {inner}
-    </motion.a>
+      {contents}
+    </a>
   );
 }
 
-function Chevron({ up }: { up: boolean }) {
+function HistoryRow({ track, index }: { track: Track; index: number }) {
+  const label = playedAt(track, index);
+  const contents = (
+    <>
+      {track.playedAt ? (
+        <time dateTime={track.playedAt} className="text-xs text-muted/75">
+          {label}
+        </time>
+      ) : (
+        <span className="text-xs tabular-nums text-muted/75">{label}</span>
+      )}
+      <span className="min-w-0 truncate text-sm leading-5 text-foreground/80">
+        {track.title}
+      </span>
+      <span className="min-w-0 truncate text-right text-sm font-light leading-5 text-muted">
+        {track.artist}
+      </span>
+    </>
+  );
+
+  const className =
+    "listening-link -mx-2 grid min-h-9 grid-cols-[2.75rem_minmax(0,1.25fr)_minmax(0,0.75fr)] items-baseline rounded-md px-2 py-2 outline-none focus-visible:ring-2 focus-visible:ring-foreground/25 sm:grid-cols-[3.25rem_minmax(0,1.45fr)_minmax(0,1fr)]";
+
+  if (!track.url) return <li className={className}>{contents}</li>;
+
   return (
-    <motion.svg
-      viewBox="0 0 24 24"
-      className="size-3.5"
-      animate={{ rotate: up ? 180 : 0 }}
-      transition={springSnappy}
-      aria-hidden
-    >
-      <path
-        d="m7 10 5 5 5-5"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1.75}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </motion.svg>
+    <li>
+      <a
+        href={track.url}
+        target="_blank"
+        rel="noreferrer noopener"
+        aria-label={`${track.title} by ${track.artist} — open in Spotify`}
+        className={className}
+      >
+        {contents}
+      </a>
+    </li>
   );
 }
 
 /**
- * The last few tracks as a stack of cards, with the rest behind a toggle.
- *
- * Closed, the cards tuck under each other and go progressively blurred, dimmer
- * and slightly smaller, so the list reads as a deck seen from the front rather
- * than a table that stops. Open, every card is sharp, level and full size —
- * blur is how depth is drawn, so there is none left once nothing is behind
- * anything.
- *
- * Every card stays mounted and only the wrapper's height moves, so the document
- * shrinks gradually instead of in one frame — which is what made collapsing at
- * the bottom of a phone screen jump. Height, tuck, blur, dim and scale all run
- * off the same spring pair, so it's one movement and not five.
- *
- * The live track heads the same deck rather than sitting in a slot of its own.
- * `Playing` keeps it apart from the log because they are different facts — one
- * is the player's state, the other is what Spotify has logged as played — but
- * that is a distinction about where the data comes from, not one the deck has
- * to draw. They stack.
- *
- * The props are the server's answer, streamed in at request time. `usePlaying`
- * takes over once there's a client to poll with, and a new song lands on top:
- * the card fades in out of a blur while the rest slide down a place under it
- * and the last one drops off the bottom.
+ * A favicon-scale current track with a chronological listening log beneath it.
+ * The current row remains pinned while the log opens in normal document flow;
+ * only the log's clipping height and collective opacity animate.
  */
 export function LatestPlaying({
   current: initialCurrent,
@@ -293,275 +248,75 @@ export function LatestPlaying({
     playing: initialPlaying,
     history: initialHistory,
   });
-
   const [expanded, setExpanded] = useState(false);
-  const still = useReducedMotion();
-  const listRef = useRef<HTMLOListElement>(null);
-  const [metrics, setMetrics] = useState<Metrics | null>(null);
+  const still = !!useReducedMotion();
 
-  // One deck: whatever the player is on, then the log behind it. Re-trimmed
-  // because `current` and `history` are counted separately by the server, so
-  // together they run one past what the list shows.
+  // Keep the widget at ten visible facts in total. The featured track is the
+  // current player state when one exists, otherwise the newest logged play.
   const tracks = (current ? [current, ...history] : history).slice(
     0,
     NOW_PLAYING_COUNT,
   );
+  const featured = tracks[0];
+  const log = tracks.slice(1);
 
-  // Spotify can hand back fewer plays than the preview wants — a short log, or
-  // a run of the same song collapsing under de-duplication. Then there's
-  // nothing behind the fold, so there's no drawer, no stack and no toggle: the
-  // list is simply the list, flat and sharp.
-  const preview = Math.min(NOW_PLAYING_PREVIEW, tracks.length);
-  const expandable = tracks.length > preview;
+  if (!featured) return null;
 
-  // Render the preview only until hydrated, so no-JS and the first paint show
-  // five cards rather than flashing all ten before we can measure them.
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false,
-  );
-
-  const progress = useMotionValue(0);
-
-  const height = useTransform(
-    progress,
-    [0, 1],
-    [metrics?.collapsed ?? 0, metrics?.full ?? 0],
-  );
-  // Closed, the fade sits on the bottom edge and eats the peeking sliver. Open,
-  // both stops are past the end — nothing is hidden, so there's nothing to hint
-  // at, and the last card keeps its shadow.
-  //
-  // A list with nothing behind the fold gets both stops parked past any height
-  // the section could have, rather than the property being dropped: once motion
-  // has written a mask onto the element, handing it `undefined` leaves the last
-  // one it wrote. A poll that shortens the list below the preview — a run of
-  // one song collapsing under de-duplication — would otherwise keep fading at a
-  // stop measured for rows that are no longer there.
-  const solid = useTransform(
-    progress,
-    [0, 1],
-    expandable
-      ? [(metrics?.collapsed ?? 0) - FADE, metrics?.full ?? 0]
-      : [OPAQUE, OPAQUE],
-  );
-  const clear = useTransform(
-    progress,
-    [0, 1],
-    expandable
-      ? [metrics?.collapsed ?? 0, (metrics?.full ?? 0) + FADE]
-      : [OPAQUE, OPAQUE],
-  );
-  const mask = useMotionTemplate`linear-gradient(to bottom, #000 0px, #000 ${solid}px, transparent ${clear}px)`;
-
-  const measure = useCallback(() => {
-    const el = listRef.current;
-    if (!el) return;
-
-    // A card on its way out is still a child, pinned where it was — so the
-    // list is measured from the ones that are actually holding a place in it.
-    const nodes = (Array.from(el.children) as HTMLElement[]).filter(
-      (node) => getComputedStyle(node).position !== "absolute",
-    );
-    if (nodes.length < tracks.length) return;
-
-    // `offsetTop`/`offsetHeight` rather than bounding boxes: the cards carry a
-    // transform at rest, and a measured box would fold the tuck and the shrink
-    // back into the numbers the tuck is computed from.
-    const fold = nodes[preview - 1];
-    const last = nodes[tracks.length - 1];
-    if (!fold || !last) return;
-
-    setMetrics({
-      collapsed:
-        fold.offsetTop + fold.offsetHeight - TUCK * (preview - 1) + PEEK,
-      full: last.offsetTop + last.offsetHeight + PAD,
-    });
-  }, [tracks.length, preview]);
-
-  // Measured before paint, so the collapsed height is in place on the same
-  // frame the extra cards mount.
-  useLayoutEffect(measure, [mounted, measure]);
-
-  useEffect(() => {
-    const el = listRef.current;
-    if (!el) return;
-    // Re-measure when the cards rewrap at a new width.
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [measure]);
-
-  useEffect(() => {
-    if (still) {
-      progress.set(expanded ? 1 : 0);
-      return;
-    }
-
-    const controls = animate(
-      progress,
-      expanded ? 1 : 0,
-      expanded ? curtainOpen : curtainClose,
-    );
-
-    return () => controls.stop();
-  }, [expanded, still, progress]);
-
-  const cards = mounted ? tracks : tracks.slice(0, preview);
-  const keys = keysFor(cards);
-  const drawer = expandable && metrics !== null;
-  const deck = expandable && !expanded;
-
-  // Before the first measurement the document has the cards at their untucked
-  // heights, which leaves the stack floating above a hole exactly the size of
-  // the tuck it hasn't been told about. Constant, and independent of how tall a
-  // card turns out to be, so the unmeasured state lands where the measured one
-  // will and hydration doesn't shift the page.
-  const settle = PEEK - PAD - TUCK * (preview - 1);
-
-  // All or nothing in practice — Spotify has art for everything, the
-  // hand-written fallback for nothing. Ten empty tiles would just read as a
-  // broken grid, so without art the cards keep their plain layout.
-  const hasArt = tracks.some((track) => track.image);
+  const heading = playing
+    ? "Playing now"
+    : current && !held
+      ? "Paused"
+      : "Latest playing";
 
   return (
-    <section aria-label="Latest playing" style={{ overflowAnchor: "none" }}>
-      {/*
-        The live marker sits with the heading rather than on the card's album
-        art. Over the art it needed a scrim to stay legible, which meant the
-        one cover with anything happening to it was the one you could see
-        least — and it read as a play button, as though the tile were a
-        control. Up here it's just a status next to the word that states it.
-      */}
-      {/*
-        Three states, not two. A paused player still has a track loaded, and
-        saying "Playing now" over it would be wrong while dropping it entirely
-        is how pausing used to make the song disappear.
-
-        "Paused" is only claimed while Spotify is still reporting the track. A
-        held one — the session went idle and took the answer with it — falls
-        back to the neutral wording, because by then we know what was last on
-        but nothing about the player.
-      */}
-      <p className="flex items-center gap-2 text-xs text-muted/70">
-        {playing ? "Playing now" : current && !held ? "Paused" : "Latest playing"}
+    <section aria-label="Listening" className="[overflow-anchor:none]">
+      <p className="flex h-4 items-center gap-2 text-xs leading-4 text-muted/75">
+        {heading}
         {playing ? <AudioLines /> : <PlayOff />}
       </p>
 
-      {/*
-        Bled out sideways and padded back in: the clip that hides the deck would
-        otherwise cut the cards' shadows off flat against both edges.
-      */}
-      <motion.div
-        className="-mx-3 mt-4 overflow-hidden px-3"
-        style={{
-          height: drawer ? height : "auto",
-          // Nothing is hidden when the list is short, so a fade would be a lie.
-          maskImage: drawer ? mask : expandable ? STATIC_MASK : "none",
-          WebkitMaskImage: drawer ? mask : expandable ? STATIC_MASK : "none",
-        }}
-      >
-        <ol
-          ref={listRef}
-          className="relative flex flex-col"
-          style={{
-            gap: GAP,
-            paddingBottom: PAD,
-            marginBottom: drawer || !expandable ? 0 : settle,
-          }}
-        >
-          {/*
-            `popLayout` takes the card falling off the end out of the flow the
-            moment it starts leaving, rather than letting it hold its slot for
-            the length of its fade. Held, it pushes the last real card past the
-            end of the drawer, which then has to slide back up from under the
-            clip once the fade finishes — the whole list settles and then the
-            bottom of it moves again.
-          */}
-          <AnimatePresence initial={false} mode="popLayout">
-            {cards.map((track, i) => (
-              /*
-                Two elements per card on purpose. The outer one owns the card's
-                place in the list — arriving, leaving, and sliding down when
-                something lands above it. The inner one owns where that card
-                sits in the deck. Kept apart because both animate a transform,
-                and one element can only have the one.
-              */
-              <motion.li
-                key={keys[i]}
-                layout
-                // Blocked by `AnimatePresence initial={false}` for the cards
-                // that are there on the first render, so this only ever runs
-                // for a song that actually arrived. The server renders the
-                // settled state either way.
-                initial={{ opacity: 0, filter: "blur(10px)" }}
-                animate={{ opacity: 1, filter: "blur(0px)" }}
-                exit={{
-                  opacity: 0,
-                  transition: still ? instant : trackLeave,
-                }}
-                transition={still ? instant : trackShift}
-                // Front of the deck paints over the back of it. Without this,
-                // document order does the opposite and each card is tucked
-                // *over* the one it should be sliding under.
-                style={{ position: "relative", zIndex: cards.length - i }}
-                aria-hidden={expandable && i >= preview && !expanded}
-              >
-                <motion.div
-                  // The depth a card mounts at is simply the depth it has —
-                  // there's nothing to animate from, and a stack that assembled
-                  // itself on every hydration would be a party trick.
-                  initial={false}
-                  animate={deck ? stacked(i, preview) : FLAT}
-                  transition={
-                    still ? instant : expanded ? curtainOpen : curtainClose
-                  }
-                  style={{ transformOrigin: "center top" }}
-                  // Clipped, so the row's hover wash takes the card's corners
-                  // rather than squaring them off.
-                  className="track-card overflow-hidden rounded-xl"
-                >
-                  <TrackRow
-                    track={track}
-                    hasArt={hasArt}
-                    // The equaliser marks the row the player is actually
-                    // advancing through. `current` heads the deck, so that is
-                    // the first card — and only while it's playing, since a
-                    // paused track is the current one but isn't moving.
-                    live={playing && !!current && i === 0}
-                    // The card behind shows an edge, not a half-clipped title.
-                    content={deck ? stackedContent(i) : FLAT_CONTENT}
-                    contentTransition={
-                      still ? instant : expanded ? curtainOpen : curtainClose
-                    }
-                    // Only the cards you can actually reach are reachable. The
-                    // ones behind the fold are `aria-hidden` and under a mask;
-                    // letting the keyboard land on one would scroll the drawer
-                    // to something the drawer is closed over.
-                    interactive={!(expandable && i >= preview && !expanded)}
-                    still={!!still}
-                  />
-                </motion.div>
-              </motion.li>
-            ))}
-          </AnimatePresence>
-        </ol>
-      </motion.div>
+      <div className="mt-3">
+        <FeaturedTrack track={featured} />
+      </div>
 
-      {expandable && (
-        <motion.button
-          type="button"
-          onClick={() => setExpanded((v) => !v)}
-          aria-expanded={expanded}
-          whileTap={still ? undefined : { scale: 0.97 }}
-          transition={springSnappy}
-          className="mt-4 flex items-center gap-1.5 text-xs text-muted/70 transition-colors duration-150 hover:text-foreground"
-        >
-          {expanded ? "Show less" : `View more (${tracks.length})`}
-          <Chevron up={expanded} />
-        </motion.button>
-      )}
+      {log.length > 0 ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setExpanded((value) => !value)}
+            aria-expanded={expanded}
+            aria-controls="listening-history"
+            className="-ml-2 mt-1 flex min-h-9 items-center gap-1.5 rounded-md px-2 text-[13px] text-muted/80 outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/25 max-sm:min-h-11"
+          >
+            {expanded ? "Hide listening log" : `Listening log · ${tracks.length}`}
+            <Chevron expanded={expanded} still={still} />
+          </button>
+
+          <AnimatePresence initial={false}>
+            {expanded ? (
+              <motion.div
+                id="listening-history"
+                key="listening-history"
+                initial={still ? false : { height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={still ? instant : revealTransition}
+                className="overflow-hidden"
+              >
+                <ol className="pb-1 pt-1">
+                  {log.map((track, index) => (
+                    <HistoryRow
+                      key={keyFor(track, index)}
+                      track={track}
+                      index={index}
+                    />
+                  ))}
+                </ol>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </>
+      ) : null}
     </section>
   );
 }
