@@ -179,40 +179,74 @@ summary {
     0 16px 40px rgba(21, 20, 15, 0.09);
 }
 
-/* Track cards. Slightly lighter than the page with a hairline ring and a low,
-   tight shadow — enough for one card to read as sitting on top of the next
-   where they overlap, without ten of them turning into a pile of drop shadows.
-   Opaque on purpose: the stack tucks the cards under each other, and anything
-   translucent would show the blurred card behind through the sharp one. */
-.track-card {
-  background: color-mix(in srgb, var(--background) 35%, #fff 65%);
-  box-shadow:
-    0 0 0 0.5px var(--line),
-    0 1px 1px rgba(21, 20, 15, 0.04),
-    0 3px 10px rgba(21, 20, 15, 0.07);
-  /* The stack tapers with scaleX, which would stretch the corner radius into
-     ellipses on the cards behind. Vector-effect has no CSS equivalent here, so
-     the radius is simply small enough that the distortion at 0.96 is under a
-     pixel — and the shadow, being drawn from the same box, tapers with it,
-     which is what you want anyway. */
+/* Music links stay part of the page until the pointer reaches them. The hover
+   wash is deliberately gated so tapping on touch cannot leave a row lit. */
+.listening-link {
   transition:
-    background-color 200ms cubic-bezier(0.23, 1, 0.32, 1),
-    box-shadow 200ms cubic-bezier(0.23, 1, 0.32, 1);
+    background-color 160ms cubic-bezier(0.23, 1, 0.32, 1),
+    box-shadow 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-/* The pressable surface inside the card. Separate from `.track-card` because
-   that element is carrying the deck transform, and a hover that changed its
-   transform would fight the stack. */
-.track-row {
-  display: flex;
-  transition: background-color 200ms cubic-bezier(0.23, 1, 0.32, 1);
+/* One surface, not a deck: enough lift to separate the live fact from its log
+   without reintroducing stacked cards or a second visual language. */
+.listening-feature {
+  background: color-mix(in srgb, var(--background) 32%, white 68%);
+  box-shadow:
+    0 0 0 0.5px color-mix(in srgb, var(--foreground) 14%, transparent),
+    0 1px 1px rgba(21, 20, 15, 0.03),
+    0 5px 14px rgba(21, 20, 15, 0.055);
 }
 
-/* Touch devices fire hover on tap and then keep it until you tap elsewhere, so
-   a card would stay lit after the finger left. */
+/* The historical tracks share one inset sheet. Each row has enough surface
+   treatment to feel composed, while the shared container keeps nine tracks
+   from becoming nine floating cards. */
+.listening-history-surface {
+  background: color-mix(in srgb, var(--foreground) 3%, transparent);
+  box-shadow: inset 0 0 0 0.5px
+    color-mix(in srgb, var(--foreground) 11%, transparent);
+}
+
+.listening-history-row {
+  background: color-mix(in srgb, var(--background) 42%, white 58%);
+  box-shadow: inset 0 0 0 0.5px
+    color-mix(in srgb, var(--foreground) 7%, transparent);
+}
+
+.listening-pressable {
+  transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.listening-pressable:active {
+  transform: scale(0.985);
+}
+
 @media (hover: hover) and (pointer: fine) {
-  a.track-row:hover {
-    background: color-mix(in srgb, var(--foreground) 4%, transparent);
+  a.listening-link:hover {
+    background: color-mix(in srgb, var(--foreground) 3.5%, transparent);
+  }
+
+  a.listening-history-row:hover {
+    background: color-mix(in srgb, var(--background) 18%, white 82%);
+    box-shadow: inset 0 0 0 0.5px
+      color-mix(in srgb, var(--foreground) 12%, transparent);
+  }
+
+  a.listening-feature:hover {
+    background: color-mix(in srgb, var(--background) 20%, white 80%);
+    box-shadow:
+      0 0 0 0.5px color-mix(in srgb, var(--foreground) 17%, transparent),
+      0 1px 2px rgba(21, 20, 15, 0.035),
+      0 7px 18px rgba(21, 20, 15, 0.07);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .listening-pressable {
+    transition: none;
+  }
+
+  .listening-pressable:active {
+    transform: none;
   }
 }
 
