@@ -37,7 +37,7 @@ function TooltipTrigger(
 }
 
 const tooltipVariants = cva(
-  "z-50 overflow-hidden whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-medium leading-none tracking-[0.01em] will-change-[transform,opacity] data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-[state=delayed-open]:zoom-in-95 data-[state=instant-open]:animate-none data-[state=closed]:animate-none data-[side=bottom]:slide-in-from-top-1 data-[side=left]:slide-in-from-right-1 data-[side=right]:slide-in-from-left-1 data-[side=top]:slide-in-from-bottom-1 motion-reduce:animate-none",
+  "z-50 overflow-hidden whitespace-nowrap rounded-full px-2.5 py-1.5 text-[11px] font-medium leading-none tracking-[0.01em] will-change-[transform,opacity] [transform-origin:var(--radix-tooltip-content-transform-origin)] animate-in fade-in-0 zoom-in-95 ease-[cubic-bezier(0.23,1,0.32,1)] data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-[8px] data-[side=left]:slide-in-from-right-[8px] data-[side=right]:slide-in-from-left-[8px] data-[side=top]:slide-in-from-bottom-[8px] motion-reduce:zoom-in-100 motion-reduce:data-[state=closed]:zoom-out-100 motion-reduce:data-[side=bottom]:slide-in-from-top-[0px] motion-reduce:data-[side=left]:slide-in-from-right-[0px] motion-reduce:data-[side=right]:slide-in-from-left-[0px] motion-reduce:data-[side=top]:slide-in-from-bottom-[0px]",
   {
     variants: {
       variant: {
