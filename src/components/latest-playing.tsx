@@ -8,10 +8,7 @@ import { duration, ease, instant } from "@/lib/motion";
 import type { Playing } from "@/lib/spotify";
 import { usePlaying } from "@/components/use-playing";
 
-const revealTransition = {
-  height: { duration: 0.28, ease },
-  opacity: { duration: 0.18, ease },
-};
+const flyoutTransition = { duration: 0.22, ease };
 
 function keyFor(track: Track, index: number) {
   return (
@@ -307,20 +304,48 @@ export function LatestPlaying({
               <motion.div
                 id="listening-history"
                 key="listening-history"
-                initial={still ? false : { height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={still ? instant : revealTransition}
+                initial={still ? false : { height: 0 }}
+                animate={{ height: "auto" }}
+                exit={{ height: 0 }}
+                transition={still ? instant : flyoutTransition}
                 className="overflow-hidden"
               >
-                <ol className="listening-history-surface mt-1 flex flex-col gap-1 rounded-xl p-1">
+                <motion.ol
+                  initial={
+                    still
+                      ? { opacity: 0 }
+                      : {
+                          opacity: 0,
+                          transform: "translateY(8px) scale(0.95)",
+                        }
+                  }
+                  animate={{
+                    opacity: 1,
+                    transform: "translateY(0px) scale(1)",
+                  }}
+                  exit={
+                    still
+                      ? { opacity: 0 }
+                      : {
+                          opacity: 0,
+                          transform: "translateY(8px) scale(0.95)",
+                        }
+                  }
+                  transition={
+                    still
+                      ? { duration: duration.fast, ease }
+                      : flyoutTransition
+                  }
+                  style={{ transformOrigin: "top center" }}
+                  className="listening-history-surface mt-1 flex flex-col gap-1 rounded-xl p-1"
+                >
                   {log.map((track, index) => (
                     <HistoryRow
                       key={keyFor(track, index)}
                       track={track}
                     />
                   ))}
-                </ol>
+                </motion.ol>
               </motion.div>
             ) : null}
           </AnimatePresence>
