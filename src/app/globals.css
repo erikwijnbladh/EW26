@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* The static foundations of the site: geometry, density and the warm stone
    palette. They stay as custom properties so utilities and hand-written CSS

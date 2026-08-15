@@ -131,7 +131,7 @@ export function Dock() {
             items={[
               {
                 id: "ask",
-                label: "Ask",
+                label: "AI",
                 icon: <BotIcon awake={active === "ask"} />,
                 content: (
                   <AskPanel
@@ -142,7 +142,7 @@ export function Dock() {
               },
               {
                 id: "say-hi",
-                label: "Say hi",
+                label: "Contact",
                 icon: <ChatIcon />,
                 content: (
                   <SayHiForm open={active === "say-hi"} onClose={close} />
@@ -151,6 +151,7 @@ export function Dock() {
               {
                 id: "email",
                 label: copied ? "Copied" : "Copy email",
+                tooltipLabel: "Copy email",
                 icon: <CopyIcon copied={copied} />,
                 onClick: () => void copyEmail(),
               },

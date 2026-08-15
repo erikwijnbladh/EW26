@@ -7,10 +7,16 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  type ReactElement,
   type ReactNode,
 } from "react";
-import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 const EASE_IN_OUT = [0.77, 0, 0.175, 1] as const;
@@ -25,6 +31,7 @@ export type ExpandableTabsItem = {
   id: string;
   label: string;
   icon: ReactNode;
+  tooltipLabel?: string;
   content?: ReactNode;
   href?: string;
   external?: boolean;
@@ -55,10 +62,6 @@ export interface ExpandableTabsProps {
 
 type Size = { width: number; height: number };
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
 function sameSizes(a: Record<string, Size>, b: Record<string, Size>) {
   const keys = Object.keys(a);
   return (
@@ -66,6 +69,31 @@ function sameSizes(a: Record<string, Size>, b: Record<string, Size>) {
     keys.every(
       (key) => a[key]?.width === b[key]?.width && a[key]?.height === b[key]?.height,
     )
+  );
+}
+
+/**
+ * A visual label for the dense dock. Radix owns hover intent, focus and the
+ * instant handoff between neighbours; the pill itself stays entirely ours.
+ */
+function DockTooltip({
+  label,
+  disabled,
+  trigger,
+}: {
+  label: string;
+  disabled: boolean;
+  trigger: ReactElement;
+}) {
+  if (disabled) return trigger;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>{trigger}</TooltipTrigger>
+      <TooltipContent side="top" sideOffset={9}>
+        {label}
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -293,115 +321,138 @@ export function ExpandableTabs({
           />
         </div>
 
-        {items.map((item, itemIndex) => {
-          const isPanel = Boolean(item.content);
-          const isActive = isPanel && item.id === active?.id;
-          const isImmersiveControl = item.id === immersiveId;
-          const itemLeft = BAR_PADDING + itemIndex * (TAB_WIDTH + BAR_GAP);
-          const centeredLeft = itemLeft - toolbarWidth / 2;
-          const activeX = isImmersiveControl
-            ? -closedInset - itemIndex * (TAB_WIDTH + BAR_GAP)
-            : 0;
-          const baseClass = cn(
-            "group absolute top-2 isolate grid size-9 place-items-center rounded-full text-muted outline-none",
-            "transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
-            "focus-visible:ring-1 focus-visible:ring-foreground/35",
-            isActive && "text-foreground",
-            immersiveOpen && !isImmersiveControl && "pointer-events-none",
-            classNames?.tab,
-            isActive && classNames?.activeTab,
-          );
-
-          const icon = (
-            <>
-              {isActive && (
-                <span
-                  aria-hidden
-                  className={cn(
-                    "absolute inset-0 -z-10 rounded-full bg-foreground/[0.07] shadow-[inset_0_0_0_0.5px_var(--line)]",
-                    classNames?.pill,
-                  )}
-                />
-              )}
-              <span
-                className={cn(
-                  "grid place-items-center transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] group-active:scale-[0.96] motion-reduce:group-active:scale-100",
-                  classNames?.icon,
-                )}
-              >
-                {item.icon}
-              </span>
-            </>
-          );
-
-          if (item.href) {
-            return (
-              <motion.a
-                key={item.id}
-                href={item.href}
-                aria-label={item.label}
-                aria-hidden={immersiveOpen}
-                tabIndex={immersiveOpen ? -1 : undefined}
-                initial={false}
-                animate={{
-                  opacity: immersiveOpen ? 0 : 1,
-                }}
-                transition={
-                  reduce
-                    ? { duration: 0 }
-                    : { duration: immersiveOpen ? 0.1 : 0.14, ease: EASE_OUT }
-                }
-                className={baseClass}
-                style={{ left: `calc(50% + ${centeredLeft}px)` }}
-                {...(item.external
-                  ? { target: "_blank", rel: "noopener noreferrer" }
-                  : {})}
-              >
-                {icon}
-              </motion.a>
+        <TooltipProvider delayDuration={0} skipDelayDuration={400}>
+          {items.map((item, itemIndex) => {
+            const isPanel = Boolean(item.content);
+            const isActive = isPanel && item.id === active?.id;
+            const isImmersiveControl = item.id === immersiveId;
+            const tooltipLabel = item.tooltipLabel ?? item.label;
+            const tooltipDisabled = immersiveOpen && !isImmersiveControl;
+            const itemLeft = BAR_PADDING + itemIndex * (TAB_WIDTH + BAR_GAP);
+            const centeredLeft = itemLeft - toolbarWidth / 2;
+            const activeX = isImmersiveControl
+              ? -closedInset - itemIndex * (TAB_WIDTH + BAR_GAP)
+              : 0;
+            const baseClass = cn(
+              "group absolute top-2 isolate grid size-9 place-items-center rounded-full text-muted outline-none",
+              "transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
+              "focus-visible:ring-1 focus-visible:ring-foreground/35",
+              isActive && "text-foreground",
+              immersiveOpen && !isImmersiveControl && "pointer-events-none",
+              classNames?.tab,
+              isActive && classNames?.activeTab,
             );
-          }
 
-          return (
-            <motion.button
-              key={item.id}
-              type="button"
-              role={isPanel && !immersiveOpen ? "tab" : undefined}
-              aria-selected={isPanel && !immersiveOpen ? isActive : undefined}
-              aria-label={
-                immersiveOpen && isImmersiveControl
-                  ? `Close ${item.label}`
-                  : item.label
-              }
-              aria-hidden={immersiveOpen && !isImmersiveControl}
-              tabIndex={immersiveOpen && !isImmersiveControl ? -1 : undefined}
-              initial={false}
-              animate={{
-                opacity: immersiveOpen && !isImmersiveControl ? 0 : 1,
-                transform: `translateX(${immersiveOpen ? activeX : 0}px)`,
-              }}
-              transition={
-                reduce
-                  ? { duration: 0 }
-                  : isImmersiveControl
-                    ? { duration: 0.2, ease: EASE_IN_OUT }
-                    : {
-                        duration: immersiveOpen ? 0.1 : 0.14,
-                        ease: EASE_OUT,
+            const icon = (
+              <>
+                {isActive && (
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "absolute inset-0 -z-10 rounded-full bg-foreground/[0.07] shadow-[inset_0_0_0_0.5px_var(--line)]",
+                      classNames?.pill,
+                    )}
+                  />
+                )}
+                <span
+                  className={cn(
+                    "grid place-items-center transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] group-active:scale-[0.96] motion-reduce:group-active:scale-100",
+                    classNames?.icon,
+                  )}
+                >
+                  {item.icon}
+                </span>
+              </>
+            );
+
+            if (item.href) {
+              return (
+                <DockTooltip
+                  key={item.id}
+                  label={tooltipLabel}
+                  disabled={tooltipDisabled}
+                  trigger={
+                    <motion.a
+                      href={item.href}
+                      aria-label={item.label}
+                      aria-hidden={immersiveOpen}
+                      tabIndex={immersiveOpen ? -1 : undefined}
+                      initial={false}
+                      animate={{
+                        opacity: immersiveOpen ? 0 : 1,
+                      }}
+                      transition={
+                        reduce
+                          ? { duration: 0 }
+                          : {
+                              duration: immersiveOpen ? 0.1 : 0.14,
+                              ease: EASE_OUT,
+                            }
                       }
-              }
-              className={baseClass}
-              style={{ left: `calc(50% + ${centeredLeft}px)` }}
-              onClick={
-                isPanel
-                  ? () => setActive(isActive ? null : item.id)
-                  : item.onClick
-              }
-            >
-              {icon}
-            </motion.button>
-          );
-        })}
+                      className={baseClass}
+                      style={{ left: `calc(50% + ${centeredLeft}px)` }}
+                      {...(item.external
+                        ? { target: "_blank", rel: "noopener noreferrer" }
+                        : {})}
+                    >
+                      {icon}
+                    </motion.a>
+                  }
+                />
+              );
+            }
+
+            return (
+              <DockTooltip
+                key={item.id}
+                label={tooltipLabel}
+                disabled={tooltipDisabled}
+                trigger={
+                  <motion.button
+                    type="button"
+                    role={isPanel && !immersiveOpen ? "tab" : undefined}
+                    aria-selected={
+                      isPanel && !immersiveOpen ? isActive : undefined
+                    }
+                    aria-label={
+                      immersiveOpen && isImmersiveControl
+                        ? `Close ${item.label}`
+                        : item.label
+                    }
+                    aria-hidden={immersiveOpen && !isImmersiveControl}
+                    tabIndex={
+                      immersiveOpen && !isImmersiveControl ? -1 : undefined
+                    }
+                    initial={false}
+                    animate={{
+                      opacity: immersiveOpen && !isImmersiveControl ? 0 : 1,
+                      transform: `translateX(${immersiveOpen ? activeX : 0}px)`,
+                    }}
+                    transition={
+                      reduce
+                        ? { duration: 0 }
+                        : isImmersiveControl
+                          ? { duration: 0.2, ease: EASE_IN_OUT }
+                          : {
+                              duration: immersiveOpen ? 0.1 : 0.14,
+                              ease: EASE_OUT,
+                            }
+                    }
+                    className={baseClass}
+                    style={{ left: `calc(50% + ${centeredLeft}px)` }}
+                    onClick={
+                      isPanel
+                        ? () => setActive(isActive ? null : item.id)
+                        : item.onClick
+                    }
+                  >
+                    {icon}
+                  </motion.button>
+                }
+              />
+            );
+          })}
+        </TooltipProvider>
 
         {immersiveBarId && (
           <motion.div
