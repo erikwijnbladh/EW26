@@ -235,13 +235,15 @@ export function ExpandableTabs({
         initial={false}
         animate={{
           opacity: panelOpen ? 1 : 0,
-          transform: panelOpen ? "scale(1)" : "scale(0.985)",
+          transform: panelOpen
+            ? "translateY(0px) scale(1)"
+            : "translateY(8px) scale(0.95)",
         }}
         transition={
           reduce
             ? { duration: 0 }
             : {
-                duration: panelOpen ? 0.16 : 0.12,
+                duration: 0.22,
                 ease: EASE_OUT,
               }
         }
