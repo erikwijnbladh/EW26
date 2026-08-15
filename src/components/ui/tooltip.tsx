@@ -47,7 +47,7 @@ const tooltipVariants = cva(
       },
     },
     defaultVariants: {
-      variant: "dark",
+      variant: "light",
     },
   },
 );
