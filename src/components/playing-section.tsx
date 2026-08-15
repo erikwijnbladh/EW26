@@ -51,7 +51,7 @@ export function PlayingSkeleton() {
 
       <div className="mt-2 flex min-h-10 items-center gap-2" aria-hidden>
         <span className={`h-3 w-18 ${bar}`} />
-        <span className="size-[3px] rounded-full bg-foreground/[0.06]" />
+        <span className="size-5 rounded-[3px] bg-foreground/[0.06]" />
         <span className={`h-3 w-28 ${bar}`} />
         <span className={`ml-auto h-3 w-4 ${bar}`} />
         <span className="size-3.5" />

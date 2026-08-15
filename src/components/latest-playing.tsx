@@ -8,13 +8,6 @@ import { duration, ease, instant } from "@/lib/motion";
 import type { Playing } from "@/lib/spotify";
 import { usePlaying } from "@/components/use-playing";
 
-const timeFormatter = new Intl.DateTimeFormat("sv-SE", {
-  hour: "2-digit",
-  minute: "2-digit",
-  hour12: false,
-  timeZone: "Europe/Stockholm",
-});
-
 const revealTransition = {
   height: { duration: 0.28, ease },
   opacity: { duration: 0.18, ease },
@@ -26,15 +19,6 @@ function keyFor(track: Track, index: number) {
     track.url ??
     `${track.title}::${track.artist}::${index}`
   );
-}
-
-function playedAt(track: Track, index: number) {
-  if (!track.playedAt) return String(index + 2).padStart(2, "0");
-
-  const date = new Date(track.playedAt);
-  return Number.isNaN(date.getTime())
-    ? String(index + 2).padStart(2, "0")
-    : timeFormatter.format(date);
 }
 
 /** A quiet fallback that still reads as intentional when artwork is absent. */
@@ -140,15 +124,25 @@ function Chevron({ expanded, still }: { expanded: boolean; still: boolean }) {
   );
 }
 
-function Artwork({ track }: { track: Track }) {
+function Artwork({
+  track,
+  compact = false,
+}: {
+  track: Track;
+  compact?: boolean;
+}) {
   return (
-    <span className="relative size-8 shrink-0 overflow-hidden rounded-[4px]">
+    <span
+      className={`relative shrink-0 overflow-hidden ${
+        compact ? "size-5 rounded-[3px]" : "size-8 rounded-[4px]"
+      }`}
+    >
       {track.image ? (
         <Image
           src={track.image}
           alt=""
           fill
-          sizes="64px"
+          sizes={compact ? "40px" : "64px"}
           className="object-cover"
         />
       ) : (
@@ -193,18 +187,11 @@ function FeaturedTrack({ track }: { track: Track }) {
   );
 }
 
-function HistoryRow({ track, index }: { track: Track; index: number }) {
-  const label = playedAt(track, index);
+function HistoryRow({ track }: { track: Track }) {
   const contents = (
     <>
-      {track.playedAt ? (
-        <time dateTime={track.playedAt} className="text-xs text-muted/75">
-          {label}
-        </time>
-      ) : (
-        <span className="text-xs tabular-nums text-muted/75">{label}</span>
-      )}
-      <span className="min-w-0 truncate text-sm leading-5 text-foreground/80">
+      <Artwork track={track} />
+      <span className="min-w-0 truncate text-sm font-medium leading-5 text-foreground/85">
         {track.title}
       </span>
       <span className="min-w-0 truncate text-right text-sm font-light leading-5 text-muted">
@@ -214,7 +201,7 @@ function HistoryRow({ track, index }: { track: Track; index: number }) {
   );
 
   const className =
-    "listening-link -mx-2 grid min-h-9 grid-cols-[2.75rem_minmax(0,1.25fr)_minmax(0,0.75fr)] items-baseline rounded-md px-2 py-2 outline-none focus-visible:ring-2 focus-visible:ring-foreground/25 sm:grid-cols-[3.25rem_minmax(0,1.45fr)_minmax(0,1fr)]";
+    "listening-link listening-history-row grid min-h-12 grid-cols-[2rem_minmax(0,1fr)_minmax(0,0.58fr)] items-center gap-3 rounded-lg px-2 outline-none focus-visible:ring-2 focus-visible:ring-foreground/25";
 
   if (!track.url) return <li className={className}>{contents}</li>;
 
@@ -303,10 +290,7 @@ export function LatestPlaying({
                 <span className="shrink-0 text-xs text-muted/70">
                   Before that
                 </span>
-                <span
-                  className="size-[3px] shrink-0 rounded-full bg-muted/55"
-                  aria-hidden
-                />
+                <Artwork track={log[0]} compact />
                 <span className="min-w-0 flex-1 truncate text-left">
                   {log[0].title}
                 </span>
@@ -329,12 +313,11 @@ export function LatestPlaying({
                 transition={still ? instant : revealTransition}
                 className="overflow-hidden"
               >
-                <ol className="pb-1 pt-1">
+                <ol className="listening-history-surface mt-1 flex flex-col gap-1 rounded-xl p-1">
                   {log.map((track, index) => (
                     <HistoryRow
                       key={keyFor(track, index)}
                       track={track}
-                      index={index}
                     />
                   ))}
                 </ol>
