@@ -41,16 +41,19 @@ export function PlayingSkeleton() {
       </p>
 
       <div
-        className="mt-3 grid h-12 grid-cols-[2rem_minmax(0,1fr)_minmax(0,0.58fr)] items-center gap-3"
+        className="listening-feature -mx-2 mt-3 grid h-14 grid-cols-[2rem_minmax(0,1fr)_minmax(0,0.58fr)] items-center gap-3 rounded-xl px-3"
         aria-hidden
       >
-        <span className="size-8 rounded-[3px] bg-foreground/[0.06]" />
+        <span className="size-8 rounded-[4px] bg-foreground/[0.06]" />
         <span className={`h-3 w-32 max-w-full ${bar}`} />
         <span className={`ml-auto h-3 w-20 max-w-full ${bar}`} />
       </div>
 
-      <div className="mt-1 flex min-h-9 items-center gap-2" aria-hidden>
-        <span className={`h-3 w-24 ${bar}`} />
+      <div className="mt-2 flex min-h-10 items-center gap-2" aria-hidden>
+        <span className={`h-3 w-18 ${bar}`} />
+        <span className="size-[3px] rounded-full bg-foreground/[0.06]" />
+        <span className={`h-3 w-28 ${bar}`} />
+        <span className={`ml-auto h-3 w-4 ${bar}`} />
         <span className="size-3.5" />
       </div>
     </section>

@@ -142,7 +142,7 @@ function Chevron({ expanded, still }: { expanded: boolean; still: boolean }) {
 
 function Artwork({ track }: { track: Track }) {
   return (
-    <span className="relative size-8 shrink-0 overflow-hidden rounded-[3px]">
+    <span className="relative size-8 shrink-0 overflow-hidden rounded-[4px]">
       {track.image ? (
         <Image
           src={track.image}
@@ -166,7 +166,7 @@ function FeaturedTrack({ track }: { track: Track }) {
   const contents = (
     <>
       <Artwork track={track} />
-      <span className="min-w-0 truncate text-[15px] leading-5 text-foreground">
+      <span className="min-w-0 truncate text-[15px] font-medium leading-5 text-foreground">
         {track.title}
       </span>
       <span className="min-w-0 truncate text-right text-sm font-light leading-5 text-muted">
@@ -176,7 +176,7 @@ function FeaturedTrack({ track }: { track: Track }) {
   );
 
   const className =
-    "listening-link -mx-2 grid h-12 grid-cols-[2rem_minmax(0,1fr)_minmax(0,0.58fr)] items-center gap-3 rounded-md px-2 outline-none focus-visible:ring-2 focus-visible:ring-foreground/25";
+    "listening-link listening-feature -mx-2 grid h-14 grid-cols-[2rem_minmax(0,1fr)_minmax(0,0.58fr)] items-center gap-3 rounded-xl px-3 outline-none focus-visible:ring-2 focus-visible:ring-foreground/25";
 
   if (!track.url) return <div className={className}>{contents}</div>;
 
@@ -186,7 +186,7 @@ function FeaturedTrack({ track }: { track: Track }) {
       target="_blank"
       rel="noreferrer noopener"
       aria-label={`${track.title} by ${track.artist} — open in Spotify`}
-      className={className}
+      className={`${className} listening-pressable`}
     >
       {contents}
     </a>
@@ -286,9 +286,35 @@ export function LatestPlaying({
             onClick={() => setExpanded((value) => !value)}
             aria-expanded={expanded}
             aria-controls="listening-history"
-            className="-ml-2 mt-1 flex min-h-9 items-center gap-1.5 rounded-md px-2 text-[13px] text-muted/80 outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/25 max-sm:min-h-11"
+            aria-label={
+              expanded
+                ? "Hide listening log"
+                : `Show listening log, ${log.length} previous tracks`
+            }
+            className="listening-pressable mt-2 flex min-h-10 w-full items-center gap-2 rounded-md text-[13px] text-muted/80 outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/25 max-sm:min-h-11"
           >
-            {expanded ? "Hide listening log" : `Listening log · ${tracks.length}`}
+            {expanded ? (
+              <>
+                <span>Listening log</span>
+                <span className="ml-auto text-xs text-muted/70">Hide</span>
+              </>
+            ) : (
+              <>
+                <span className="shrink-0 text-xs text-muted/70">
+                  Before that
+                </span>
+                <span
+                  className="size-[3px] shrink-0 rounded-full bg-muted/55"
+                  aria-hidden
+                />
+                <span className="min-w-0 flex-1 truncate text-left">
+                  {log[0].title}
+                </span>
+                <span className="shrink-0 text-xs tabular-nums text-muted/65">
+                  {log.length}
+                </span>
+              </>
+            )}
             <Chevron expanded={expanded} still={still} />
           </button>
 
