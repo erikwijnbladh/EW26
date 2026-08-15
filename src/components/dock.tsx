@@ -3,6 +3,7 @@
 import { useCallback, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { profile, contactHref } from "@/lib/data";
+import { copyText } from "@/lib/clipboard";
 import { ease } from "@/lib/motion";
 import { ExpandableTabs } from "@/components/ui/be-ui-expandable-tabs";
 import { SayHiForm } from "@/components/say-hi";
@@ -17,79 +18,37 @@ const stroke = {
   strokeLinejoin: "round" as const,
 };
 
-/**
- * The bot, blinking.
- *
- * Built on the same principle as the copy button below — one box, nothing ever
- * unmounts, states are reached by drawing strokes on and retracting them —
- * except the interesting thing about this icon is that it's a face, so it
- * blinks instead of swapping glyphs. The eyes retract to nothing and come back
- * on a slow loop, a hair out of step with each other so it reads as a blink
- * rather than two shutters closing.
- *
- * Opening the card wakes it: the antenna redraws itself, and the blink speeds
- * up. It goes back to idling when the card closes.
- */
+/** A quiet state change, not an idle animation: opening Ask wakes the bot. */
 function BotIcon({ awake }: { awake: boolean }) {
   const still = useReducedMotion();
-
-  /**
-   * Open, hold, shut, open — the hold is most of it, which is what a blink is.
-   *
-   * Not `pathLength`, which is what the copy button below retracts its strokes
-   * with. Motion animates that as a scalar target only; handed a keyframe array
-   * it sets the last value and never moves, which is a silent no-op rather than
-   * an error. `scaleY` does the closing and `opacity` covers the last hair of
-   * it, since a 2px stroke scaled to nothing still leaves a cap behind.
-   */
-  const eye = { scaleY: [1, 1, 0.05, 1, 1], opacity: [1, 1, 0.15, 1, 1] };
-
-  const blink = (offset: number) => ({
-    duration: awake ? 3.4 : 6.2,
-    times: [0, 0.9, 0.94, 0.98, 1],
-    // A named curve, not the shared `easeInOut` tuple. With five keyframes
-    // Motion reads a four-element array as one easing per segment, and
-    // `[0.65, 0, 0.35, 1]` is four numbers — so the bezier this file uses
-    // everywhere else is silently taken as four nonsense easings.
-    ease: "easeInOut" as const,
-    repeat: Infinity,
-    // Applied once, so after the first pass the two eyes stay this far apart.
-    delay: offset,
-  });
+  const transition = still ? { duration: 0 } : { duration: 0.2, ease };
 
   return (
     <svg viewBox="0 0 24 24" className="size-4" aria-hidden>
-      {/* Antenna. Redraws itself on waking — the keyframe pair is what makes a
-          prop flip replay it, where a bare target would just already be there. */}
       <motion.path
         d="M12 8V4H8"
         {...stroke}
         initial={false}
-        animate={{ pathLength: awake && !still ? [0, 1] : 1 }}
-        transition={{ duration: 0.42, ease }}
+        animate={{ pathLength: awake ? 1 : 0.55, opacity: awake ? 1 : 0.72 }}
+        transition={transition}
       />
 
       <rect x="4" y="8" width="16" height="12" rx="2" {...stroke} />
       <path d="M2 14h2" {...stroke} />
       <path d="M20 14h2" {...stroke} />
-
-      {/* `fill-box` so each eye scales about its own centre rather than the
-          whole 24-unit canvas, which would slide it up the face instead. */}
       <motion.path
         d="M9 13v2"
         {...stroke}
-        style={{ transformBox: "fill-box", transformOrigin: "center" }}
-        initial={{ scaleY: 1, opacity: 1 }}
-        animate={still ? { scaleY: 1, opacity: 1 } : eye}
-        transition={still ? undefined : blink(0)}
+        initial={false}
+        animate={{ pathLength: awake ? 1 : 0.45 }}
+        transition={transition}
       />
       <motion.path
         d="M15 13v2"
         {...stroke}
-        style={{ transformBox: "fill-box", transformOrigin: "center" }}
-        initial={{ scaleY: 1, opacity: 1 }}
-        animate={still ? { scaleY: 1, opacity: 1 } : eye}
-        transition={still ? undefined : blink(0.07)}
+        initial={false}
+        animate={{ pathLength: awake ? 1 : 0.45 }}
+        transition={transition}
       />
     </svg>
   );
@@ -130,8 +89,8 @@ function LinkedinIcon() {
 }
 
 /**
- * The floating bar: one expanding tab (the form) and three plain icon actions,
- * all inside the ExpandableTabs shell so they share its styling and timing.
+ * The floating bar. Ask takes the bar over and turns its unused navigation
+ * space into the composer; Say hi keeps the bar as navigation beneath its form.
  */
 export function Dock() {
   const [active, setActive] = useState<string | null>(null);
@@ -139,8 +98,8 @@ export function Dock() {
 
   const close = useCallback(() => setActive(null), []);
 
-  const copyEmail = useCallback(() => {
-    void navigator.clipboard.writeText(profile.email);
+  const copyEmail = useCallback(async () => {
+    if (!(await copyText(profile.email))) return;
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);
   }, []);
@@ -153,38 +112,37 @@ export function Dock() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease }}
-            className="pointer-events-none fixed inset-0 z-40 bg-foreground/[0.07]"
+            transition={{ duration: 0.16, ease }}
+            className="pointer-events-none fixed inset-0 z-40 bg-foreground/[0.035]"
           />
         )}
       </AnimatePresence>
 
       <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-5 sm:p-8">
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.35, ease }}
-          className="pointer-events-auto"
-        >
+        <div className="pointer-events-none">
           <ExpandableTabs
             value={active}
             onValueChange={setActive}
+            immersiveId="ask"
+            immersiveBarId="dock-chat-composer"
             classNames={{
-              root: `dock border-transparent ${active ? "dock-open" : ""}`,
-              // The gap lives in the component now: it's baked into the closed
-              // shell's width, so overriding it here made the two disagree.
               pill: "bg-foreground/[0.08]",
             }}
             items={[
               {
                 id: "ask",
-                label: "Ask",
+                label: "AI",
                 icon: <BotIcon awake={active === "ask"} />,
-                content: <AskPanel open={active === "ask"} />,
+                content: (
+                  <AskPanel
+                    open={active === "ask"}
+                    composerTargetId="dock-chat-composer"
+                  />
+                ),
               },
               {
                 id: "say-hi",
-                label: "Say hi",
+                label: "Contact",
                 icon: <ChatIcon />,
                 content: (
                   <SayHiForm open={active === "say-hi"} onClose={close} />
@@ -193,8 +151,9 @@ export function Dock() {
               {
                 id: "email",
                 label: copied ? "Copied" : "Copy email",
+                tooltipLabel: "Copy email",
                 icon: <CopyIcon copied={copied} />,
-                onClick: copyEmail,
+                onClick: () => void copyEmail(),
               },
               {
                 id: "github",
@@ -212,7 +171,7 @@ export function Dock() {
               },
             ]}
           />
-        </motion.div>
+        </div>
       </div>
     </>
   );

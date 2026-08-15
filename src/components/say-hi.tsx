@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { profile } from "@/lib/data";
-import { drawOff, drawOn, duration, ease, instant, springSnappy } from "@/lib/motion";
+import { drawOff, drawOn, duration, ease, instant } from "@/lib/motion";
 
-const fieldClass =
-  "w-full rounded-xl border border-line bg-surface/50 px-3.5 py-2.5 text-[15px] text-foreground outline-none transition-colors duration-150 placeholder:text-muted/70 focus:border-foreground/25 focus:bg-surface/80";
+const inputClass =
+  "mt-1 w-full bg-transparent text-[15px] leading-tight text-foreground outline-none placeholder:text-muted/60";
 
 /** Where the form is in the send: nothing yet, in flight, failed, or done. */
 type Status = "idle" | "sending" | "error" | "sent";
@@ -47,7 +47,12 @@ function SendIcon({ status, still }: { status: Status; still: boolean }) {
 
   /** The arrow in flight: up and out, back in from below, over and over. */
   const flight = {
-    y: [0, -24, 24, 0],
+    transform: [
+      "translateY(0px)",
+      "translateY(-24px)",
+      "translateY(24px)",
+      "translateY(0px)",
+    ],
     opacity: [1, 0, 0, 1],
   };
 
@@ -61,17 +66,21 @@ function SendIcon({ status, still }: { status: Status; still: boolean }) {
           animate={
             sending && !still
               ? flight
-              : { y: sent && !still ? -24 : 0, opacity: sent ? 0 : 1 }
+              : {
+                  transform:
+                    sent && !still ? "translateY(-24px)" : "translateY(0px)",
+                  opacity: sent ? 0 : 1,
+                }
           }
           transition={
             still
               ? instant
               : sending
                 ? {
-                    duration: 1.05,
+                    duration: 0.72,
                     // Four keyframes, so a bezier tuple would be read as one
                     // easing per segment. A named curve is the only safe form.
-                    ease: "easeInOut",
+                    ease: "linear",
                     times: [0, 0.42, 0.5, 0.92],
                     repeat: Infinity,
                   }
@@ -210,98 +219,63 @@ export function SayHiForm({
   const busy = status === "sending" || status === "sent";
 
   return (
-    // Deliberately the same measure as the ask card. The dock morphs its shell
-    // between the two, and matching widths leave only the height to travel —
-    // one axis of movement to read instead of two.
-    // A column that can absorb slack. The dock sizes its shell to the taller of
-    // its two cards, and this one is currently the taller — but if that ever
-    // flips, `grow` on the form and the message box is what stops the extra
-    // height landing as a gap under the send button.
-    <div className="flex w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-4">
-      <h2 className="text-[26px] font-medium leading-tight tracking-[-0.02em] text-foreground">
-        What&rsquo;s up?
-      </h2>
+    <div className="flex h-full w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-5">
+      <div>
+        <h2 className="text-xl font-medium leading-tight tracking-[-0.025em] text-foreground">
+          Say hi
+        </h2>
+      </div>
 
-      <form onSubmit={onSubmit} className="mt-6 flex grow flex-col gap-2.5">
-        <div className="flex flex-col gap-2.5 sm:flex-row">
-          <input
-            ref={firstFieldRef}
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            aria-label="Your name"
-            autoComplete="name"
-            maxLength={100}
-            disabled={busy}
-            className={fieldClass}
-          />
-          <input
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            type="email"
-            required
-            placeholder="Your email"
-            // Required now that the reply goes to this address rather than
-            // being composed in the visitor's own client — without it there is
-            // no way to answer.
-            aria-label="Your email (required)"
-            autoComplete="email"
-            maxLength={200}
-            disabled={busy}
-            className={fieldClass}
-          />
+      <form onSubmit={onSubmit} className="mt-4 flex grow flex-col">
+        <div className="flex grow flex-col overflow-hidden rounded-xl border border-line transition-colors duration-150 focus-within:border-foreground/30">
+          <div className="grid sm:grid-cols-2">
+            <label className="block px-3.5 py-3">
+              <span className="block text-[11px] leading-none text-muted">Name</span>
+              <input
+                ref={firstFieldRef}
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Your name"
+                autoComplete="name"
+                maxLength={100}
+                disabled={busy}
+                className={inputClass}
+              />
+            </label>
+
+            <label className="block border-t border-line px-3.5 py-3 sm:border-l sm:border-t-0">
+              <span className="block text-[11px] leading-none text-muted">Email</span>
+              <input
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                type="email"
+                required
+                placeholder="you@example.com"
+                autoComplete="email"
+                maxLength={200}
+                disabled={busy}
+                className={inputClass}
+              />
+            </label>
+          </div>
+
+          <label className="flex min-h-40 grow flex-col border-t border-line px-3.5 py-3 [@media(max-height:520px)]:min-h-20">
+            <span className="block text-[11px] leading-none text-muted">Message</span>
+            <textarea
+              value={message}
+              onChange={(event) => setMessage(event.target.value)}
+              required
+              rows={6}
+              placeholder="Tell me what you&rsquo;re thinking."
+              maxLength={5000}
+              disabled={busy}
+              className={`${inputClass} grow resize-none leading-relaxed`}
+            />
+          </label>
         </div>
 
-        {/* Roomier than it was. The full-width button used to eat this space,
-            and a contact box you can only see three lines of asks for a short
-            message — which is not what this form is for. */}
-        <textarea
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          required
-          rows={6}
-          placeholder="Hey Erik, I have a stupid idea and a budget"
-          aria-label="Message"
-          maxLength={5000}
-          disabled={busy}
-          // `grow` keeps its natural six rows as the basis and only takes space
-          // that is actually spare.
-          //
-          // The cap keeps this card inside a short viewport — six rows plus two
-          // fields, a heading and a footer is more than a landscape phone has
-          // room for, and the dock now sizes itself to the taller card, so this
-          // one's height is the chat's too. Behind a height query rather than an
-          // svh unit: svh scales linearly, so any value tight enough for a 390px
-          // screen also shrinks the box on a normal one. This changes nothing
-          // above 520px tall.
-          className={`${fieldClass} grow resize-none [@media(max-height:520px)]:max-h-16`}
-        />
-
-        {/*
-          The last row, and the reason the button is here rather than across
-          the form: the chat card ends in exactly this — something on the left,
-          a square send button hard against the bottom-right corner. Both cards
-          put it the same distance from the same edge, so swapping tabs leaves
-          it sitting still instead of crossing the card.
-
-          Error copy swaps into the note's reserved space rather than adding a
-          row. The dock measures a separate hidden copy of this form, so live
-          state cannot safely change its height once the shell has opened.
-        */}
-        {/*
-          Three lines of reserved height, and the copy anchored to the *bottom*
-          of it. The note is one line and sits level with the button; an error
-          grows upward into the space above it. Anchored to the top instead, a
-          one-line note floats away from the button with nothing under it.
-
-          Three, because the narrowest card leaves this column about 168px and
-          the longest failure wraps to three lines there. It has to be reserved
-          rather than found: the dock sizes itself from a hidden copy of this
-          form that is always idle, so anything that grows the card after the
-          shell has opened is simply clipped.
-        */}
-        <div className="mt-3 flex items-end gap-3">
-          <div className="relative min-h-[3.75rem] flex-1 text-xs font-light">
+        <div className="mt-3 flex min-h-11 items-end gap-3">
+          <div className="flex-1 text-xs font-light leading-relaxed">
             <AnimatePresence mode="wait" initial={false}>
               {status === "error" && error ? (
                 <motion.p
@@ -311,13 +285,8 @@ export function SayHiForm({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: duration.fast, ease }}
-                  className="absolute inset-x-0 bottom-0 leading-relaxed text-foreground/80"
+                  className="text-foreground/80"
                 >
-                  {/* A short link rather than the address itself. Spelled out,
-                      it is an unbreakable 23-character token — on the narrowest
-                      card it can't share a line with anything and forces the
-                      copy onto a fourth, past the reserved space. Anyone who
-                      wants the address has the copy button two icons below. */}
                   {error}{" "}
                   <a
                     href={`mailto:${profile.email}`}
@@ -333,25 +302,22 @@ export function SayHiForm({
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: duration.fast, ease }}
-                  className="absolute inset-x-0 bottom-0 leading-relaxed text-muted"
+                  className="text-muted"
                 >
-                  Please don&rsquo;t try to sell me anything...
+                  Pls don&rsquo;t try to sell me anything.
                 </motion.p>
               )}
             </AnimatePresence>
           </div>
 
-          <motion.button
+          <button
             type="submit"
             aria-label={LABEL[status]}
             disabled={busy}
-            whileHover={still || busy ? undefined : { scale: 1.04 }}
-            whileTap={still || busy ? undefined : { scale: 0.94 }}
-            transition={springSnappy}
-            className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background transition-opacity duration-150 hover:opacity-90 disabled:opacity-70"
+            className="grid size-11 shrink-0 place-items-center rounded-xl bg-foreground text-background transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] hover:opacity-90 active:scale-[0.97] disabled:opacity-70 motion-reduce:active:scale-100"
           >
             <SendIcon status={status} still={Boolean(still)} />
-          </motion.button>
+          </button>
         </div>
       </form>
     </div>
