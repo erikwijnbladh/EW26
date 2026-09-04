@@ -215,13 +215,13 @@ export type Mention = {
   /** Whose entry in `experience` or `education` carries the link. */
   org: string;
   /**
-   * The gradient behind the thumbnails — and all you see until there are any.
+   * The background behind the brand mark.
    * Deliberately abstract: a stand-in that looked like a screenshot would be
    * claiming something about a company that hasn't been shown.
    */
   tone: string;
-  /** Up to two, fanned out on hover. Drop files in `/public/mentions/`. */
-  images?: { src: string; alt: string }[];
+  /** One brand mark, shown on the single tilted hover card. */
+  logo: { src: string; alt: string; className?: string };
 };
 
 /**
@@ -242,17 +242,32 @@ export const mentions: Mention[] = [
   {
     phrase: "Compileit",
     org: "Compileit",
-    tone: "linear-gradient(150deg, #1b1a16 0%, #4a4842 55%, #cbc7bf 100%)",
+    tone: "#000000",
+    logo: {
+      src: "/mentions/compileit.svg",
+      alt: "Compileit",
+      className: "h-9 w-9",
+    },
   },
   {
     phrase: "KTH",
     org: "KTH Royal Institute of Technology",
-    tone: "linear-gradient(150deg, #1a1f2b 0%, #3f4a63 55%, #b9c2d4 100%)",
+    tone: "#def0ff",
+    logo: {
+      src: "/mentions/kth.svg",
+      alt: "KTH Royal Institute of Technology",
+      className: "h-[45px] w-10",
+    },
   },
   {
     phrase: "BrightBid",
     org: "BrightBid",
-    tone: "linear-gradient(150deg, #21180f 0%, #6b4a22 55%, #e0cbaa 100%)",
+    tone: "#58aee4",
+    logo: {
+      src: "/mentions/brightbid.svg",
+      alt: "BrightBid",
+      className: "h-10 w-10",
+    },
   },
 ];
 
