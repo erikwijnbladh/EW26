@@ -365,17 +365,43 @@ function CatPhoto({
       transition={
         still ? instant : { duration: open ? 0.42 : 0.32, ease: easeGlide }
       }
-      className={`relative mt-3 aspect-[3/2] overflow-hidden rounded-xl shadow-[inset_0_0_0_0.5px_var(--line)] outline-none focus-visible:ring-2 focus-visible:ring-foreground/40 ${
-        open ? "w-60 cursor-zoom-out" : "w-36 cursor-zoom-in"
+      className={`relative mt-3 overflow-hidden rounded-xl bg-line shadow-[inset_0_0_0_0.5px_var(--line)] outline-none focus-visible:ring-2 focus-visible:ring-foreground/40 ${
+        open
+          ? "aspect-[3/4] w-40 cursor-zoom-out"
+          : "aspect-[3/2] w-36 cursor-zoom-in"
       }`}
     >
-      <Image
-        src="/ask/cat.webp"
-        alt="Erik's grey-and-white cat looking into the camera"
-        fill
-        sizes={open ? "240px" : "144px"}
-        className="object-cover object-[center_10%]"
-      />
+      <motion.span
+        aria-hidden={open}
+        className="absolute inset-0"
+        initial={false}
+        animate={{ opacity: open ? 0 : 1 }}
+        transition={still ? instant : { duration: 0.16, ease }}
+      >
+        <Image
+          src="/ask/cat.webp"
+          alt=""
+          fill
+          sizes="144px"
+          className="object-cover object-[center_10%]"
+        />
+      </motion.span>
+
+      <motion.span
+        aria-hidden={!open}
+        className="absolute inset-0"
+        initial={false}
+        animate={{ opacity: open ? 1 : 0 }}
+        transition={still ? instant : { duration: 0.18, ease }}
+      >
+        <Image
+          src="/ask/cat.webp"
+          alt="Erik's grey-and-white cat looking into the camera"
+          fill
+          sizes="160px"
+          className="object-contain"
+        />
+      </motion.span>
     </motion.button>
   );
 }
