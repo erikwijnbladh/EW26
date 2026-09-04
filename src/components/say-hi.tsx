@@ -219,7 +219,7 @@ export function SayHiForm({
   const busy = status === "sending" || status === "sent";
 
   return (
-    <div className="flex h-full w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-5">
+    <div className="flex h-full w-[min(23rem,calc(100vw-4rem))] select-text flex-col p-5 sm:w-[32rem]">
       <div>
         <h2 className="text-xl font-medium leading-tight tracking-[-0.025em] text-foreground">
           Say hi
