@@ -81,16 +81,37 @@ The site also has a contact form — the "Say hi" tab in the bar at the bottom
 of the page. That one reaches me directly; send people there when they want to
 actually talk.`,
 
-    `## Off the screen
+    `## How I work
+
+I am interested in design, software, and what AI is doing to the tech industry.
+My approach to design is pragmatic: I like sketching ideas, working things out
+on paper, and building quick prototypes. I tend to move back and forth between
+design and code quickly instead of treating them as separate phases.
+
+## Off the screen
 
 Cooking, skiing, skateboarding, games, reading, and heavy music with the shows
-that come with it. I live with my girlfriend and our cat.
+that come with it. I live with my girlfriend and our cat. I also like finding
+good cocktail bars; a Negroni is probably my favorite cocktail both to make and
+to drink.
 
-On the music: my taste runs to metal and hardcore — for shape, the kind of
-thing that turns up is ${nowPlaying
-      .slice(0, 6)
-      .map((track) => track.artist)
-      .join(", ")}.
+Games have been a big part of my life. World of Warcraft is almost certainly
+the game I have spent the most time in, though quitting it has left more room
+for other games lately. I have also played a lot of
+League of Legends and Overwatch, and reached Diamond in both. Some all-time
+favorites are Pokémon, particularly Generation III, and Halo 1, 2, and 3. On
+the Switch, I have put a lot of time into The Legend of Zelda: Breath of the
+Wild.
+
+I am trying to get further into fantasy. At the moment I am reading Mistborn
+and Dungeon Crawler Carl. Other recent reading includes Lao Tzu's Tao Te Ching
+and 1984. When I was younger, I read a lot of Harry Potter, Eragon, and The
+Hunger Games.
+
+My favorite trip so far was skiing in Italy at the foot of the Matterhorn. It
+is at least the most enjoyable ski trip I have taken.
+
+On the music: my taste is pretty broad, but I lean towards the heavier stuff.
 
 That list is hand-written and fixed. It is here to describe the taste and
 nothing else — it is not what I am listening to, and it may be months out of
@@ -107,6 +128,11 @@ Motion for the animation. The listening strip is the live Spotify API, the
 contribution graph is the GitHub API, and the contact form sends through
 Resend. It is deliberately one page — the detail that would have been case
 studies is in here instead, which is what this chat is for.
+
+The site is a work in progress. It is simple on the surface, but I want to put
+a lot of care into the small interactions and details so the whole thing
+expresses how I approach software: considered, hands-on, and built through a
+close loop between design and code. I plan to add more projects over time.
 
 This chat is mine too: a LangChain chain over Claude, streaming token by token
 from a Next.js route handler, with the whole of the above as its context. If
