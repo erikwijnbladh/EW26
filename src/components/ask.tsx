@@ -403,6 +403,7 @@ export function AskPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
+  const [scrolledFromTop, setScrolledFromTop] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -426,6 +427,7 @@ export function AskPanel({
     const el = scrollRef.current;
     if (!el) return;
     pinned.current = el.scrollHeight - el.scrollTop - el.clientHeight < 32;
+    setScrolledFromTop(el.scrollTop > 1);
   }, []);
 
   // `open` is in here because the answer keeps arriving while the card is shut:
@@ -666,9 +668,13 @@ export function AskPanel({
         <div
           ref={scrollRef}
           onScroll={onScroll}
-          // The mask softens the top edge: scrolled-past text dissolves under
-          // the heading instead of being guillotined by the overflow box.
-          className="no-scrollbar absolute inset-x-0 bottom-0 top-3 overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0,black_1rem)]"
+          // Only soften content that has actually moved under the heading.
+          // Applying the mask at rest washes out the first line for no reason.
+          className={`no-scrollbar absolute inset-x-0 bottom-0 top-3 overflow-y-auto overscroll-contain ${
+            scrolledFromTop
+              ? "[mask-image:linear-gradient(to_bottom,transparent_0,black_1rem)]"
+              : ""
+          }`}
         >
           <motion.div
             initial={false}
