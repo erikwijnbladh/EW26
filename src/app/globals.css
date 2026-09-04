@@ -136,17 +136,6 @@ summary {
     0 8px 24px rgba(21, 20, 15, 0.08);
 }
 
-/* Keep floating navigation distinct from copy moving beneath it. The fade is
-   intentionally local to the dock rather than a permanent footer band. */
-.dock-scrim {
-  background: linear-gradient(
-    to bottom,
-    transparent,
-    color-mix(in srgb, var(--background) 88%, transparent) 58%,
-    var(--background)
-  );
-}
-
 /* The viewport can become much shorter when a phone keyboard opens. These
    inherited insets let the dock cap its panel without guessing that height,
    and keep the compact bar clear of the home indicator. */
