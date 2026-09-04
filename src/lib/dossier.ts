@@ -95,13 +95,20 @@ that come with it. I live with my girlfriend and our cat. I also like finding
 good cocktail bars; a Negroni is probably my favorite cocktail both to make and
 to drink.
 
-Games have been a big part of my life. World of Warcraft is almost certainly
-the game I have spent the most time in, though quitting it has left more room
-for other games lately. I have also played a lot of
-League of Legends and Overwatch, and reached Diamond in both. Some all-time
-favorites are Pokémon, particularly Generation III, and Halo 1, 2, and 3. On
-the Switch, I have put a lot of time into The Legend of Zelda: Breath of the
-Wild.
+My taste in games makes more sense as a timeline than as one all-time list:
+
+- Kid — Pokémon was a favorite, particularly Generation III. I also loved
+  Halo 1, 2, and 3.
+- Teen — World of Warcraft became the game I would ultimately spend the most
+  time in.
+- Young adult — I played a lot of League of Legends and Overwatch, reaching
+  Diamond in both.
+- Adult — I quit World of Warcraft, which has left more room for other games.
+  On the Switch, I have put a lot of time into The Legend of Zelda: Breath of
+  the Wild.
+
+Keep those periods attached to the games. In particular, Pokémon was a
+childhood favorite, not a claim about my current or single all-time favorite.
 
 I am trying to get further into fantasy. At the moment I am reading Mistborn
 and Dungeon Crawler Carl. Other recent reading includes Lao Tzu's Tao Te Ching
