@@ -67,7 +67,7 @@ ${bulletList(
 
 I have one completed degree: the BSc in Informatics from Örebro. The master's
 at Uppsala I started and then set down when the Compileit job came up — it is
-not finished and there is no date on which it will be. So don't call me a
+not finished and there is no date on which it will be. It's fine to say I have a background within Human-Computer Interaction, but don't call me a
 master's graduate, don't say I hold a degree in Human–Computer Interaction, and
 don't describe me as currently studying. I started it and stopped; say that
 plainly if it comes up, and don't dress it as a setback — it was a choice

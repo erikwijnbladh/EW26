@@ -19,9 +19,9 @@ export const profile = {
   email: "hello@erikwijnbladh.com",
   tagline: "Currently building products people love to use at Compileit.",
   bio: [
-    "I'm Erik, developer and designer based in Stockholm.",
-    "Currently fullstack at Compileit, building products people love. Before that, development and design at KTH, and three years owning the frontend at BrightBid, an AI ads platform, where the job was making automated bidding decisions legible to the people who had to answer for them. A few other places further back.",
-    "Away from the screen I cook, ski, skateboard, game and read, and spend a lot of time in small rooms watching heavy bands. Home is my girlfriend and our cat.",
+    "I'm Erik.",
+    "Currently fullstack dev at Compileit, building products people love. Before that, I was doing development and design at KTH, and prior to that I spent three years owning all things frontend on BrightBids AI ads platform.",
+    "Away from the screen I like to cook, ski, skateboard, play the occasional game and read the occasional book. I also try to attend as many concerts as possible.",
   ],
 };
 

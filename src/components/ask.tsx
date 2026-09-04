@@ -44,9 +44,9 @@ class ReplyError extends Error {}
 
 /** Short on purpose — long enough to be a real question, short enough to pair up. */
 const PROMPTS = [
-  "What are you working on?",
-  "Which project should I look at?",
+  "What are you working on right now?",
   "How can I reach you?",
+  "What's your favorite band?",
 ];
 
 const stroke = {
