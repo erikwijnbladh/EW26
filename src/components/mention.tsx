@@ -6,7 +6,6 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   contactHref,
   mentions,
-  orgDetail,
   orgHref,
   profile,
   type Mention,
@@ -23,7 +22,7 @@ import { duration, ease, springSoft } from "@/lib/motion";
  * rendering it, and no chance of the page and the dossier drifting apart.
  */
 
-/** How far the two cards lean apart once they're out. */
+/** The single card keeps the original flare's slight lean. */
 const LEAN = 7;
 
 type Piece = {
@@ -92,19 +91,13 @@ function toPieces(text: string): Piece[] {
 }
 
 /**
- * Two cards fanned out of the word, like a hand being spread.
- *
- * They come out from behind the text rather than appearing beside it — both
- * start square on the same spot and lean apart, which is what makes it read as
- * one gesture instead of two things arriving.
+ * One logo card lifted from behind the word.
  */
 function Flare({ mention, children }: { mention: Mention; children: ReactNode }) {
   const still = useReducedMotion();
   const [open, setOpen] = useState(false);
 
   const href = orgHref(mention.org);
-  const detail = orgDetail(mention.org);
-  const cards = [0, 1];
 
   return (
     <span
@@ -135,58 +128,28 @@ function Flare({ mention, children }: { mention: Mention; children: ReactNode })
             aria-hidden
             className="pointer-events-none absolute bottom-full left-1/2 z-20 mb-2 block -translate-x-1/2"
           >
-            {cards.map((i) => {
-              const image = mention.images?.[i];
-              const lean = i === 0 ? -LEAN : LEAN;
-
-              return (
-                <motion.span
-                  key={i}
-                  className="absolute bottom-0 left-1/2 block h-16 w-24 overflow-hidden rounded-lg shadow-ring"
-                  style={{ background: mention.tone }}
-                  initial={{ opacity: 0, x: "-50%", y: 10, rotate: 0, scale: 0.9 }}
-                  animate={{
-                    opacity: 1,
-                    // Both cards are anchored to the same centre, so the offset
-                    // has to ride on the same transform that centres them.
-                    x: `calc(-50% + ${lean * 2.4}px)`,
-                    y: 0,
-                    rotate: still ? 0 : lean,
-                    scale: 1,
-                  }}
-                  exit={{ opacity: 0, x: "-50%", y: 8, rotate: 0, scale: 0.94 }}
-                  transition={
-                    still
-                      ? { duration: duration.fast, ease }
-                      : { ...springSoft, delay: i * 0.04 }
-                  }
-                >
-                  {image && (
-                    <Image
-                      src={image.src}
-                      alt={image.alt}
-                      fill
-                      sizes="96px"
-                      className="object-cover"
-                    />
-                  )}
-
-                  {/* Only the front card. The one behind it is a card back —
-                      repeating the same words twice would read as a glitch
-                      rather than a stack. */}
-                  {i === 1 && detail && (
-                    <span className="absolute inset-0 flex flex-col justify-end gap-0.5 bg-foreground/45 p-2 text-left">
-                      <span className="text-[11px] font-medium leading-tight text-background">
-                        {detail.title}
-                      </span>
-                      <span className="text-[10px] leading-none text-background/70">
-                        {detail.year}
-                      </span>
-                    </span>
-                  )}
-                </motion.span>
-              );
-            })}
+            <motion.span
+              className="absolute bottom-0 left-1/2 flex h-16 w-24 items-center justify-center overflow-hidden rounded-lg shadow-ring"
+              style={{ background: mention.tone }}
+              initial={{ opacity: 0, x: "-50%", y: 10, rotate: 0, scale: 0.9 }}
+              animate={{
+                opacity: 1,
+                x: "-50%",
+                y: 0,
+                rotate: still ? 0 : LEAN,
+                scale: 1,
+              }}
+              exit={{ opacity: 0, x: "-50%", y: 8, rotate: 0, scale: 0.94 }}
+              transition={still ? { duration: duration.fast, ease } : springSoft}
+            >
+              <Image
+                src={mention.logo.src}
+                alt={mention.logo.alt}
+                width={64}
+                height={64}
+                className={mention.logo.className}
+              />
+            </motion.span>
           </span>
         )}
       </AnimatePresence>
