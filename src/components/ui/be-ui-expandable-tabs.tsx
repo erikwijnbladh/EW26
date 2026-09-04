@@ -291,6 +291,34 @@ export function ExpandableTabs({
         <div aria-hidden className="dock-shell absolute inset-0">
           <motion.span
             initial={false}
+            animate={{ opacity: immersiveOpen ? 0 : 1 }}
+            transition={
+              reduce
+                ? { duration: 0 }
+                : { duration: immersiveOpen ? 0.1 : 0.14, ease: EASE_OUT }
+            }
+            className="dock-shell-shadow absolute inset-y-0 left-1/2 rounded-full"
+            style={{
+              width: toolbarWidth,
+              marginLeft: -toolbarWidth / 2,
+            }}
+          />
+          <motion.span
+            initial={false}
+            animate={{ opacity: immersiveOpen ? 1 : 0 }}
+            transition={
+              reduce
+                ? { duration: 0 }
+                : { duration: immersiveOpen ? 0.14 : 0.1, ease: EASE_OUT }
+            }
+            className="dock-shell-shadow absolute inset-y-0 left-1/2 rounded-full"
+            style={{
+              width: panelSize.width,
+              marginLeft: -panelSize.width / 2,
+            }}
+          />
+          <motion.span
+            initial={false}
             animate={{
               transform: immersiveOpen
                 ? `scaleX(${openBodyScale})`

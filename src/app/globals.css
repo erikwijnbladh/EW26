@@ -155,12 +155,13 @@ summary {
 }
 
 /* The immersive dock is one visual pill assembled from three transform-only
-   pieces. Circular caps preserve true round ends while the rectangular middle
-   stretches; a filter on their union supplies one continuous outer shadow. */
-.dock-shell {
-  filter:
-    drop-shadow(0 1px 2px rgba(21, 20, 15, 0.05))
-    drop-shadow(0 8px 24px rgba(21, 20, 15, 0.08));
+   pieces. Its two exact-size shadow silhouettes crossfade underneath instead
+   of filtering the animated union: Safari can clip a filtered fixed layer at
+   the edge of its browser chrome. */
+.dock-shell-shadow {
+  box-shadow:
+    0 1px 2px rgba(21, 20, 15, 0.05),
+    0 8px 24px rgba(21, 20, 15, 0.08);
 }
 
 .dock-shell-piece {
