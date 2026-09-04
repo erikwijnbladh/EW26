@@ -97,7 +97,7 @@ to drink.
 
 Games have been a big part of my life. World of Warcraft is almost certainly
 the game I have spent the most time in, though quitting it has left more room
-for other games lately — especially Satisfactory. I have also played a lot of
+for other games lately. I have also played a lot of
 League of Legends and Overwatch, and reached Diamond in both. Some all-time
 favorites are Pokémon, particularly Generation III, and Halo 1, 2, and 3. On
 the Switch, I have put a lot of time into The Legend of Zelda: Breath of the
@@ -111,11 +111,7 @@ Hunger Games.
 My favorite trip so far was skiing in Italy at the foot of the Matterhorn. It
 is at least the most enjoyable ski trip I have taken.
 
-On the music: my taste runs to metal and hardcore — for shape, the kind of
-thing that turns up is ${nowPlaying
-      .slice(0, 6)
-      .map((track) => track.artist)
-      .join(", ")}.
+On the music: my taste is pretty broad, but I lean towards the heavier stuff.
 
 That list is hand-written and fixed. It is here to describe the taste and
 nothing else — it is not what I am listening to, and it may be months out of
