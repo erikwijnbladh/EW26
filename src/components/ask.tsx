@@ -630,7 +630,7 @@ export function AskPanel({
   return (
     <div
       ref={panelRef}
-      className="flex h-full w-[min(24rem,calc(100vw-4rem))] select-text flex-col p-5"
+      className="flex h-full w-[min(24rem,calc(100vw-4rem))] select-text flex-col p-5 sm:w-[32rem]"
     >
       <div className="grid min-h-8 grid-cols-[minmax(0,1fr)_2rem] items-center gap-3">
         <h2 className="text-sm font-medium leading-5 text-foreground/85">
