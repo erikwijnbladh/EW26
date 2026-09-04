@@ -14,7 +14,8 @@ import { createServer } from "node:http";
 const CLIENT_ID = process.env.SPOTIFY_CLIENT_ID;
 const CLIENT_SECRET = process.env.SPOTIFY_CLIENT_SECRET;
 const REDIRECT = "http://127.0.0.1:8888/callback";
-const SCOPES = "user-read-currently-playing user-read-recently-played";
+const SCOPES =
+  "user-read-currently-playing user-read-recently-played user-top-read";
 
 if (!CLIENT_ID || !CLIENT_SECRET) {
   console.error(
@@ -90,7 +91,7 @@ const server = createServer(async (req, res) => {
 
     console.log(`granted: ${granted.join(", ") || "(none)"}`);
     if (missing.length) {
-      console.error(`MISSING: ${missing.join(", ")} — the widget needs these.`);
+      console.error(`MISSING: ${missing.join(", ")} — the site needs these.`);
     }
   } catch (e) {
     res.writeHead(500, { "content-type": "text/plain" });

@@ -44,6 +44,20 @@ export type Playing = {
   history: Track[];
 };
 
+export type SpotifyTimeRange =
+  | "short_term"
+  | "medium_term"
+  | "long_term";
+
+/** Ranked listening data Spotify derives from the account's play history. */
+export type TopListening = {
+  timeRange: SpotifyTimeRange;
+  /** null means the endpoint failed; [] means Spotify returned no artists. */
+  artists: string[] | null;
+  /** null means the endpoint failed; [] means Spotify returned no tracks. */
+  tracks: Track[] | null;
+};
+
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
 const API = "https://api.spotify.com/v1";
 
@@ -57,6 +71,12 @@ const API = "https://api.spotify.com/v1";
  * list and no "view more" — so take the widest window on offer.
  */
 const RECENT_LIMIT = 50;
+
+/** Enough context for the chat to answer without dumping a chart at people. */
+const TOP_LIMIT = 10;
+
+/** Top artists barely move compared with the currently-playing endpoint. */
+const TOP_REVALIDATE = 15 * 60;
 
 /**
  * How long an answer is reused before Spotify is asked again.
@@ -143,7 +163,8 @@ function toTrack(item: SpotifyTrack | null | undefined): Track | null {
 let token: { value: string; expires: number; scope: string } | null = null;
 
 /**
- * What the widget needs granted, and what a token missing each one looks like.
+ * What the site's Spotify features need granted, and what a token missing each
+ * one looks like.
  *
  * Nothing declares these anywhere except the authorisation request that minted
  * the refresh token — there is no scope setting in the developer dashboard, so
@@ -153,6 +174,7 @@ let token: { value: string; expires: number; scope: string } | null = null;
 const REQUIRED_SCOPES = [
   "user-read-currently-playing",
   "user-read-recently-played",
+  "user-top-read",
 ] as const;
 
 async function getAccessToken(): Promise<string | null> {
@@ -329,6 +351,73 @@ async function getRecent(token: string): Promise<Track[] | null> {
   return tracks;
 }
 
+async function getTopArtists(
+  token: string,
+  timeRange: SpotifyTimeRange,
+): Promise<string[] | null> {
+  const res = await call(
+    `/me/top/artists?time_range=${timeRange}&limit=${TOP_LIMIT}`,
+    token,
+  );
+
+  if (!res.ok) {
+    await complain("top artists", res);
+    return null;
+  }
+
+  const json = (await res.json()) as { items?: SpotifyArtist[] };
+  const seen = new Set<string>();
+
+  return (json.items ?? [])
+    .map((artist) => artist.name?.trim())
+    .filter((name): name is string => {
+      if (!name) return false;
+      const key = name.toLocaleLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+async function getTopTracks(
+  token: string,
+  timeRange: SpotifyTimeRange,
+): Promise<Track[] | null> {
+  const res = await call(
+    `/me/top/tracks?time_range=${timeRange}&limit=${TOP_LIMIT}`,
+    token,
+  );
+
+  if (!res.ok) {
+    await complain("top tracks", res);
+    return null;
+  }
+
+  const json = (await res.json()) as { items?: SpotifyTrack[] };
+  return (json.items ?? [])
+    .map(toTrack)
+    .filter((track): track is Track => track !== null);
+}
+
+async function fetchTopListening(
+  timeRange: SpotifyTimeRange,
+): Promise<TopListening | null> {
+  try {
+    const accessToken = await getAccessToken();
+    if (!accessToken) return null;
+
+    const [artists, tracks] = await Promise.all([
+      getTopArtists(accessToken, timeRange),
+      getTopTracks(accessToken, timeRange),
+    ]);
+
+    if (artists === null && tracks === null) return null;
+    return { timeRange, artists, tracks };
+  } catch {
+    return null;
+  }
+}
+
 async function fetchPlaying(count: number): Promise<Playing | null> {
   try {
     const token = await getAccessToken();
@@ -399,4 +488,26 @@ export function getPlaying(count: number): Promise<Playing | null> {
   pending = { count, at: Date.now(), result: fetchPlaying(count) };
 
   return pending.result;
+}
+
+const topPending = new Map<
+  SpotifyTimeRange,
+  { at: number; result: Promise<TopListening | null> }
+>();
+
+/**
+ * Spotify's ranked artists and tracks for one of its three supported windows.
+ * Cached separately from the live player because this data changes slowly.
+ */
+export function getTopListening(
+  timeRange: SpotifyTimeRange,
+): Promise<TopListening | null> {
+  const cached = topPending.get(timeRange);
+  if (cached && Date.now() - cached.at < TOP_REVALIDATE * 1000) {
+    return cached.result;
+  }
+
+  const result = fetchTopListening(timeRange);
+  topPending.set(timeRange, { at: Date.now(), result });
+  return result;
 }

@@ -44,10 +44,12 @@ retrieval would add a round trip per turn and the chance of fetching the wrong
 three paragraphs, and buy nothing. If the writing grows by an order of
 magnitude, that trade flips; until then the dossier is the retriever.
 
-One thing can't be static: what he's listening to changes by the song. That's a
-LangChain tool (`now_playing`) the model calls when a question is actually about
-music — it reads the same live Spotify response the listening strip does, so the
-chat answers with what's on rather than pointing you up the page.
+One thing can't be static: Spotify listening changes constantly. Two LangChain
+tools fetch it when a question is about music: `now_playing` reads the live
+player and recent history, while `spotify_top` reads ranked artists and tracks
+over Spotify's short-, medium- and long-term windows. That lets the chat answer
+both "what's on?" and "what's your favorite band?" from the account instead of
+the hand-written sample.
 
 Nothing hard-codes the answers. Edit `src/lib/data.ts` and the chat knows about
 it on the next boot.

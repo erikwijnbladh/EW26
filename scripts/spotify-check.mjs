@@ -6,14 +6,18 @@
  * Reads the credentials already in .env.local (or the environment) and does
  * one refresh. Spotify restates the granted scopes on every refresh, so this
  * reports what the live token actually carries without minting a new one or
- * deploying anything — then calls both endpoints the widget needs so a scope
+ * deploying anything — then calls every endpoint the site needs so a scope
  * that is present but still failing has nowhere to hide.
  *
  * Read-only. It changes no credentials and stores nothing.
  */
 import { readFileSync } from "node:fs";
 
-const REQUIRED = ["user-read-currently-playing", "user-read-recently-played"];
+const REQUIRED = [
+  "user-read-currently-playing",
+  "user-read-recently-played",
+  "user-top-read",
+];
 
 // Fill anything missing from .env.local, so this works straight after a
 // `vercel env pull` without also needing a --env-file flag.
@@ -74,7 +78,7 @@ if (missing.length) {
       "and replace SPOTIFY_REFRESH_TOKEN wherever it's set, including Vercel.",
   );
 } else {
-  console.log("missing: none — the token covers everything the widget needs.");
+  console.log("missing: none — the token covers everything the site needs.");
 }
 
 // Scopes can look right and the call still fail, so check the endpoints too.
@@ -104,4 +108,6 @@ const probe = async (label, path) => {
 console.log("");
 await probe("currently-playing", "/me/player/currently-playing");
 await probe("recently-played", "/me/player/recently-played?limit=50");
+await probe("top-artists", "/me/top/artists?time_range=long_term&limit=10");
+await probe("top-tracks", "/me/top/tracks?time_range=long_term&limit=10");
 console.log("");
