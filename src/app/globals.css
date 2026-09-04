@@ -26,6 +26,11 @@
   --line: hsl(var(--h) 17% 7% / var(--rule));
   --surface: hsl(var(--h) 9% 91%);
   --accent: var(--foreground);
+
+  /* Floating chrome needs a little more separation than an inline card. The
+     outline defines its silhouette; the shadow only describes its height. */
+  --floating-surface: color-mix(in srgb, var(--background) 52%, white 48%);
+  --floating-outline: color-mix(in srgb, var(--foreground) 17%, transparent);
 }
 
 @theme inline {
@@ -124,16 +129,16 @@ summary {
   }
 }
 
-/* Floating controls use the same paper and ink as the page. The half-pixel
-   hairline is enough separation; glass blur made a tiny toolbar feel heavier
-   than the content it belongs to. */
+/* Floating controls stay opaque and paper-like. A full pixel outline survives
+   low-density and ultrawide displays; the close shadow gives contact while the
+   broad, lighter shadow establishes elevation without turning the pill grey. */
 .dock {
   border-radius: 999px;
-  background: color-mix(in srgb, var(--background) 94%, white 6%);
+  background: var(--floating-surface);
   box-shadow:
-    inset 0 0 0 0.5px color-mix(in srgb, var(--foreground) 18%, transparent),
-    0 1px 2px rgba(21, 20, 15, 0.05),
-    0 8px 24px rgba(21, 20, 15, 0.08);
+    inset 0 0 0 1px var(--floating-outline),
+    0 2px 4px rgba(21, 20, 15, 0.07),
+    0 14px 36px rgba(21, 20, 15, 0.11);
 }
 
 /* The viewport can become much shorter when a phone keyboard opens. These
@@ -164,19 +169,24 @@ summary {
     0 8px 24px rgba(21, 20, 15, 0.08);
 }
 
+.dock-shell {
+  filter:
+    drop-shadow(0 2px 3px rgba(21, 20, 15, 0.07))
+    drop-shadow(0 12px 28px rgba(21, 20, 15, 0.1));
+}
+
 .dock-shell-piece {
-  background: color-mix(in srgb, var(--background) 94%, white 6%);
+  background: var(--floating-surface);
 }
 
 .dock-shell-body {
   box-shadow:
-    inset 0 0.5px 0 color-mix(in srgb, var(--foreground) 18%, transparent),
-    inset 0 -0.5px 0 color-mix(in srgb, var(--foreground) 18%, transparent);
+    inset 0 1px 0 var(--floating-outline),
+    inset 0 -1px 0 var(--floating-outline);
 }
 
 .dock-shell-cap {
-  box-shadow: inset 0 0 0 0.5px
-    color-mix(in srgb, var(--foreground) 18%, transparent);
+  box-shadow: inset 0 0 0 1px var(--floating-outline);
 }
 
 .dock-shell-cap-left {
@@ -191,11 +201,11 @@ summary {
    switching form is a content transition rather than a layout animation. */
 .dock-panel {
   border-radius: 20px;
-  background: color-mix(in srgb, var(--background) 97%, white 3%);
+  background: var(--floating-surface);
   box-shadow:
-    inset 0 0 0 0.5px color-mix(in srgb, var(--foreground) 18%, transparent),
-    0 2px 5px rgba(21, 20, 15, 0.04),
-    0 16px 40px rgba(21, 20, 15, 0.09);
+    inset 0 0 0 1px var(--floating-outline),
+    0 2px 5px rgba(21, 20, 15, 0.06),
+    0 18px 48px -16px rgba(21, 20, 15, 0.2);
 }
 
 /* Music links stay part of the page until the pointer reaches them. The hover

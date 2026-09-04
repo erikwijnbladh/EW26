@@ -44,9 +44,9 @@ class ReplyError extends Error {}
 
 /** Short on purpose — long enough to be a real question, short enough to pair up. */
 const PROMPTS = [
-  "What are you working on?",
-  "Which project should I look at?",
+  "What are you working on right now?",
   "How can I reach you?",
+  "What's your favorite band?",
 ];
 
 const stroke = {
@@ -403,6 +403,7 @@ export function AskPanel({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [phase, setPhase] = useState<Phase>("idle");
+  const [scrolledFromTop, setScrolledFromTop] = useState(false);
 
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -426,6 +427,7 @@ export function AskPanel({
     const el = scrollRef.current;
     if (!el) return;
     pinned.current = el.scrollHeight - el.scrollTop - el.clientHeight < 32;
+    setScrolledFromTop(el.scrollTop > 1);
   }, []);
 
   // `open` is in here because the answer keeps arriving while the card is shut:
@@ -662,13 +664,17 @@ export function AskPanel({
         height goes — into more transcript. The floor is what the height used to
         be, so the card still measures the same when there is no slack to take.
       */}
-      <div className="relative mt-3 min-h-[min(15rem,40svh)] grow border-t border-line pt-3 [@media(max-height:520px)]:min-h-[6.5rem]">
+      <div className="relative mt-3 min-h-[min(15rem,40svh)] grow pt-3 [@media(max-height:520px)]:min-h-[6.5rem]">
         <div
           ref={scrollRef}
           onScroll={onScroll}
-          // The mask softens the top edge: scrolled-past text dissolves under
-          // the heading instead of being guillotined by the overflow box.
-          className="no-scrollbar absolute inset-x-0 bottom-0 top-3 overflow-y-auto overscroll-contain [mask-image:linear-gradient(to_bottom,transparent_0,black_1rem)]"
+          // Only soften content that has actually moved under the heading.
+          // Applying the mask at rest washes out the first line for no reason.
+          className={`no-scrollbar absolute inset-x-0 bottom-0 top-3 overflow-y-auto overscroll-contain ${
+            scrolledFromTop
+              ? "[mask-image:linear-gradient(to_bottom,transparent_0,black_1rem)]"
+              : ""
+          }`}
         >
           <motion.div
             initial={false}
@@ -698,13 +704,13 @@ export function AskPanel({
                   Work, projects, and this site.
                 </p>
 
-                <div className="border-t border-line">
+                <div className="overflow-hidden rounded-xl border border-line bg-foreground/[0.018]">
                   {PROMPTS.map((prompt) => (
                     <button
                       key={prompt}
                       type="button"
                       onClick={() => void send(prompt)}
-                      className="block w-full border-b border-line px-1 py-2.5 text-left text-sm leading-5 text-muted transition-[color,background-color] duration-150 hover:bg-foreground/[0.025] hover:text-foreground"
+                      className="block w-full border-b border-line px-3 py-2.5 text-left text-sm leading-5 text-muted transition-[color,background-color] duration-150 last:border-b-0 hover:bg-foreground/[0.035] hover:text-foreground"
                     >
                       {prompt}
                     </button>
@@ -717,12 +723,34 @@ export function AskPanel({
               // empty box, and the transcript starts scrolling once it outgrows it.
               <div className="flex min-h-full flex-col justify-end gap-4">
                 {messages.map((message, i) => (
-                  <div
+                  <motion.div
                     key={message.id}
                     className={
                       message.role === "user"
                         ? "flex justify-end"
                         : "grid grid-cols-[2rem_minmax(0,1fr)] items-end gap-2.5 pr-2"
+                    }
+                    initial={false}
+                    animate={{
+                      opacity: phase === "shredding" ? 0 : 1,
+                      filter:
+                        phase === "shredding" ? "blur(2px)" : "blur(0px)",
+                      transform:
+                        phase === "shredding"
+                          ? "translateY(-6px) scale(0.985)"
+                          : "translateY(0px) scale(1)",
+                    }}
+                    transition={
+                      still
+                        ? instant
+                        : {
+                            duration: phase === "shredding" ? 0.26 : 0.18,
+                            ease,
+                            delay:
+                              phase === "shredding"
+                                ? Math.min(messages.length - 1 - i, 4) * 0.035
+                                : 0,
+                          }
                     }
                     {...(message.role === "assistant"
                       ? { role: "group", "aria-label": "Erik" }
@@ -745,7 +773,7 @@ export function AskPanel({
                         />
                       </>
                     )}
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
