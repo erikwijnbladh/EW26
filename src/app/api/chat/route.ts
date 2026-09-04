@@ -25,8 +25,25 @@ export const maxDuration = 30;
 
 type Event =
   | { type: "delta"; text: string }
+  | { type: "media"; media: "cat" }
   | { type: "error"; message: string }
   | { type: "done" };
+
+/**
+ * Media stays deterministic rather than model-authored. The answer can vary;
+ * the asset path cannot, and a visitor should never be able to make the model
+ * invent an image URL for the client to render.
+ */
+function asksAboutCat(message: string) {
+  return (
+    /\b(?:cat|cats|kitten|kittens|kitty|kitties|feline|felines)\b/i.test(
+      message,
+    ) ||
+    /\b(?:your|the) pets?\b|\bdo you (?:have|own|live with) (?:a |any )?pets?\b/i.test(
+      message,
+    )
+  );
+}
 
 const encoder = new TextEncoder();
 
@@ -73,6 +90,10 @@ export async function POST(req: Request) {
 
         for await (const token of answer) {
           if (token) controller.enqueue(line({ type: "delta", text: token }));
+        }
+
+        if (asksAboutCat(parsed.value.message)) {
+          controller.enqueue(line({ type: "media", media: "cat" }));
         }
 
         controller.enqueue(line({ type: "done" }));

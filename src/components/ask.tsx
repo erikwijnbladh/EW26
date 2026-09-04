@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
-import { motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
   duration,
   ease,
+  easeGlide,
   easeInOut,
   drawOn,
   drawOff,
@@ -37,6 +38,7 @@ type Message = {
   id: number;
   role: Role;
   content: string;
+  media?: "cat";
 };
 
 /** An error the server described. Anything else gets a generic line. */
@@ -327,17 +329,158 @@ function AssistantAvatar({ thinking }: { thinking: boolean }) {
 }
 
 /**
+ * The cat photo borrows Elsewhere's interaction: the same image grows in place
+ * and toggles back, so there is no second lightbox copy to keep aligned with
+ * its source. Closed, it stays a quiet thumbnail beneath the answer.
+ */
+function CatPhoto({
+  still,
+}: {
+  still: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const overflow = document.body.style.overflow;
+    const trigger = triggerRef.current;
+    document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
+
+    return () => {
+      document.body.style.overflow = overflow;
+      requestAnimationFrame(() => trigger?.focus());
+    };
+  }, [open]);
+
+  return (
+    <>
+      <motion.button
+        ref={triggerRef}
+        type="button"
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        aria-label="Open cat photo"
+        onClick={() => setOpen(true)}
+        initial={still ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={still ? instant : { duration: 0.22, ease }}
+        className="relative mt-3 block aspect-[3/2] w-36 cursor-zoom-in overflow-hidden rounded-xl bg-line shadow-[inset_0_0_0_0.5px_var(--line)] outline-none transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-foreground/40 motion-reduce:active:scale-100"
+      >
+        <Image
+          src="/ask/cat.webp"
+          alt="Erik's grey-and-white cat looking into the camera"
+          fill
+          sizes="144px"
+          className="object-cover object-[center_10%]"
+        />
+      </motion.button>
+
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence>
+            {open && (
+              <motion.div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Cat photo"
+                onKeyDownCapture={(event) => {
+                  if (event.key === "Escape") {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    setOpen(false);
+                  } else if (event.key === "Tab") {
+                    event.preventDefault();
+                    closeRef.current?.focus();
+                  }
+                }}
+                className="fixed inset-0 z-[70] grid place-items-center p-6"
+              >
+                <motion.button
+                  type="button"
+                  tabIndex={-1}
+                  aria-label="Close cat photo"
+                  onClick={() => setOpen(false)}
+                  className="absolute inset-0 cursor-zoom-out bg-foreground/45"
+                  initial={still ? false : { opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={still ? instant : { duration: 0.16, ease }}
+                />
+
+                <motion.div
+                  className="relative z-10"
+                  initial={
+                    still
+                      ? false
+                      : {
+                          opacity: 0,
+                          transform: "translateY(8px) scale(0.98)",
+                        }
+                  }
+                  animate={{
+                    opacity: 1,
+                    transform: "translateY(0px) scale(1)",
+                  }}
+                  exit={{
+                    opacity: 0,
+                    transform: "translateY(4px) scale(0.985)",
+                  }}
+                  transition={
+                    still ? instant : { duration: 0.22, ease: easeGlide }
+                  }
+                >
+                  <Image
+                    src="/ask/cat.webp"
+                    alt="Erik's grey-and-white cat looking into the camera"
+                    width={720}
+                    height={960}
+                    sizes="(max-width: 640px) 78vw, 448px"
+                    className="h-auto max-h-[70svh] w-auto max-w-[min(78vw,28rem)] rounded-2xl object-contain shadow-2xl"
+                  />
+
+                  <button
+                    ref={closeRef}
+                    type="button"
+                    aria-label="Close cat photo"
+                    onClick={() => setOpen(false)}
+                    className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-background/90 text-foreground shadow-ring outline-none transition-transform duration-150 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.96] focus-visible:ring-2 focus-visible:ring-background motion-reduce:active:scale-100"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="size-4"
+                      aria-hidden
+                    >
+                      <path d="m7 7 10 10M17 7 7 17" {...stroke} />
+                    </svg>
+                  </button>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
+    </>
+  );
+}
+
+/**
  * One assistant turn. Separate component so the reveal re-renders this and not
  * the whole card — and so each reply gets its own reveal state, since the hook
  * is keyed by mount.
  */
 function Reply({
   content,
+  media,
   streaming,
   still,
   onReveal,
 }: {
   content: string;
+  media?: "cat";
   streaming: boolean;
   still: boolean;
   onReveal: () => void;
@@ -346,7 +489,7 @@ function Reply({
 
   useEffect(() => {
     onReveal();
-  }, [tokens, onReveal]);
+  }, [tokens, media, onReveal]);
 
   // The placeholder owns the same line the answer will begin on. It is static:
   // sending already has a stop state, and another animation would only make a
@@ -360,32 +503,36 @@ function Reply({
   }
 
   return (
-    <p className="text-base leading-7 text-foreground/90">
-      {tokens.map((token, i) => (
-        <span key={i}>
-          {token.href ? (
-            // `nowrap` holds the address, its copy button and the full stop
-            // after it together — the three read as one thing and shouldn't
-            // be split across a line break.
-            <span className="whitespace-nowrap">
-              <a
-                href={token.href}
-                {...(token.external
-                  ? { target: "_blank", rel: "noreferrer" }
-                  : {})}
-                className="underline underline-offset-2 transition-colors duration-150 hover:text-foreground"
-              >
-                {token.text}
-              </a>
-              {token.copy && <CopyButton value={token.copy} />}
-              {token.tail}
-            </span>
-          ) : (
-            token.text
-          )}
-        </span>
-      ))}
-    </p>
+    <div className="min-w-0">
+      <p className="text-base leading-7 text-foreground/90">
+        {tokens.map((token, i) => (
+          <span key={i}>
+            {token.href ? (
+              // `nowrap` holds the address, its copy button and the full stop
+              // after it together — the three read as one thing and shouldn't
+              // be split across a line break.
+              <span className="whitespace-nowrap">
+                <a
+                  href={token.href}
+                  {...(token.external
+                    ? { target: "_blank", rel: "noreferrer" }
+                    : {})}
+                  className="underline underline-offset-2 transition-colors duration-150 hover:text-foreground"
+                >
+                  {token.text}
+                </a>
+                {token.copy && <CopyButton value={token.copy} />}
+                {token.tail}
+              </span>
+            ) : (
+              token.text
+            )}
+          </span>
+        ))}
+      </p>
+
+      {media === "cat" && <CatPhoto still={still} />}
+    </div>
   );
 }
 
@@ -552,7 +699,12 @@ export function AskPanel({
             buffer = buffer.slice(cut + 1);
             if (!raw) continue;
 
-            let event: { type?: string; text?: string; message?: string };
+            let event: {
+              type?: string;
+              text?: string;
+              message?: string;
+              media?: string;
+            };
             try {
               event = JSON.parse(raw);
             } catch {
@@ -564,6 +716,12 @@ export function AskPanel({
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === replyId ? { ...m, content: m.content + chunk } : m,
+                ),
+              );
+            } else if (event.type === "media" && event.media === "cat") {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === replyId ? { ...m, media: "cat" } : m,
                 ),
               );
             } else if (event.type === "error") {
@@ -767,6 +925,7 @@ export function AskPanel({
                         />
                         <Reply
                           content={message.content}
+                          media={message.media}
                           streaming={busy && i === messages.length - 1}
                           still={Boolean(still)}
                           onReveal={stickToBottom}

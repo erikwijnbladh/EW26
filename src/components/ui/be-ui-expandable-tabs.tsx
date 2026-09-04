@@ -385,7 +385,7 @@ export function ExpandableTabs({
                   <span
                     aria-hidden
                     className={cn(
-                      "absolute inset-0 -z-10 rounded-full bg-foreground/[0.07] shadow-[inset_0_0_0_0.5px_var(--line)]",
+                      "absolute inset-1 -z-10 rounded-full bg-foreground/[0.07] shadow-[inset_0_0_0_0.5px_var(--line)]",
                       classNames?.pill,
                     )}
                   />
