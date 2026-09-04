@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
+import { preload } from "react-dom";
 import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
@@ -159,6 +160,13 @@ function Flare({ mention, children }: { mention: Mention; children: ReactNode })
 
 /** One bio paragraph, with its places turned into hover targets. */
 export function Prose({ text }: { text: string }) {
+  // The cards are mounted on demand so their entrance animation can start from
+  // a clean state. Fetch the tiny marks with the page, though, rather than
+  // making the first hover wait for its SVG request and decode.
+  for (const mention of mentions) {
+    preload(mention.logo.src, { as: "image", type: "image/svg+xml" });
+  }
+
   return (
     // No width of its own: the rail decides the measure, and a second cap here
     // would be the one that silently won the day the rail changed.
