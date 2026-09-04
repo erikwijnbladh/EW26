@@ -167,7 +167,7 @@ function FeaturedTrack({ track }: { track: Track }) {
   );
 
   const className =
-    "listening-link listening-feature -mx-2 grid h-14 grid-cols-[2rem_minmax(0,1fr)_minmax(0,0.58fr)] items-center gap-3 rounded-xl px-3 outline-none focus-visible:ring-2 focus-visible:ring-foreground/25";
+    "listening-link listening-feature grid h-14 grid-cols-[2rem_minmax(0,1fr)_minmax(0,0.58fr)] items-center gap-3 rounded-xl px-3 outline-none focus-visible:ring-2 focus-visible:ring-foreground/25";
 
   if (!track.url) return <div className={className}>{contents}</div>;
 

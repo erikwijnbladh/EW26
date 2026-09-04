@@ -13,11 +13,11 @@ export default async function Home() {
   const contributions = await getContributions("erikwijnbladh");
 
   return (
-    // One centred column, shared with the nav. Text carries `pl-5` so it starts
-    // level with the name in the header.
+    // One centred column, shared with the nav. Content carries an inner gutter
+    // so it starts level with the name while keeping equal space on both sides.
     <div className={`${PAGE_RAIL} pb-40 pt-4 sm:pb-44`}>
       <Reveal onMount>
-        <div className="pl-5">
+        <div className="px-5">
           {/* Square, because the source is. The old 7/6 box cropped a square
               photograph to a landscape one and then scaled it up to fill the
               column — losing the top and bottom of it to make it larger. */}
@@ -37,7 +37,7 @@ export default async function Home() {
         </div>
       </Reveal>
 
-      <RevealGroup className="mt-10 flex flex-col gap-5 pl-5" stagger={0.05}>
+      <RevealGroup className="mt-10 flex flex-col gap-5 px-5" stagger={0.05}>
         {profile.bio.map((paragraph, i) => (
           <RevealItem key={i}>
             <Prose text={paragraph} />
@@ -46,7 +46,7 @@ export default async function Home() {
       </RevealGroup>
 
       <Reveal onMount delay={0.06}>
-        <div className="mt-14 pl-5">
+        <div className="mt-14 px-5">
           {/* Inside the reveal, not around it: the reveal plays once, on the
               skeleton, and the tracks then swap in underneath it. Around it,
               the strip would animate in a second time when it streamed. */}
@@ -62,7 +62,7 @@ export default async function Home() {
 
       {contributions && (
         <Reveal onMount delay={0.12}>
-          <div className="mt-12 pl-5">
+          <div className="mt-12 px-5">
             <Contributions data={contributions} />
           </div>
         </Reveal>
