@@ -7,6 +7,7 @@ import { motion, useReducedMotion } from "motion/react";
 import {
   duration,
   ease,
+  easeGlide,
   easeInOut,
   drawOn,
   drawOff,
@@ -328,6 +329,58 @@ function AssistantAvatar({ thinking }: { thinking: boolean }) {
 }
 
 /**
+ * The cat photo borrows Elsewhere's interaction: the same image grows in place
+ * and toggles back, so there is no second lightbox copy to keep aligned with
+ * its source. Closed, it stays a quiet thumbnail beneath the answer.
+ */
+function CatPhoto({
+  still,
+  onResize,
+}: {
+  still: boolean;
+  onResize: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    onResize();
+  }, [open, onResize]);
+
+  return (
+    <motion.button
+      type="button"
+      layout="size"
+      aria-pressed={open}
+      aria-label={open ? "Close: Cat photo" : "Open: Cat photo"}
+      onClick={() => setOpen((current) => !current)}
+      onKeyDownCapture={(event) => {
+        if (open && event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          setOpen(false);
+        }
+      }}
+      initial={still ? false : { opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={
+        still ? instant : { duration: open ? 0.42 : 0.32, ease: easeGlide }
+      }
+      className={`relative mt-3 aspect-[3/2] overflow-hidden rounded-xl shadow-[inset_0_0_0_0.5px_var(--line)] outline-none focus-visible:ring-2 focus-visible:ring-foreground/40 ${
+        open ? "w-60 cursor-zoom-out" : "w-36 cursor-zoom-in"
+      }`}
+    >
+      <Image
+        src="/ask/cat.webp"
+        alt="Erik's grey-and-white cat looking into the camera"
+        fill
+        sizes={open ? "240px" : "144px"}
+        className="object-cover object-[center_10%]"
+      />
+    </motion.button>
+  );
+}
+
+/**
  * One assistant turn. Separate component so the reveal re-renders this and not
  * the whole card — and so each reply gets its own reveal state, since the hook
  * is keyed by mount.
@@ -391,29 +444,7 @@ function Reply({
         ))}
       </p>
 
-      {media === "cat" && (
-        <motion.div
-          initial={
-            still
-              ? false
-              : {
-                  opacity: 0,
-                  transform: "translateY(4px) scale(0.98)",
-                }
-          }
-          animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
-          transition={still ? instant : { duration: 0.22, ease }}
-          className="relative mt-3 aspect-[3/2] w-full max-w-60 overflow-hidden rounded-xl shadow-[inset_0_0_0_0.5px_var(--line)]"
-        >
-          <Image
-            src="/ask/cat.webp"
-            alt="Erik's grey-and-white cat looking into the camera"
-            fill
-            sizes="240px"
-            className="object-cover object-[center_10%]"
-          />
-        </motion.div>
-      )}
+      {media === "cat" && <CatPhoto still={still} onResize={onReveal} />}
     </div>
   );
 }
