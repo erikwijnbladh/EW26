@@ -6,8 +6,8 @@ import type { Track } from "@/lib/data";
  * Uses the refresh-token grant: a one-off authorisation produces a long-lived
  * refresh token, which is traded for a short-lived access token per request.
  * That means no user interaction at build or request time. Three env vars are
- * needed — SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET, SPOTIFY_REFRESH_TOKEN —
- * and `npm run spotify:token` walks through producing the third.
+ * needed — SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET and
+ * SPOTIFY_REFRESH_TOKEN.
  *
  * Every failure path returns null so the page falls back to the hand-written
  * list. A music widget must never be the reason the site doesn't render.
@@ -226,7 +226,7 @@ async function getAccessToken(): Promise<string | null> {
   if (missing.length) {
     console.error(
       `[spotify] refresh token is missing ${missing.join(", ")} — ` +
-        `re-run \`npm run spotify:token\` and replace SPOTIFY_REFRESH_TOKEN.`,
+        "reauthorize Spotify and replace SPOTIFY_REFRESH_TOKEN.",
     );
   }
 
