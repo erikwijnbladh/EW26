@@ -662,7 +662,7 @@ export function AskPanel({
         height goes — into more transcript. The floor is what the height used to
         be, so the card still measures the same when there is no slack to take.
       */}
-      <div className="relative mt-3 min-h-[min(15rem,40svh)] grow border-t border-line pt-3 [@media(max-height:520px)]:min-h-[6.5rem]">
+      <div className="relative mt-3 min-h-[min(15rem,40svh)] grow pt-3 [@media(max-height:520px)]:min-h-[6.5rem]">
         <div
           ref={scrollRef}
           onScroll={onScroll}
@@ -698,13 +698,13 @@ export function AskPanel({
                   Work, projects, and this site.
                 </p>
 
-                <div className="border-t border-line">
+                <div className="overflow-hidden rounded-xl border border-line bg-foreground/[0.018]">
                   {PROMPTS.map((prompt) => (
                     <button
                       key={prompt}
                       type="button"
                       onClick={() => void send(prompt)}
-                      className="block w-full border-b border-line px-1 py-2.5 text-left text-sm leading-5 text-muted transition-[color,background-color] duration-150 hover:bg-foreground/[0.025] hover:text-foreground"
+                      className="block w-full border-b border-line px-3 py-2.5 text-left text-sm leading-5 text-muted transition-[color,background-color] duration-150 last:border-b-0 hover:bg-foreground/[0.035] hover:text-foreground"
                     >
                       {prompt}
                     </button>
