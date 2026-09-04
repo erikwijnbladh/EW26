@@ -406,7 +406,7 @@ function Reply({
           className="relative mt-3 aspect-[3/2] w-full max-w-60 overflow-hidden rounded-xl shadow-[inset_0_0_0_0.5px_var(--line)]"
         >
           <Image
-            src="/ask/cat.jpg"
+            src="/ask/cat.webp"
             alt="Erik's grey-and-white cat looking into the camera"
             fill
             sizes="240px"
