@@ -723,12 +723,34 @@ export function AskPanel({
               // empty box, and the transcript starts scrolling once it outgrows it.
               <div className="flex min-h-full flex-col justify-end gap-4">
                 {messages.map((message, i) => (
-                  <div
+                  <motion.div
                     key={message.id}
                     className={
                       message.role === "user"
                         ? "flex justify-end"
                         : "grid grid-cols-[2rem_minmax(0,1fr)] items-end gap-2.5 pr-2"
+                    }
+                    initial={false}
+                    animate={{
+                      opacity: phase === "shredding" ? 0 : 1,
+                      filter:
+                        phase === "shredding" ? "blur(2px)" : "blur(0px)",
+                      transform:
+                        phase === "shredding"
+                          ? "translateY(-6px) scale(0.985)"
+                          : "translateY(0px) scale(1)",
+                    }}
+                    transition={
+                      still
+                        ? instant
+                        : {
+                            duration: phase === "shredding" ? 0.26 : 0.18,
+                            ease,
+                            delay:
+                              phase === "shredding"
+                                ? Math.min(messages.length - 1 - i, 4) * 0.035
+                                : 0,
+                          }
                     }
                     {...(message.role === "assistant"
                       ? { role: "group", "aria-label": "Erik" }
@@ -751,7 +773,7 @@ export function AskPanel({
                         />
                       </>
                     )}
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             )}
