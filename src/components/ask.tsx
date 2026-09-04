@@ -37,6 +37,7 @@ type Message = {
   id: number;
   role: Role;
   content: string;
+  media?: "cat";
 };
 
 /** An error the server described. Anything else gets a generic line. */
@@ -333,11 +334,13 @@ function AssistantAvatar({ thinking }: { thinking: boolean }) {
  */
 function Reply({
   content,
+  media,
   streaming,
   still,
   onReveal,
 }: {
   content: string;
+  media?: "cat";
   streaming: boolean;
   still: boolean;
   onReveal: () => void;
@@ -346,7 +349,7 @@ function Reply({
 
   useEffect(() => {
     onReveal();
-  }, [tokens, onReveal]);
+  }, [tokens, media, onReveal]);
 
   // The placeholder owns the same line the answer will begin on. It is static:
   // sending already has a stop state, and another animation would only make a
@@ -360,32 +363,58 @@ function Reply({
   }
 
   return (
-    <p className="text-base leading-7 text-foreground/90">
-      {tokens.map((token, i) => (
-        <span key={i}>
-          {token.href ? (
-            // `nowrap` holds the address, its copy button and the full stop
-            // after it together — the three read as one thing and shouldn't
-            // be split across a line break.
-            <span className="whitespace-nowrap">
-              <a
-                href={token.href}
-                {...(token.external
-                  ? { target: "_blank", rel: "noreferrer" }
-                  : {})}
-                className="underline underline-offset-2 transition-colors duration-150 hover:text-foreground"
-              >
-                {token.text}
-              </a>
-              {token.copy && <CopyButton value={token.copy} />}
-              {token.tail}
-            </span>
-          ) : (
-            token.text
-          )}
-        </span>
-      ))}
-    </p>
+    <div className="min-w-0">
+      <p className="text-base leading-7 text-foreground/90">
+        {tokens.map((token, i) => (
+          <span key={i}>
+            {token.href ? (
+              // `nowrap` holds the address, its copy button and the full stop
+              // after it together — the three read as one thing and shouldn't
+              // be split across a line break.
+              <span className="whitespace-nowrap">
+                <a
+                  href={token.href}
+                  {...(token.external
+                    ? { target: "_blank", rel: "noreferrer" }
+                    : {})}
+                  className="underline underline-offset-2 transition-colors duration-150 hover:text-foreground"
+                >
+                  {token.text}
+                </a>
+                {token.copy && <CopyButton value={token.copy} />}
+                {token.tail}
+              </span>
+            ) : (
+              token.text
+            )}
+          </span>
+        ))}
+      </p>
+
+      {media === "cat" && (
+        <motion.div
+          initial={
+            still
+              ? false
+              : {
+                  opacity: 0,
+                  transform: "translateY(4px) scale(0.98)",
+                }
+          }
+          animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+          transition={still ? instant : { duration: 0.22, ease }}
+          className="relative mt-3 aspect-[3/2] w-full max-w-60 overflow-hidden rounded-xl shadow-[inset_0_0_0_0.5px_var(--line)]"
+        >
+          <Image
+            src="/ask/cat.jpg"
+            alt="Erik's grey-and-white cat looking into the camera"
+            fill
+            sizes="240px"
+            className="object-cover object-[center_10%]"
+          />
+        </motion.div>
+      )}
+    </div>
   );
 }
 
@@ -552,7 +581,12 @@ export function AskPanel({
             buffer = buffer.slice(cut + 1);
             if (!raw) continue;
 
-            let event: { type?: string; text?: string; message?: string };
+            let event: {
+              type?: string;
+              text?: string;
+              message?: string;
+              media?: string;
+            };
             try {
               event = JSON.parse(raw);
             } catch {
@@ -564,6 +598,12 @@ export function AskPanel({
               setMessages((prev) =>
                 prev.map((m) =>
                   m.id === replyId ? { ...m, content: m.content + chunk } : m,
+                ),
+              );
+            } else if (event.type === "media" && event.media === "cat") {
+              setMessages((prev) =>
+                prev.map((m) =>
+                  m.id === replyId ? { ...m, media: "cat" } : m,
                 ),
               );
             } else if (event.type === "error") {
@@ -767,6 +807,7 @@ export function AskPanel({
                         />
                         <Reply
                           content={message.content}
+                          media={message.media}
                           streaming={busy && i === messages.length - 1}
                           still={Boolean(still)}
                           onReveal={stickToBottom}
