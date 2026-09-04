@@ -20,7 +20,7 @@ export const profile = {
   tagline: "Currently building products people love to use at Compileit.",
   bio: [
     "I'm Erik.",
-    "Currently fullstack dev at Compileit, building products people love. Before that, I was doing development and design at KTH, and prior to that I spent three years owning all things frontend on BrightBids AI ads platform.",
+    "Currently fullstack dev at Compileit, building products people love. Before that, I was doing development and design at KTH, and prior to that I spent three years owning all things frontend at BrightBid, an AI powered Google Ads platform.",
     "Away from the screen I like to cook, ski, skateboard, play the occasional game and read the occasional book. I also try to attend as many concerts as possible.",
   ],
 };
