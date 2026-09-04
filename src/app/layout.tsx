@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { profile } from "@/lib/data";
 import { Nav } from "@/components/nav";
 import { Dock } from "@/components/dock";
@@ -55,6 +56,7 @@ export default function RootLayout({
           <main className="min-w-0 flex-1 pt-24 sm:pt-28">{children}</main>
           <Dock />
         </IndicatorProvider>
+        <Analytics />
       </body>
     </html>
   );
