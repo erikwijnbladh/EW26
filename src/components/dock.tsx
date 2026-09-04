@@ -118,7 +118,7 @@ export function Dock() {
         )}
       </AnimatePresence>
 
-      <div className="pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center p-5 sm:p-8">
+      <div className="dock-frame pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center">
         <div className="pointer-events-none">
           <ExpandableTabs
             value={active}

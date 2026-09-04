@@ -23,7 +23,7 @@ const EASE_IN_OUT = [0.77, 0, 0.175, 1] as const;
 
 const PANEL_GAP = 8;
 const BAR_HEIGHT = 52;
-const TAB_WIDTH = 36;
+const TAB_WIDTH = 44;
 const BAR_GAP = 4;
 const BAR_PADDING = 8;
 
@@ -212,6 +212,9 @@ export function ExpandableTabs({
 
   const panelReady = panelSize.height > 0;
   const panelOpen = Boolean(active && panelReady);
+  const maxRootHeight =
+    "calc(100dvh - var(--dock-top) - var(--dock-bottom))";
+  const maxPanelHeight = `calc(${maxRootHeight} - ${PANEL_GAP + BAR_HEIGHT}px)`;
   const closedInset = Math.max(0, (panelSize.width - toolbarWidth) / 2);
   const closedBodyWidth = toolbarWidth - BAR_HEIGHT;
   const openBodyWidth = panelSize.width - BAR_HEIGHT;
@@ -227,7 +230,7 @@ export function ExpandableTabs({
       className={cn("relative pointer-events-none", className)}
       style={{
         width: panelSize.width,
-        height: panelSize.height + PANEL_GAP + BAR_HEIGHT,
+        height: `min(${panelSize.height + PANEL_GAP + BAR_HEIGHT}px, ${maxRootHeight})`,
       }}
     >
       <motion.div
@@ -248,11 +251,14 @@ export function ExpandableTabs({
               }
         }
         className={cn(
-          "dock-panel absolute inset-x-0 top-0 grid overflow-hidden",
+          "dock-panel no-scrollbar absolute inset-x-0 top-0 grid overflow-y-auto overscroll-contain",
           panelOpen ? "pointer-events-auto" : "pointer-events-none",
           classNames?.panel,
         )}
-        style={{ height: panelSize.height, transformOrigin: "bottom center" }}
+        style={{
+          height: `min(${panelSize.height}px, ${maxPanelHeight})`,
+          transformOrigin: "bottom center",
+        }}
       >
         {panels.map((item) => {
           const current = item.id === shownId;
@@ -283,6 +289,34 @@ export function ExpandableTabs({
         )}
       >
         <div aria-hidden className="dock-shell absolute inset-0">
+          <motion.span
+            initial={false}
+            animate={{ opacity: immersiveOpen ? 0 : 1 }}
+            transition={
+              reduce
+                ? { duration: 0 }
+                : { duration: immersiveOpen ? 0.1 : 0.14, ease: EASE_OUT }
+            }
+            className="dock-shell-shadow absolute inset-y-0 left-1/2 rounded-full"
+            style={{
+              width: toolbarWidth,
+              marginLeft: -toolbarWidth / 2,
+            }}
+          />
+          <motion.span
+            initial={false}
+            animate={{ opacity: immersiveOpen ? 1 : 0 }}
+            transition={
+              reduce
+                ? { duration: 0 }
+                : { duration: immersiveOpen ? 0.14 : 0.1, ease: EASE_OUT }
+            }
+            className="dock-shell-shadow absolute inset-y-0 left-1/2 rounded-full"
+            style={{
+              width: panelSize.width,
+              marginLeft: -panelSize.width / 2,
+            }}
+          />
           <motion.span
             initial={false}
             animate={{
@@ -336,7 +370,7 @@ export function ExpandableTabs({
               ? -closedInset - itemIndex * (TAB_WIDTH + BAR_GAP)
               : 0;
             const baseClass = cn(
-              "group absolute top-2 isolate grid size-9 place-items-center rounded-full text-muted outline-none",
+              "group absolute top-1 isolate grid size-11 place-items-center rounded-full text-muted outline-none",
               "transition-colors duration-150 ease-[cubic-bezier(0.23,1,0.32,1)]",
               "focus-visible:ring-1 focus-visible:ring-foreground/35",
               isActive && "text-foreground",

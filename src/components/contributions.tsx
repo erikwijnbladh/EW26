@@ -79,6 +79,9 @@ type Hovered = { x: number; y: number; text: string };
 /** A year of GitHub activity, in the site's own greys. */
 export function Contributions({ data }: { data: ContributionsData }) {
   const labels = monthLabels(data.weeks);
+  const compactLabels = labels.filter(({ label }) =>
+    ["Jan", "Apr", "Jul", "Oct"].includes(label),
+  );
   const columns = data.weeks.length;
   const gridRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState<Hovered | null>(null);
@@ -108,7 +111,7 @@ export function Contributions({ data }: { data: ContributionsData }) {
 
       <div className="mt-4">
         <div
-          className="grid gap-[2px] text-[10px] text-muted/70"
+          className="hidden gap-[2px] text-[10px] text-muted/70 min-[360px]:grid"
           style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
           aria-hidden
         >
@@ -116,6 +119,22 @@ export function Contributions({ data }: { data: ContributionsData }) {
             <span
               key={`${label}-${index}`}
               className="col-span-3 whitespace-nowrap"
+              style={{ gridColumnStart: index + 1 }}
+            >
+              {label}
+            </span>
+          ))}
+        </div>
+
+        <div
+          className="grid gap-[2px] text-[10px] text-muted/70 min-[360px]:hidden"
+          style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
+          aria-hidden
+        >
+          {compactLabels.map(({ index, label }) => (
+            <span
+              key={`${label}-${index}`}
+              className="col-span-4 whitespace-nowrap"
               style={{ gridColumnStart: index + 1 }}
             >
               {label}
