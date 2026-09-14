@@ -35,7 +35,7 @@ export function PlayingSkeleton() {
 
   return (
     <section aria-label="Latest playing" aria-busy>
-      <p className="flex h-4 items-center gap-2 text-xs leading-4 text-muted/75">
+      <p className="flex h-4 items-center gap-2 text-xs leading-4 text-muted">
         Latest playing
         <span className="size-3.5" aria-hidden />
       </p>

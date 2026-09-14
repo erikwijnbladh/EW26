@@ -101,7 +101,7 @@ export function Contributions({ data }: { data: ContributionsData }) {
   return (
     <section aria-label="GitHub activity">
       <div className="flex items-baseline justify-between gap-4">
-        <p className="text-xs text-muted/70">
+        <p className="text-xs text-muted">
           GitHub activity
         </p>
         <p className="text-xs text-muted">
@@ -111,7 +111,7 @@ export function Contributions({ data }: { data: ContributionsData }) {
 
       <div className="mt-4">
         <div
-          className="hidden gap-[2px] text-[10px] text-muted/70 min-[360px]:grid"
+          className="hidden gap-[2px] text-[10px] text-muted min-[360px]:grid"
           style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
           aria-hidden
         >
@@ -127,7 +127,7 @@ export function Contributions({ data }: { data: ContributionsData }) {
         </div>
 
         <div
-          className="grid gap-[2px] text-[10px] text-muted/70 min-[360px]:hidden"
+          className="grid gap-[2px] text-[10px] text-muted min-[360px]:hidden"
           style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
           aria-hidden
         >
@@ -187,7 +187,7 @@ export function Contributions({ data }: { data: ContributionsData }) {
           </AnimatePresence>
         </div>
 
-        <div className="mt-3 flex items-center justify-end gap-1.5 text-[10px] text-muted/70">
+        <div className="mt-3 flex items-center justify-end gap-1.5 text-[10px] text-muted">
           <span>Less</span>
           {LEVELS.map((level) => (
             <span key={level} className={`size-2 rounded-[2px] ${level}`} />

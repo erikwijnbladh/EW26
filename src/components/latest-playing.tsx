@@ -21,7 +21,7 @@ function keyFor(track: Track, index: number) {
 /** A quiet fallback that still reads as intentional when artwork is absent. */
 function RecordMark() {
   return (
-    <span className="flex size-full items-center justify-center bg-foreground/[0.055] text-muted/75">
+    <span className="flex size-full items-center justify-center bg-foreground/[0.055] text-muted">
       <svg
         viewBox="0 0 24 24"
         className="size-4"
@@ -254,7 +254,7 @@ export function LatestPlaying({
 
   return (
     <section aria-label="Listening" className="[overflow-anchor:none]">
-      <p className="flex h-4 items-center gap-2 text-xs leading-4 text-muted/75">
+      <p className="flex h-4 items-center gap-2 text-xs leading-4 text-muted">
         {heading}
         {playing ? <AudioLines /> : <PlayOff />}
       </p>
@@ -275,23 +275,23 @@ export function LatestPlaying({
                 ? "Hide listening log"
                 : `Show listening log, ${log.length} previous tracks`
             }
-            className="listening-pressable mt-2 flex min-h-10 w-full items-center gap-2 rounded-md text-[13px] text-muted/80 outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/25 max-sm:min-h-11"
+            className="listening-pressable mt-2 flex min-h-10 w-full items-center gap-2 rounded-md text-[13px] text-muted outline-none transition-colors duration-150 hover:text-foreground focus-visible:ring-2 focus-visible:ring-foreground/25 max-sm:min-h-11"
           >
             {expanded ? (
               <>
                 <span>Listening log</span>
-                <span className="ml-auto text-xs text-muted/70">Hide</span>
+                <span className="ml-auto text-xs text-muted">Hide</span>
               </>
             ) : (
               <>
-                <span className="shrink-0 text-xs text-muted/70">
+                <span className="shrink-0 text-xs text-muted">
                   Before that
                 </span>
                 <Artwork track={log[0]} compact />
                 <span className="min-w-0 flex-1 truncate text-left">
                   {log[0].title}
                 </span>
-                <span className="shrink-0 text-xs text-muted/65">
+                <span className="shrink-0 text-xs text-muted">
                   Show
                 </span>
               </>

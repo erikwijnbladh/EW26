@@ -134,28 +134,12 @@ export function SayHiForm({
   const [error, setError] = useState<string | null>(null);
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
-  // Gated on `open`, not on mount: the dock keeps both cards mounted so it can
-  // cross-fade between them, so this component is alive from page load and an
-  // ungated focus would take the caret off the page before anyone clicked
-  // anything. The dock also measures a hidden copy of this card, which would
-  // otherwise install a second Escape handler.
+  // Only the visible panel owns focus; the sizing copy is inert.
   useEffect(() => {
-    if (!open) return;
-
-    // Focus once the surface has finished expanding, so the browser doesn't
-    // scroll or repaint mid-morph.
-    const focusTimer = setTimeout(() => firstFieldRef.current?.focus(), 320);
-
-    function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") onClose();
-    }
-    window.addEventListener("keydown", onKeyDown);
-
-    return () => {
-      clearTimeout(focusTimer);
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, onClose]);
+    if (!open || firstFieldRef.current?.closest("[data-panel-measurement]")) return;
+    const timer = setTimeout(() => firstFieldRef.current?.focus({ preventScroll: true }), 320);
+    return () => clearTimeout(timer);
+  }, [open]);
 
   /**
    * Once it has gone: hold the tick long enough to read, close, then clear.
