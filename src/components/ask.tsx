@@ -678,7 +678,7 @@ export function AskPanel({
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({ message: question, history }),
-          signal: controller.signal,
+          signal: AbortSignal.any([controller.signal, AbortSignal.timeout(35_000)]),
         });
 
         if (!res.ok || !res.body) {
@@ -710,8 +710,12 @@ export function AskPanel({
         setDraft((current) => current || question);
         setAnnouncement("");
         setError(
-          cause instanceof Error
-            ? cause.message
+          cause instanceof Error && cause.name === "TimeoutError"
+            ? "The reply timed out. Try again?"
+            : cause instanceof TypeError
+              ? "Couldn't reach the server. Check your connection."
+              : cause instanceof Error
+                ? cause.message
             : "Couldn't reach the server. Check your connection.",
         );
         // An assistant turn that never got a word is just an empty gap.
@@ -734,6 +738,7 @@ export function AskPanel({
     controller.abort();
     abort.current = null;
     setBusy(false);
+    setAnnouncement("Reply stopped.");
     // Drop the reply if it never started; keep it if it did.
     setMessages((prev) =>
       prev.filter((m, i) => i !== prev.length - 1 || m.content.length > 0),

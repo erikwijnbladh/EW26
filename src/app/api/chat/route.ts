@@ -1,7 +1,7 @@
-import { createAnswerStream } from "@/lib/chat-stream";
 import { connection } from "next/server";
 import { isConfigured, parseChatRequest, streamAnswer } from "@/lib/chat";
 import { createRateLimit } from "@/lib/rate-limit";
+import { createAnswerStream } from "@/lib/chat-stream";
 
 /**
  * What the chat card in the dock posts to.
