@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useLayoutEffect,
+  useId,
   useRef,
   useState,
   type ReactElement,
@@ -153,6 +154,9 @@ export function ExpandableTabs({
 }: ExpandableTabsProps) {
   const reduce = useReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
+  const instanceId = useId();
+  const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+  const restoreOnClose = useRef(true);
   const controlled = value !== undefined;
   const [internal, setInternal] = useState<string | null>(defaultValue);
   const activeId = controlled ? value : internal;
@@ -174,14 +178,30 @@ export function ExpandableTabs({
     [controlled, onValueChange],
   );
 
+  const previousActive = useRef(activeId);
+  useLayoutEffect(() => {
+    const previous = previousActive.current;
+    if (previous && !activeId && restoreOnClose.current) {
+      triggerRefs.current[previous]?.focus({ preventScroll: true });
+    }
+    restoreOnClose.current = true;
+    previousActive.current = activeId;
+  }, [activeId]);
+
   useEffect(() => {
     if (!active) return;
 
     const closeOnOutsidePress = (event: PointerEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setActive(null);
+      const target = event.target as HTMLElement;
+      // A child lightbox is portalled outside the dock but still belongs to it.
+      if (target.closest('[role="dialog"][aria-modal="true"]')) return;
+      if (!rootRef.current?.contains(target)) {
+        restoreOnClose.current = false;
+        setActive(null);
+      }
     };
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setActive(null);
+      if (event.key === "Escape" && !event.defaultPrevented) { event.preventDefault(); setActive(null); }
     };
 
     document.addEventListener("pointerdown", closeOnOutsidePress);
@@ -265,6 +285,9 @@ export function ExpandableTabs({
           return (
             <div
               key={item.id}
+              id={`${instanceId}-panel-${item.id}`}
+              role="region"
+              aria-labelledby={`${instanceId}-trigger-${item.id}`}
               inert={!panelOpen || !current}
               aria-hidden={!current}
               className={cn(
@@ -279,9 +302,8 @@ export function ExpandableTabs({
       </motion.div>
 
       <div
-        role={immersiveOpen ? undefined : "tablist"}
+        role="group"
         aria-label={immersiveOpen ? "Ask Erik" : "Contact and navigation"}
-        aria-orientation={immersiveOpen ? undefined : "horizontal"}
         className={cn(
           "pointer-events-auto absolute inset-x-0 bottom-0 h-[52px]",
           classNames?.root,
@@ -446,10 +468,10 @@ export function ExpandableTabs({
                 trigger={
                   <motion.button
                     type="button"
-                    role={isPanel && !immersiveOpen ? "tab" : undefined}
-                    aria-selected={
-                      isPanel && !immersiveOpen ? isActive : undefined
-                    }
+                    ref={(node) => { triggerRefs.current[item.id] = node; }}
+                    id={`${instanceId}-trigger-${item.id}`}
+                    aria-expanded={isPanel ? isActive : undefined}
+                    aria-controls={isPanel ? `${instanceId}-panel-${item.id}` : undefined}
                     aria-label={
                       immersiveOpen && isImmersiveControl
                         ? `Close ${item.label}`

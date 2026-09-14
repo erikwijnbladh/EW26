@@ -599,8 +599,8 @@ export function AskPanel({
   // or repaint mid-morph. The measuring copy of this card is inert and never
   // receives a composer portal, so only the real one can take the caret.
   useEffect(() => {
-    if (!open) return;
-    const timer = setTimeout(() => inputRef.current?.focus(), 320);
+    if (!open || panelRef.current?.closest("[data-panel-measurement]")) return;
+    const timer = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 320);
     return () => clearTimeout(timer);
   }, [open]);
 

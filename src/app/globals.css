@@ -350,3 +350,9 @@ summary {
     font-size: 16px;
   }
 }
+
+/* A consistent keyboard focus indicator, including icon-only actions and fields. */
+:where(a, button, input, textarea, summary):focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+}
