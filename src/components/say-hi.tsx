@@ -132,6 +132,8 @@ export function SayHiForm({
   const [message, setMessage] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
+  const submission = useRef<{ payload: string; key: string } | null>(null);
+  const sending = useRef(false);
   const firstFieldRef = useRef<HTMLInputElement>(null);
 
   // Gated on `open`, not on mount: the dock keeps both cards mounted so it can
@@ -157,52 +159,40 @@ export function SayHiForm({
     };
   }, [open, onClose]);
 
-  /**
-   * Once it has gone: hold the tick long enough to read, close, then clear.
-   *
-   * The reset matters because this form is never unmounted — the dock keeps
-   * every card alive so it can cross-fade between them — so without it the next
-   * visitor to open the card finds the last message still sitting there, sent.
-   * It happens after the card has shut, so nobody watches the fields empty.
-   */
-  useEffect(() => {
-    if (status !== "sent") return;
-
-    const timers = [
-      setTimeout(onClose, 1600),
-      setTimeout(() => {
-        setName("");
-        setEmail("");
-        setMessage("");
-        setStatus("idle");
-      }, 2000),
-    ];
-
-    return () => timers.forEach(clearTimeout);
-  }, [status, onClose]);
+  function reset() {
+    setName("");
+    setEmail("");
+    setMessage("");
+    setStatus("idle");
+    submission.current = null;
+    requestAnimationFrame(() => firstFieldRef.current?.focus());
+  }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     // A second press while the first is in flight would send twice.
-    if (status === "sending" || status === "sent") return;
+    if (sending.current || status === "sent") return;
+    sending.current = true;
 
     setStatus("sending");
     setError(null);
 
     try {
+      const payload = JSON.stringify({ name, email, message });
+      if (submission.current?.payload !== payload) {
+        submission.current = { payload, key: crypto.randomUUID() };
+      }
       const res = await fetch("/api/contact", {
         method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ name, email, message }),
+        headers: { "content-type": "application/json", "idempotency-key": submission.current.key },
+        body: payload,
+        signal: AbortSignal.timeout(15_000),
       });
 
-      if (!res.ok) {
+      const body = (await res.json().catch(() => null)) as { ok?: boolean; error?: string } | null;
+      if (!res.ok || body?.ok !== true) {
         // The route sends a reason worth showing; a proxy failing in front of
         // it won't, so there's a fallback that doesn't say "undefined".
-        const body = (await res.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-
         setError(body?.error ?? "Couldn't send that. Try again in a moment.");
         setStatus("error");
         return;
@@ -210,9 +200,10 @@ export function SayHiForm({
 
       setStatus("sent");
     } catch {
-      // Offline, DNS, a connection cut mid-request.
-      setError("Couldn't reach the server. Check your connection.");
+      setError("Delivery couldn't be confirmed. Retry safely, or email me directly.");
       setStatus("error");
+    } finally {
+      sending.current = false;
     }
   }
 
@@ -226,7 +217,7 @@ export function SayHiForm({
         </h2>
       </div>
 
-      <form onSubmit={onSubmit} className="mt-4 flex grow flex-col">
+      <form onSubmit={onSubmit} aria-busy={status === "sending"} className="mt-4 flex grow flex-col">
         <div className="flex grow flex-col overflow-hidden rounded-xl border border-line transition-colors duration-150 focus-within:border-foreground/30">
           <div className="grid sm:grid-cols-2">
             <label className="block px-3.5 py-3">
@@ -276,6 +267,15 @@ export function SayHiForm({
 
         <div className="mt-3 flex min-h-11 items-end gap-3">
           <div className="flex-1 text-xs font-light leading-relaxed">
+            <p role="status" aria-live="polite" aria-atomic="true" className={status === "sent" ? "text-muted" : "sr-only"}>
+              {status === "sending" ? "Sending your message…" : status === "sent" ? "Message sent. Thanks for getting in touch." : ""}
+            </p>
+            {status === "sent" && (
+              <div className="mt-2 flex gap-4">
+                <button type="button" onClick={reset} className="underline underline-offset-2">Write another</button>
+                <button type="button" onClick={onClose} className="underline underline-offset-2">Done</button>
+              </div>
+            )}
             <AnimatePresence mode="wait" initial={false}>
               {status === "error" && error ? (
                 <motion.p
@@ -295,7 +295,7 @@ export function SayHiForm({
                     Email instead.
                   </a>
                 </motion.p>
-              ) : (
+              ) : status !== "sent" ? (
                 <motion.p
                   key="note"
                   initial={still ? false : { opacity: 0 }}
@@ -306,7 +306,7 @@ export function SayHiForm({
                 >
                   Pls don&rsquo;t try to sell me anything.
                 </motion.p>
-              )}
+              ) : null}
             </AnimatePresence>
           </div>
 
