@@ -1,3 +1,4 @@
+import { readText, bodyErrorResponse } from "@/lib/request-body";
 import type { NextRequest } from "next/server";
 import { connection, NextResponse } from "next/server";
 import { Resend } from "resend";
@@ -5,7 +6,6 @@ import { Resend } from "resend";
 export async function POST(request: NextRequest) {
   await connection();
 
-  const payload = await request.text();
   const id = request.headers.get("svix-id");
   const timestamp = request.headers.get("svix-timestamp");
   const signature = request.headers.get("svix-signature");
@@ -22,6 +22,13 @@ export async function POST(request: NextRequest) {
       "[resend webhook] not configured: RESEND_WEBHOOK_SECRET is required.",
     );
     return new NextResponse("Webhook is not configured.", { status: 500 });
+  }
+
+  let payload: string;
+  try {
+    payload = await readText(request, 256 * 1024);
+  } catch (cause) {
+    return bodyErrorResponse(cause);
   }
 
   const resend = new Resend(process.env.RESEND_API_KEY);

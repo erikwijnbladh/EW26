@@ -1,3 +1,4 @@
+import { readJson, bodyErrorResponse } from "@/lib/request-body";
 import { connection } from "next/server";
 import { parse, send } from "@/lib/contact";
 import { createRateLimit } from "@/lib/rate-limit";
@@ -23,15 +24,15 @@ export async function POST(req: Request) {
   if (!allowed(req)) {
     return Response.json(
       { error: "Too many messages. Try again in a little while." },
-      { status: 429 },
+      { status: 429, headers: { "retry-after": "600" } },
     );
   }
 
   let body: unknown;
   try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Expected JSON." }, { status: 400 });
+    body = await readJson(req, 32 * 1024);
+  } catch (cause) {
+    return bodyErrorResponse(cause);
   }
 
   const parsed = parse(body);
