@@ -1,5 +1,6 @@
 "use client";
 
+import { fetchWithDeadline } from "@/lib/fetch-with-deadline";
 import { useEffect, useState } from "react";
 import type { Track } from "@/lib/data";
 import type { Playing } from "@/lib/spotify";
@@ -82,11 +83,12 @@ export function usePlaying(initial: Playing): Shown {
 
     async function tick() {
       controller?.abort();
-      controller = new AbortController();
+      const current = new AbortController();
+      controller = current;
 
       try {
-        const res = await fetch("/api/playing", {
-          signal: controller.signal,
+        const res = await fetchWithDeadline("/api/playing", {
+          signal: current.signal,
           cache: "no-store",
         });
 
@@ -96,13 +98,13 @@ export function usePlaying(initial: Playing): Shown {
         // is on screen, since a log a minute old reads better than dropping
         // back to the hand-written fallback under someone's eyes. An answer
         // that arrived is folded in by `merge`.
-        if (!stopped && next) setPlaying((prev) => merge(prev, next));
+        if (!stopped && controller === current && !current.signal.aborted && next) setPlaying((prev) => merge(prev, next));
       } catch {
         // Offline, aborted, or a payload that didn't parse. Try again next tick
         // — this widget is never allowed to be the thing that breaks.
       }
 
-      if (!stopped) queue();
+      if (!stopped && controller === current) queue();
     }
 
     function queue() {
@@ -116,10 +118,10 @@ export function usePlaying(initial: Playing): Shown {
 
     function onVisibilityChange() {
       if (document.visibilityState === "visible") void tick();
-      else clearTimeout(timer);
+      else { clearTimeout(timer); controller?.abort(); }
     }
 
-    void tick();
+    if (document.visibilityState === "visible") void tick();
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {

@@ -9,8 +9,17 @@ import { Contributions } from "@/components/contributions";
 import { Prose } from "@/components/mention";
 import { BuiltWith } from "@/components/built-with";
 
-export default async function Home() {
+async function ContributionSection() {
   const contributions = await getContributions("erikwijnbladh");
+  if (!contributions) return null;
+  return (
+    <Reveal onMount delay={0.12}>
+      <div className="mt-12 px-5"><Contributions data={contributions} /></div>
+    </Reveal>
+  );
+}
+
+export default function Home() {
 
   return (
     // One centred column, shared with the nav. Content carries an inner gutter
@@ -60,13 +69,9 @@ export default async function Home() {
           images are still here, so putting it back is this block and its
           import. See src/components/elsewhere.tsx. */}
 
-      {contributions && (
-        <Reveal onMount delay={0.12}>
-          <div className="mt-12 px-5">
-            <Contributions data={contributions} />
-          </div>
-        </Reveal>
-      )}
+      <Suspense fallback={null}>
+        <ContributionSection />
+      </Suspense>
 
       <Reveal onMount delay={0.18}>
         <div className="mt-14">

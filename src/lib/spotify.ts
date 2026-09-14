@@ -1,3 +1,4 @@
+import { fetchWithDeadline } from "@/lib/fetch-with-deadline";
 import type { Track } from "@/lib/data";
 
 /**
@@ -185,7 +186,7 @@ async function getAccessToken(): Promise<string | null> {
   if (!id || !secret || !refresh) return null;
   if (token && Date.now() < token.expires) return token.value;
 
-  const res = await fetch(TOKEN_URL, {
+  const res = await fetchWithDeadline(TOKEN_URL, {
     method: "POST",
     headers: {
       "content-type": "application/x-www-form-urlencoded",
@@ -237,7 +238,7 @@ async function call(path: string, token: string) {
   // No `next: { revalidate }` — under `cacheComponents` a fetch outside a
   // `use cache` scope isn't stored, so it would have been inert config that
   // read like the thing doing the throttling. `pending` does that.
-  return fetch(`${API}${path}`, {
+  return fetchWithDeadline(`${API}${path}`, {
     headers: { authorization: `Bearer ${token}` },
   });
 }
