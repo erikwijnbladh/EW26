@@ -8,6 +8,7 @@ import { PlayingSection, PlayingSkeleton } from "@/components/playing-section";
 import { Contributions } from "@/components/contributions";
 import { Prose } from "@/components/mention";
 import { BuiltWith } from "@/components/built-with";
+import { WorkDetails } from "@/components/work-details";
 
 export default async function Home() {
   const contributions = await getContributions("erikwijnbladh");
@@ -44,6 +45,8 @@ export default async function Home() {
           </RevealItem>
         ))}
       </RevealGroup>
+
+      <WorkDetails />
 
       <Reveal onMount delay={0.06}>
         <div className="mt-14 px-5">
