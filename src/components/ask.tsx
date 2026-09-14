@@ -15,6 +15,7 @@ import {
 } from "@/lib/motion";
 import { useWordReveal } from "@/components/use-word-reveal";
 import { CopyIcon } from "@/components/copy-icon";
+import { readChatStream } from "@/lib/chat-stream";
 import { copyText } from "@/lib/clipboard";
 
 /**
@@ -549,6 +550,8 @@ export function AskPanel({
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [failedQuestion, setFailedQuestion] = useState<string | null>(null);
+  const [announcement, setAnnouncement] = useState("");
   const [phase, setPhase] = useState<Phase>("idle");
   const [scrolledFromTop, setScrolledFromTop] = useState(false);
 
@@ -625,6 +628,8 @@ export function AskPanel({
         setBusy(false);
         setMessages([]);
         setError(null);
+        setFailedQuestion(null);
+        setAnnouncement("");
         setPhase("vanishing");
       }, SHRED_CLEAR_DELAY);
 
@@ -640,24 +645,28 @@ export function AskPanel({
   }, [phase]);
 
   const send = useCallback(
-    async (text: string) => {
+    async (text: string, retry = false) => {
       const question = text.trim();
-      if (!question || busy) return;
+      if (!question || busy || abort.current || phase !== "idle") return;
 
       // The turns as they stand — the ones this question is a follow-up to,
       // read before the state update that adds it.
-      const history = messages.map(({ role, content }) => ({ role, content }));
+      const lastUser = messages.findLastIndex((message) => message.role === "user");
+      const prior = retry && lastUser >= 0 ? messages.slice(0, lastUser) : messages;
+      const history = prior.slice(-12).map(({ role, content }) => ({ role, content: content.slice(0, 4000) }));
 
       const replyId = nextId.current + 1;
       nextId.current += 2;
 
-      setMessages((prev) => [
-        ...prev,
+      setMessages([
+        ...prior,
         { id: replyId - 1, role: "user", content: question },
         { id: replyId, role: "assistant", content: "" },
       ]);
       setDraft("");
       setError(null);
+      setFailedQuestion(null);
+      setAnnouncement("Thinking…");
       setBusy(true);
       pinned.current = true;
 
@@ -681,63 +690,27 @@ export function AskPanel({
           throw new ReplyError(body?.error ?? "That didn't go through. Try again?");
         }
 
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-
-        // Newline-delimited JSON: one event per line, and a chunk boundary can
-        // land anywhere, so whatever trails the last newline waits for more.
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-
-          let cut: number;
-          while ((cut = buffer.indexOf("\n")) !== -1) {
-            const raw = buffer.slice(0, cut).trim();
-            buffer = buffer.slice(cut + 1);
-            if (!raw) continue;
-
-            let event: {
-              type?: string;
-              text?: string;
-              message?: string;
-              media?: string;
-            };
-            try {
-              event = JSON.parse(raw);
-            } catch {
-              continue;
-            }
-
-            if (event.type === "delta" && event.text) {
-              const chunk = event.text;
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === replyId ? { ...m, content: m.content + chunk } : m,
-                ),
-              );
-            } else if (event.type === "media" && event.media === "cat") {
-              setMessages((prev) =>
-                prev.map((m) =>
-                  m.id === replyId ? { ...m, media: "cat" } : m,
-                ),
-              );
-            } else if (event.type === "error") {
-              // Mid-stream failure. Whatever arrived before it stays on screen —
-              // half an answer plus a reason beats the answer vanishing.
-              throw new ReplyError(
-                event.message ?? "Something broke on the way back.",
-              );
-            }
+        let reply = "";
+        await readChatStream(res.body, (event) => {
+          if (event.type === "delta") {
+            reply += event.text;
+            setMessages((prev) => prev.map((m) => m.id === replyId
+              ? { ...m, content: m.content + event.text } : m));
+          } else if (event.type === "media") {
+            setMessages((prev) => prev.map((m) => m.id === replyId ? { ...m, media: "cat" } : m));
+          } else if (event.type === "error") {
+            throw new ReplyError(event.message);
           }
-        }
+        });
+        setAnnouncement(reply || "Reply complete.");
       } catch (cause) {
         if (controller.signal.aborted) return;
 
+        setFailedQuestion(question);
+        setDraft((current) => current || question);
+        setAnnouncement("");
         setError(
-          cause instanceof ReplyError
+          cause instanceof Error
             ? cause.message
             : "Couldn't reach the server. Check your connection.",
         );
@@ -752,7 +725,7 @@ export function AskPanel({
         }
       }
     },
-    [busy, messages],
+    [busy, messages, phase],
   );
 
   const stop = useCallback(() => {
@@ -776,7 +749,7 @@ export function AskPanel({
   function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     // Enter sends, shift+enter breaks the line — the convention everyone
     // already has in their fingers.
-    if (e.key === "Enter" && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing && e.keyCode !== 229) {
       e.preventDefault();
       if (!busy) void send(draft);
     }
@@ -790,6 +763,7 @@ export function AskPanel({
       ref={panelRef}
       className="flex h-full w-[min(24rem,calc(100vw-4rem))] select-text flex-col p-5 sm:w-[32rem]"
     >
+      <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">{announcement}</p>
       <div className="grid min-h-8 grid-cols-[minmax(0,1fr)_2rem] items-center gap-3">
         <h2 className="text-sm font-medium leading-5 text-foreground/85">
           Ask Erik
@@ -950,6 +924,9 @@ export function AskPanel({
         style={{ opacity: error ? 1 : 0 }}
       >
         {error ?? "\u00a0"}
+        {error && failedQuestion && !busy && (
+          <button type="button" onClick={() => void send(failedQuestion, true)} className="ml-2 underline underline-offset-2">Retry</button>
+        )}
       </p>
 
       {composerHost &&
