@@ -8,6 +8,7 @@ import { ease } from "@/lib/motion";
 import { ExpandableTabs } from "@/components/ui/be-ui-expandable-tabs";
 import { SayHiForm } from "@/components/say-hi";
 import { AskPanel } from "@/components/ask";
+import { useDockViewport } from "@/components/use-dock-viewport";
 import { CopyIcon } from "@/components/copy-icon";
 
 const stroke = {
@@ -93,6 +94,7 @@ function LinkedinIcon() {
  * space into the composer; Say hi keeps the bar as navigation beneath its form.
  */
 export function Dock() {
+  const frameRef = useDockViewport();
   const [active, setActive] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -118,7 +120,7 @@ export function Dock() {
         )}
       </AnimatePresence>
 
-      <div className="dock-frame pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center">
+      <div ref={frameRef} className="dock-frame pointer-events-none fixed inset-x-0 bottom-0 z-50 flex justify-center">
         <div className="pointer-events-none">
           <ExpandableTabs
             value={active}

@@ -213,7 +213,7 @@ export function ExpandableTabs({
   const panelReady = panelSize.height > 0;
   const panelOpen = Boolean(active && panelReady);
   const maxRootHeight =
-    "calc(100dvh - var(--dock-top) - var(--dock-bottom))";
+    "calc(var(--dock-viewport-height, 100dvh) - var(--dock-top) - var(--dock-bottom))";
   const maxPanelHeight = `calc(${maxRootHeight} - ${PANEL_GAP + BAR_HEIGHT}px)`;
   const closedInset = Math.max(0, (panelSize.width - toolbarWidth) / 2);
   const closedBodyWidth = toolbarWidth - BAR_HEIGHT;
