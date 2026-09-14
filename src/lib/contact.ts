@@ -78,11 +78,16 @@ export function parse(body: unknown): Valid | Invalid {
   }
 
   const clean = {
-    name: (name ?? "").toString().trim().slice(0, LIMITS.name),
-    email: email.trim().slice(0, LIMITS.email),
-    message: message.trim().slice(0, LIMITS.message),
+    name: (name ?? "").toString().trim(),
+    email: email.trim(),
+    message: message.trim(),
   };
 
+  for (const field of ["name", "email", "message"] as const) {
+    if (clean[field].length > LIMITS[field]) {
+      return { ok: false, error: `${field[0].toUpperCase() + field.slice(1)} must be ${LIMITS[field]} characters or fewer.` };
+    }
+  }
   return { ok: true, value: clean };
 }
 
@@ -111,7 +116,7 @@ export type SendResult = { ok: true } | { ok: false; error: string };
  * back as a flag plus something safe to show a stranger, with the real reason
  * going to the server log.
  */
-export async function send(input: ContactInput): Promise<SendResult> {
+export async function send(input: ContactInput, idempotencyKey?: string): Promise<SendResult> {
   const key = process.env.RESEND_API_KEY;
   const publicEmail = process.env.PUBLIC_EMAIL;
   const forwardTo = process.env.FORWARD_TO;
@@ -138,7 +143,7 @@ export async function send(input: ContactInput): Promise<SendResult> {
       // that into HTML is an injection waiting to happen — there is no markup
       // here worth the escaping it would need.
       text: `${input.message}\n\n— ${who} (${input.email})`,
-    });
+    }, idempotencyKey ? { idempotencyKey: `contact/${idempotencyKey}` } : undefined);
 
     if (error) {
       console.error(`[contact] resend refused: ${error.name}: ${error.message}`);

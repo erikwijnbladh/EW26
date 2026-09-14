@@ -39,7 +39,11 @@ export async function POST(req: Request) {
     return Response.json({ error: parsed.error }, { status: 400 });
   }
 
-  const result = await send(parsed.value);
+  const idempotencyKey = req.headers.get("idempotency-key") ?? undefined;
+  if (idempotencyKey && !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idempotencyKey)) {
+    return Response.json({ error: "Invalid submission identifier." }, { status: 400 });
+  }
+  const result = await send(parsed.value, idempotencyKey);
   if (!result.ok) {
     // 502 rather than 400: the submission was fine, the sending wasn't. The
     // distinction matters to anyone reading the logs later.
