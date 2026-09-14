@@ -6,7 +6,7 @@ import { profile } from "@/lib/data";
 import { drawOff, drawOn, duration, ease, instant } from "@/lib/motion";
 
 const inputClass =
-  "mt-1 w-full bg-transparent text-[15px] leading-tight text-foreground outline-none placeholder:text-muted/60";
+  "mt-1 w-full bg-transparent text-base leading-tight text-foreground outline-none placeholder:text-muted/60";
 
 /** Where the form is in the send: nothing yet, in flight, failed, or done. */
 type Status = "idle" | "sending" | "error" | "sent";
