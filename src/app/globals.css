@@ -101,6 +101,17 @@ summary {
   cursor: pointer;
 }
 
+/* Keep small hints readable and make every keyboard target visible. */
+input::placeholder, textarea::placeholder {
+  color: var(--muted);
+  opacity: 1;
+}
+
+:where(a, button, input, textarea, summary):focus-visible {
+  outline: 2px solid var(--foreground);
+  outline-offset: 3px;
+}
+
 /* Elevated surfaces: a 1px ring rendered as a shadow, plus soft elevation. */
 .shadow-ring {
   box-shadow:
@@ -349,10 +360,4 @@ summary {
   select {
     font-size: 16px;
   }
-}
-
-/* A consistent keyboard focus indicator, including icon-only actions and fields. */
-:where(a, button, input, textarea, summary):focus-visible {
-  outline: 2px solid var(--foreground);
-  outline-offset: 3px;
 }

@@ -39,7 +39,7 @@ const linkClass =
 /** Fine print. Marks sit grey until you hover them, then come back to brand. */
 export function BuiltWith() {
   return (
-    <div className="flex flex-col items-center gap-2.5 text-xs text-muted/70">
+    <div className="flex flex-col items-center gap-2.5 text-xs text-muted">
       <span>Built with</span>
 
       <div className="flex items-center gap-5">
