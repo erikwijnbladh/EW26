@@ -350,3 +350,15 @@ summary {
     font-size: 16px;
   }
 }
+
+@keyframes reveal-entrance {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Visible is the baseline. Reduced motion removes entrance movement entirely. */
+@media (prefers-reduced-motion: no-preference) {
+  .reveal-enter {
+    animation: reveal-entrance 600ms cubic-bezier(0.16, 1, 0.3, 1) var(--reveal-delay, 0s) both;
+  }
+}
