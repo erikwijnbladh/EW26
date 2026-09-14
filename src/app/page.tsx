@@ -1,3 +1,4 @@
+import { WorkDetails } from "@/components/work-details";
 import { Suspense } from "react";
 import Image from "next/image";
 import { profile } from "@/lib/data";
@@ -44,6 +45,8 @@ export default async function Home() {
           </RevealItem>
         ))}
       </RevealGroup>
+
+      <WorkDetails />
 
       <Reveal onMount delay={0.06}>
         <div className="mt-14 px-5">
