@@ -1,4 +1,3 @@
-import { WorkDetails } from "@/components/work-details";
 import { Suspense } from "react";
 import Image from "next/image";
 import { profile } from "@/lib/data";
@@ -9,6 +8,7 @@ import { PlayingSection, PlayingSkeleton } from "@/components/playing-section";
 import { Contributions } from "@/components/contributions";
 import { Prose } from "@/components/mention";
 import { BuiltWith } from "@/components/built-with";
+import { WorkDetails } from "@/components/work-details";
 
 export default async function Home() {
   const contributions = await getContributions("erikwijnbladh");
