@@ -1,3 +1,4 @@
+import { fetchWithDeadline } from "@/lib/fetch-with-deadline";
 import { cacheLife } from "next/cache";
 
 export type ContributionDay = {
@@ -96,7 +97,7 @@ export async function getContributions(
   cacheLife("days");
 
   try {
-    const res = await fetch(
+    const res = await fetchWithDeadline(
       `https://github.com/users/${encodeURIComponent(user)}/contributions`,
       { headers: { "x-requested-with": "XMLHttpRequest" } },
     );
