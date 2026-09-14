@@ -1,6 +1,7 @@
 import { connection } from "next/server";
 import { isConfigured, parseChatRequest, streamAnswer } from "@/lib/chat";
 import { createRateLimit } from "@/lib/rate-limit";
+import { createAnswerStream } from "@/lib/chat-stream";
 
 /**
  * What the chat card in the dock posts to.
@@ -23,12 +24,6 @@ const allowed = createRateLimit(30, 10 * 60 * 1000);
 /** Long enough for a slow answer, short of the platform cutting the socket. */
 export const maxDuration = 30;
 
-type Event =
-  | { type: "delta"; text: string }
-  | { type: "media"; media: "cat" }
-  | { type: "error"; message: string }
-  | { type: "done" };
-
 /**
  * Media stays deterministic rather than model-authored. The answer can vary;
  * the asset path cannot, and a visitor should never be able to make the model
@@ -43,12 +38,6 @@ function asksAboutCat(message: string) {
       message,
     )
   );
-}
-
-const encoder = new TextEncoder();
-
-function line(event: Event) {
-  return encoder.encode(`${JSON.stringify(event)}\n`);
 }
 
 export async function POST(req: Request) {
@@ -83,38 +72,11 @@ export async function POST(req: Request) {
     return Response.json({ error: parsed.error }, { status: 400 });
   }
 
-  const stream = new ReadableStream({
-    async start(controller) {
-      try {
-        const answer = await streamAnswer(parsed.value, req.signal);
-
-        for await (const token of answer) {
-          if (token) controller.enqueue(line({ type: "delta", text: token }));
-        }
-
-        if (asksAboutCat(parsed.value.message)) {
-          controller.enqueue(line({ type: "media", media: "cat" }));
-        }
-
-        controller.enqueue(line({ type: "done" }));
-      } catch (cause) {
-        // The visitor navigating away or hitting stop aborts the request, which
-        // lands here as a rejection. It isn't a failure and there is nobody
-        // left to tell about it.
-        if (req.signal.aborted) return;
-
-        console.error("[chat] stream failed:", cause);
-        controller.enqueue(
-          line({
-            type: "error",
-            message: "Something broke on the way back. Try that again?",
-          }),
-        );
-      } finally {
-        controller.close();
-      }
-    },
-  });
+  const stream = createAnswerStream(
+    (signal) => streamAnswer(parsed.value, signal),
+    req.signal,
+    asksAboutCat(parsed.value.message),
+  );
 
   return new Response(stream, {
     headers: {
