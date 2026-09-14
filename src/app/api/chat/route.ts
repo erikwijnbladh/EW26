@@ -1,3 +1,4 @@
+import { readJson, bodyErrorResponse } from "@/lib/request-body";
 import { connection } from "next/server";
 import { isConfigured, parseChatRequest, streamAnswer } from "@/lib/chat";
 import { createRateLimit } from "@/lib/rate-limit";
@@ -57,7 +58,7 @@ export async function POST(req: Request) {
   if (!allowed(req)) {
     return Response.json(
       { error: "That's a lot of questions. Give it a few minutes." },
-      { status: 429 },
+      { status: 429, headers: { "retry-after": "600" } },
     );
   }
 
@@ -73,9 +74,9 @@ export async function POST(req: Request) {
 
   let body: unknown;
   try {
-    body = await req.json();
-  } catch {
-    return Response.json({ error: "Expected JSON." }, { status: 400 });
+    body = await readJson(req, 256 * 1024);
+  } catch (cause) {
+    return bodyErrorResponse(cause);
   }
 
   const parsed = parseChatRequest(body);
