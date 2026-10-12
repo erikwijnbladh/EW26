@@ -1,64 +1,70 @@
-# Portfolio
+# Outside the ordinary
 
-Personal portfolio built with Next.js (App Router), Tailwind CSS v4, and Motion.
+Erik Wijnbladh’s portfolio: an orbital design observatory built with Next.js 16,
+React 19, TypeScript, and Three.js. Dark olive, electric orange, editorial type,
+and a real, procedural 3D instrument.
 
-## Stack
+## Run locally
 
-- Next.js 16 / React 19 / TypeScript
-- Tailwind CSS v4
-- [Motion](https://motion.dev) for animation
-- [LangChain](https://js.langchain.com) over Claude for the chat
-- Geist Sans / Geist Mono
-
-## Getting started
-
-```bash
-npm install
+```sh
+npm ci
 npm run dev
 ```
 
-Copy `.env.example` to `.env.local` and fill in what you need. Everything in
-there is optional except the chat, which needs `ANTHROPIC_API_KEY` — without it
-the card still opens and every question comes back with "the chat isn't
-switched on right now".
+The portfolio needs no API keys, downloaded models, or remote image assets.
+Geist and Instrument Serif are fetched by Next.js at build time and hosted with
+the application.
 
-## Content
+```sh
+npm run lint
+npx tsc --noEmit
+npm run build
+npm start
+```
 
-Edit `src/lib/data.ts` to update work history, projects, and writing.
+## The experience
 
-## Chat
+- Drag the orbital instrument, or focus it and use the arrow keys. Home resets
+  its orientation.
+- Switch between chrome, clay, and wireframe, separate its rings with Explode,
+  or pause its automatic rotation.
+- Open any exploration for its concept and construction notes. Escape closes
+  the dialog and returns focus to its trigger.
+- Contact links open the visitor’s email client. The adjacent button copies the
+  email address, with an email-link fallback when clipboard access is unavailable.
 
-The "Ask" tab in the dock answers questions about Erik and declines everything
-else. Four files:
+The three explorations are independent visual concepts, not client case studies.
+Career and contact information come from `src/lib/data.ts`.
 
-| File | What it does |
-| --- | --- |
-| `src/lib/dossier.ts` | Assembles everything the chat is allowed to know, out of `src/lib/data.ts` |
-| `src/lib/chat.ts` | The LangChain chain — prompt, scope rules, history trimming, model |
-| `src/app/api/chat/route.ts` | Rate limit, validation, and the NDJSON token stream |
-| `src/components/ask.tsx` | The card: transcript, composer, and the paced reveal |
+## Implementation
 
-There is no vector store on purpose. The whole corpus is a couple of thousand
-tokens, so it goes into the system prompt in full behind a cache breakpoint —
-retrieval would add a round trip per turn and the chance of fetching the wrong
-three paragraphs, and buy nothing. If the writing grows by an order of
-magnitude, that trade flips; until then the dossier is the retriever.
+| File                               | Responsibility                                                    |
+| ---------------------------------- | ----------------------------------------------------------------- |
+| `src/components/observatory.tsx`   | Portfolio sections, artwork, controls, and native project dialogs |
+| `src/components/orbital-scene.tsx` | Lazy-loaded WebGL scene, materials, input, and resource lifecycle |
+| `src/app/observatory.css`          | Responsive design and procedural CSS artwork                      |
+| `src/app/layout.tsx`               | Fonts, metadata, and analytics                                    |
+| `src/app/opengraph-image.tsx`      | Matching social preview                                           |
 
-One thing can't be static: Spotify listening changes constantly. Two LangChain
-tools fetch it when a question is about music: `now_playing` reads the live
-player and recent history, while `spotify_top` reads ranked artists and tracks
-over Spotify's short-, medium- and long-term windows. That lets the chat answer
-both "what's on?" and "what's your favorite band?" from the account instead of
-the hand-written sample.
+The sculpture uses procedural geometry, instanced index marks, and a generated
+studio reflection environment. Device pixel ratio is capped. Rendering stops
+when the object is offscreen, the tab is hidden, or a paused scene has settled.
+Reduced-motion preferences disable automatic rotation and animated transitions.
+If WebGL cannot initialize or its context is lost, a static CSS sculpture remains.
 
-Nothing hard-codes the answers. Edit `src/lib/data.ts` and the chat knows about
-it on the next boot.
+The previous chat, contact API, Spotify integrations, and their components remain
+in the repository but are not mounted by this design. Their optional configuration
+is documented in `.env.example`.
 
-## Dock
+## Browser verification
 
-The bar at the bottom holds two cards — the chat and the contact form — and
-morphs its shell between them. It sizes itself from a hidden, always-idle copy
-of each card and takes the larger of the two on each axis, so both open at one
-height and switching tabs moves nothing but the contents. Anything that grows a
-card after the shell has opened is clipped, which is why the transcript scrolls
-and the form's error copy sits in reserved space.
+Check the rendered production build at desktop and phone sizes:
+
+1. Rotate using drag and arrow keys, then reset with Home.
+2. Switch every material; explode, assemble, pause, and resume.
+3. Open each exploration, close it with Escape, and check restored keyboard focus.
+4. Follow section navigation and copy the email address.
+5. Enable reduced motion and confirm the sculpture stays still until interacted with.
+6. Disable WebGL and confirm the static artwork and portfolio remain usable.
+
+No backend calls are needed for these interactions.

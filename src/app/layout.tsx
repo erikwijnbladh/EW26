@@ -2,11 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import { profile } from "@/lib/data";
-import { Nav } from "@/components/nav";
-import { Dock } from "@/components/dock";
-import { ScrollReset } from "@/components/scroll-reset";
-import { IndicatorProvider } from "@/components/indicator-context";
 import "./globals.css";
+import "./observatory.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,12 +24,12 @@ const instrumentSerif = Instrument_Serif({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://erikwijnbladh.com"),
-  title: "Erik Wijnbladh — Design engineer",
-  description: profile.tagline,
+  title: "Erik Wijnbladh — Outside the ordinary",
+  description: `${profile.name}. Developer, designer, and curious human in Stockholm. A playground at the intersection of design, code, and the unexpected.`,
 };
 
 export const viewport: Viewport = {
-  themeColor: "#f4f3f1",
+  themeColor: "#11120f",
   width: "device-width",
   initialScale: 1,
 };
@@ -49,13 +46,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <body className="flex min-h-full min-w-0 flex-col overflow-x-clip font-sans">
-        <ScrollReset />
-        <div className="grain" aria-hidden />
-        <IndicatorProvider>
-          <Nav />
-          <main className="min-w-0 flex-1 pt-24 sm:pt-28">{children}</main>
-          <Dock />
-        </IndicatorProvider>
+        {children}
         <Analytics />
       </body>
     </html>
