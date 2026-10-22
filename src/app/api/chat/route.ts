@@ -1,5 +1,6 @@
 import { connection } from "next/server";
 import { isConfigured, parseChatRequest, streamAnswer } from "@/lib/chat";
+import { conversationId, saveConversation } from "@/lib/chat-log";
 import { createRateLimit } from "@/lib/rate-limit";
 
 /**
@@ -83,13 +84,21 @@ export async function POST(req: Request) {
     return Response.json({ error: parsed.error }, { status: 400 });
   }
 
+  const conversation = conversationId(body);
+
   const stream = new ReadableStream({
     async start(controller) {
+      // Collected alongside the stream so the log holds what was actually sent.
+      let reply = "";
+      let outcome: "done" | "error" | "aborted" = "done";
+
       try {
         const answer = await streamAnswer(parsed.value, req.signal);
 
         for await (const token of answer) {
-          if (token) controller.enqueue(line({ type: "delta", text: token }));
+          if (!token) continue;
+          reply += token;
+          controller.enqueue(line({ type: "delta", text: token }));
         }
 
         if (asksAboutCat(parsed.value.message)) {
@@ -101,8 +110,12 @@ export async function POST(req: Request) {
         // The visitor navigating away or hitting stop aborts the request, which
         // lands here as a rejection. It isn't a failure and there is nobody
         // left to tell about it.
-        if (req.signal.aborted) return;
+        if (req.signal.aborted) {
+          outcome = "aborted";
+          return;
+        }
 
+        outcome = "error";
         console.error("[chat] stream failed:", cause);
         controller.enqueue(
           line({
@@ -111,7 +124,20 @@ export async function POST(req: Request) {
           }),
         );
       } finally {
-        controller.close();
+        // A visitor who left has already cancelled the stream, and closing a
+        // cancelled stream throws — which would skip the save below.
+        try {
+          controller.close();
+        } catch {}
+        // After the close, so the visitor isn't waiting on it — but still
+        // awaited, so the function isn't frozen before the write lands.
+        if (conversation) {
+          await saveConversation(
+            conversation,
+            { request: parsed.value, reply, outcome },
+            req,
+          );
+        }
       }
     },
   });

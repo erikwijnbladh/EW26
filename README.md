@@ -51,6 +51,15 @@ over Spotify's short-, medium- and long-term windows. That lets the chat answer
 both "what's on?" and "what's your favorite band?" from the account instead of
 the hand-written sample.
 
+### Chat logs
+
+Every conversation is saved to a private Vercel Blob store as
+`chats/<conversation-id>.json`, rewritten after each turn with the whole
+transcript, how the latest reply ended, and the visitor's country and user
+agent. The card says so under the suggested questions. Connect a private Blob
+store to the project to turn it on (that sets `BLOB_READ_WRITE_TOKEN`); without
+it nothing is saved. `src/lib/chat-log.ts` holds the logic.
+
 Nothing hard-codes the answers. Edit `src/lib/data.ts` and the chat knows about
 it on the next boot.
 

@@ -557,6 +557,8 @@ export function AskPanel({
   const scrollRef = useRef<HTMLDivElement>(null);
   const abort = useRef<AbortController | null>(null);
   const nextId = useRef(0);
+  /** Ties this transcript's turns together in the saved log; a new one per clear. */
+  const conversation = useRef<string | null>(null);
   const [composerHost, setComposerHost] = useState<HTMLElement | null>(null);
 
   /** Whether the transcript is at the bottom — i.e. whether to keep it there. */
@@ -625,6 +627,7 @@ export function AskPanel({
         setBusy(false);
         setMessages([]);
         setError(null);
+        conversation.current = null;
         setPhase("vanishing");
       }, SHRED_CLEAR_DELAY);
 
@@ -664,11 +667,19 @@ export function AskPanel({
       const controller = new AbortController();
       abort.current = controller;
 
+      // Minted on the first question rather than on mount, so a card nobody
+      // types into never has one.
+      conversation.current ??= crypto.randomUUID();
+
       try {
         const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ message: question, history }),
+          body: JSON.stringify({
+            message: question,
+            history,
+            conversation: conversation.current,
+          }),
           signal: controller.signal,
         });
 
@@ -874,6 +885,10 @@ export function AskPanel({
                     </button>
                   ))}
                 </div>
+
+                <p className="text-sm leading-5 text-muted/80">
+                  Chats are saved so Erik can read them.
+                </p>
               </div>
             ) : (
               // `justify-end` against a full-height column: the first couple of
