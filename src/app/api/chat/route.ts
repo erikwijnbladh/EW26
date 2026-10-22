@@ -1,4 +1,4 @@
-import { connection } from "next/server";
+import { after, connection } from "next/server";
 import { isConfigured, parseChatRequest, streamAnswer } from "@/lib/chat";
 import { conversationId, saveConversation } from "@/lib/chat-log";
 import { createRateLimit } from "@/lib/rate-limit";
@@ -86,6 +86,13 @@ export async function POST(req: Request) {
 
   const conversation = conversationId(body);
 
+  // Settled by the stream once the reply is finished and the log is written.
+  // Handed to `after()` because the stream closing ends the response, and on
+  // Vercel a function with no response left to send can be frozen mid-write —
+  // which is what happened when the save was merely awaited after the close.
+  let settle!: () => void;
+  after(new Promise<void>((resolve) => (settle = resolve)));
+
   const stream = new ReadableStream({
     async start(controller) {
       // Collected alongside the stream so the log holds what was actually sent.
@@ -129,8 +136,7 @@ export async function POST(req: Request) {
         try {
           controller.close();
         } catch {}
-        // After the close, so the visitor isn't waiting on it — but still
-        // awaited, so the function isn't frozen before the write lands.
+        // After the close, so the visitor isn't waiting on it.
         if (conversation) {
           await saveConversation(
             conversation,
@@ -138,6 +144,7 @@ export async function POST(req: Request) {
             req,
           );
         }
+        settle();
       }
     },
   });
