@@ -1,3 +1,4 @@
+import { SITE_URL } from "@/lib/site";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Instrument_Serif } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
@@ -26,9 +27,21 @@ const instrumentSerif = Instrument_Serif({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://erikwijnbladh.com"),
+  metadataBase: new URL(SITE_URL),
   title: "Erik Wijnbladh — Design engineer",
   description: profile.tagline,
+  openGraph: {
+    type: "website",
+    siteName: profile.name,
+    title: `${profile.name} — ${profile.role}`,
+    description: profile.tagline,
+    locale: "en_GB",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${profile.name} — ${profile.role}`,
+    description: profile.tagline,
+  },
 };
 
 export const viewport: Viewport = {
@@ -49,11 +62,12 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${instrumentSerif.variable} h-full antialiased`}
     >
       <body className="flex min-h-full min-w-0 flex-col overflow-x-clip font-sans">
+        <a href="#main-content" className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-md bg-background px-4 py-2 text-sm text-foreground shadow-ring focus:translate-y-0">Skip to content</a>
         <ScrollReset />
         <div className="grain" aria-hidden />
         <IndicatorProvider>
           <Nav />
-          <main className="min-w-0 flex-1 pt-24 sm:pt-28">{children}</main>
+          <main id="main-content" tabIndex={-1} className="min-w-0 flex-1 pt-24 sm:pt-28">{children}</main>
           <Dock />
         </IndicatorProvider>
         <Analytics />

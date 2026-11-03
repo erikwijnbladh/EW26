@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import Image from "next/image";
-import { profile } from "@/lib/data";
+import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site";
+import { profile, contacts } from "@/lib/data";
 import { PAGE_RAIL, PORTRAIT } from "@/lib/layout";
 import { getContributions } from "@/lib/github";
 import { Reveal, RevealGroup, RevealItem } from "@/components/reveal";
@@ -16,6 +18,7 @@ export default async function Home() {
     // One centred column, shared with the nav. Content carries an inner gutter
     // so it starts level with the name while keeping equal space on both sides.
     <div className={`${PAGE_RAIL} pb-40 pt-4 sm:pb-44`}>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(person).replace(/</g, "\\u003c") }} />
       <Reveal onMount>
         <div className="px-5">
           {/* Square, because the source is. The old 7/6 box cropped a square
@@ -40,7 +43,9 @@ export default async function Home() {
       <RevealGroup className="mt-10 flex flex-col gap-5 px-5" stagger={0.05}>
         {profile.bio.map((paragraph, i) => (
           <RevealItem key={i}>
-            <Prose text={paragraph} />
+            {i === 0 ? (
+              <h1 className="text-sm leading-relaxed text-muted" aria-label={`${profile.name} — ${profile.role}`}>{paragraph}</h1>
+            ) : <Prose text={paragraph} />}
           </RevealItem>
         ))}
       </RevealGroup>
@@ -76,3 +81,18 @@ export default async function Home() {
     </div>
   );
 }
+
+export const metadata: Metadata = {
+  alternates: { canonical: SITE_URL },
+  openGraph: { url: SITE_URL, type: "website", title: `${profile.name} — ${profile.role}`, description: profile.tagline, siteName: profile.name, locale: "en_GB" },
+};
+
+const person = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: profile.name,
+  url: SITE_URL,
+  image: `${SITE_URL}/images/pfp.png`,
+  jobTitle: profile.role,
+  sameAs: contacts.filter((contact) => contact.external).map((contact) => contact.href),
+};
