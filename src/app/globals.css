@@ -18,19 +18,21 @@
      (#f4f3f1 / #15140f); at 0 the same design in cool grey. */
   --h: calc(220deg - var(--warmth) * 182deg);
 
-  --background: hsl(var(--h) 12% 95%);
-  /* Contrast pulls the ink toward the paper rather than fading it out, so
-     text stays solid at every setting instead of turning grey. */
-  --foreground: hsl(var(--h) 17% calc(7% + (1 - var(--contrast)) * 30%));
-  --muted: hsl(var(--h) 5% calc(41% + (1 - var(--contrast)) * 12%));
-  --line: hsl(var(--h) 17% 7% / var(--rule));
-  --surface: hsl(var(--h) 9% 91%);
+  /* Night. The same warm stone, inverted: paper is now the dark and ink the
+     light, so every utility written against the tokens flips with it. */
+  --background: hsl(var(--h) 10% 5.5%);
+  --foreground: hsl(var(--h) 14% calc(91% - (1 - var(--contrast)) * 25%));
+  --muted: hsl(var(--h) 5% calc(60% - (1 - var(--contrast)) * 12%));
+  --line: hsl(var(--h) 14% 91% / calc(var(--rule) * 0.85));
+  --surface: hsl(var(--h) 8% 9.5%);
   --accent: var(--foreground);
 
-  /* Floating chrome needs a little more separation than an inline card. The
-     outline defines its silhouette; the shadow only describes its height. */
-  --floating-surface: color-mix(in srgb, var(--background) 52%, white 48%);
-  --floating-outline: color-mix(in srgb, var(--foreground) 17%, transparent);
+  /* What "toward white" used to mean for raised surfaces. On a dark page a
+     lifted card is a lighter dark, never actually white. */
+  --lift: hsl(var(--h) 6% 19%);
+
+  --floating-surface: color-mix(in srgb, var(--background) 45%, var(--lift) 55%);
+  --floating-outline: color-mix(in srgb, var(--foreground) 12%, transparent);
 }
 
 @theme inline {
@@ -105,8 +107,8 @@ summary {
 .shadow-ring {
   box-shadow:
     0 0 0 1px var(--line),
-    0 1px 2px rgba(21, 20, 15, 0.04),
-    0 6px 20px rgba(21, 20, 15, 0.06);
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 6px 20px rgba(0, 0, 0, 0.06);
 }
 
 /* The same surface, lifted — for hover states that must not move anything.
@@ -115,8 +117,8 @@ summary {
 .shadow-ring-raised {
   box-shadow:
     0 0 0 1px var(--line),
-    0 2px 4px rgba(21, 20, 15, 0.06),
-    0 14px 34px rgba(21, 20, 15, 0.12);
+    0 2px 4px rgba(0, 0, 0, 0.06),
+    0 14px 34px rgba(0, 0, 0, 0.12);
 }
 
 /* Touch devices: a permanently-animating full-screen layer is a composite
@@ -137,8 +139,8 @@ summary {
   background: var(--floating-surface);
   box-shadow:
     inset 0 0 0 1px var(--floating-outline),
-    0 2px 4px rgba(21, 20, 15, 0.07),
-    0 14px 36px rgba(21, 20, 15, 0.11);
+    0 2px 4px rgba(0, 0, 0, 0.07),
+    0 14px 36px rgba(0, 0, 0, 0.11);
 }
 
 /* The viewport can become much shorter when a phone keyboard opens. These
@@ -165,14 +167,14 @@ summary {
    the edge of its browser chrome. */
 .dock-shell-shadow {
   box-shadow:
-    0 1px 2px rgba(21, 20, 15, 0.05),
-    0 8px 24px rgba(21, 20, 15, 0.08);
+    0 1px 2px rgba(0, 0, 0, 0.05),
+    0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .dock-shell {
   filter:
-    drop-shadow(0 2px 3px rgba(21, 20, 15, 0.07))
-    drop-shadow(0 12px 28px rgba(21, 20, 15, 0.1));
+    drop-shadow(0 2px 3px rgba(0, 0, 0, 0.07))
+    drop-shadow(0 12px 28px rgba(0, 0, 0, 0.1));
 }
 
 .dock-shell-piece {
@@ -204,8 +206,8 @@ summary {
   background: var(--floating-surface);
   box-shadow:
     inset 0 0 0 1px var(--floating-outline),
-    0 2px 5px rgba(21, 20, 15, 0.06),
-    0 18px 48px -16px rgba(21, 20, 15, 0.2);
+    0 2px 5px rgba(0, 0, 0, 0.06),
+    0 18px 48px -16px rgba(0, 0, 0, 0.2);
 }
 
 /* Music links stay part of the page until the pointer reaches them. The hover
@@ -219,11 +221,11 @@ summary {
 /* One surface, not a deck: enough lift to separate the live fact from its log
    without reintroducing stacked cards or a second visual language. */
 .listening-feature {
-  background: color-mix(in srgb, var(--background) 32%, white 68%);
+  background: color-mix(in srgb, var(--background) 32%, var(--lift) 68%);
   box-shadow:
     0 0 0 0.5px color-mix(in srgb, var(--foreground) 14%, transparent),
-    0 1px 1px rgba(21, 20, 15, 0.03),
-    0 5px 14px rgba(21, 20, 15, 0.055);
+    0 1px 1px rgba(0, 0, 0, 0.03),
+    0 5px 14px rgba(0, 0, 0, 0.055);
 }
 
 /* The historical tracks share one inset sheet. Each row has enough surface
@@ -236,7 +238,7 @@ summary {
 }
 
 .listening-history-row {
-  background: color-mix(in srgb, var(--background) 42%, white 58%);
+  background: color-mix(in srgb, var(--background) 42%, var(--lift) 58%);
   box-shadow: inset 0 0 0 0.5px
     color-mix(in srgb, var(--foreground) 7%, transparent);
 }
@@ -255,17 +257,17 @@ summary {
   }
 
   a.listening-history-row:hover {
-    background: color-mix(in srgb, var(--background) 18%, white 82%);
+    background: color-mix(in srgb, var(--background) 18%, var(--lift) 82%);
     box-shadow: inset 0 0 0 0.5px
       color-mix(in srgb, var(--foreground) 12%, transparent);
   }
 
   a.listening-feature:hover {
-    background: color-mix(in srgb, var(--background) 20%, white 80%);
+    background: color-mix(in srgb, var(--background) 20%, var(--lift) 80%);
     box-shadow:
       0 0 0 0.5px color-mix(in srgb, var(--foreground) 17%, transparent),
-      0 1px 2px rgba(21, 20, 15, 0.035),
-      0 7px 18px rgba(21, 20, 15, 0.07);
+      0 1px 2px rgba(0, 0, 0, 0.035),
+      0 7px 18px rgba(0, 0, 0, 0.07);
   }
 }
 
@@ -349,4 +351,80 @@ summary {
   select {
     font-size: 16px;
   }
+}
+
+/* ------------------------------------------------------------------------ */
+/* Night */
+
+:root {
+  color-scheme: dark;
+}
+
+/* Perforated edge: a ring of bites out of a paper-coloured backing. */
+.stamp {
+  background: #efe9dc;
+  --bite: radial-gradient(circle at center, transparent 2.2px, #000 2.6px);
+  /* Bites tiled everywhere, then the middle filled back in: only the edge
+     keeps its holes. Mask layers add, so the union is the stamp. */
+  -webkit-mask:
+    var(--bite) -4px -4px / 8px 8px round,
+    linear-gradient(#000 0 0) center / calc(100% - 8px) calc(100% - 8px) no-repeat;
+  mask:
+    var(--bite) -4px -4px / 8px 8px round,
+    linear-gradient(#000 0 0) center / calc(100% - 8px) calc(100% - 8px) no-repeat;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.45));
+}
+
+/* The scene has no hard edge — it fades into the page like a memory. */
+.sky {
+  -webkit-mask-image: radial-gradient(ellipse 52% 52% at 50% 50%, #000 62%, transparent 100%);
+  mask-image: radial-gradient(ellipse 52% 52% at 50% 50%, #000 62%, transparent 100%);
+}
+
+.sky-stars {
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 27% 8%, #fff, transparent),
+    radial-gradient(1px 1px at 41% 26%, #fff, transparent),
+    radial-gradient(1px 1px at 58% 12%, #fff, transparent),
+    radial-gradient(1px 1px at 69% 30%, #fff, transparent),
+    radial-gradient(1px 1px at 83% 16%, #fff, transparent),
+    radial-gradient(1px 1px at 91% 36%, #fff, transparent),
+    radial-gradient(1.4px 1.4px at 35% 40%, #fff, transparent),
+    radial-gradient(1.4px 1.4px at 76% 6%, #fff, transparent),
+    radial-gradient(1px 1px at 6% 44%, #fff, transparent);
+}
+
+/* A fine screen-door over everything, so the gradients read as pixels too. */
+.sky-pixels {
+  background-image:
+    linear-gradient(to right, rgba(0, 0, 0, 0.22) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.22) 1px, transparent 1px);
+  background-size: 3px 3px;
+}
+
+.sky-range {
+  appearance: none;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--line);
+}
+
+.sky-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--foreground);
+  box-shadow: 0 0 0 3px var(--background);
+  cursor: grab;
+}
+
+.sky-range::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--foreground);
+  cursor: grab;
 }

@@ -1,75 +1,108 @@
 import { Suspense } from "react";
-import Image from "next/image";
-import { profile } from "@/lib/data";
-import { PAGE_RAIL, PORTRAIT } from "@/lib/layout";
+import { contacts, profile } from "@/lib/data";
+import { PAGE_RAIL } from "@/lib/layout";
 import { getContributions } from "@/lib/github";
-import { Reveal, RevealGroup, RevealItem } from "@/components/reveal";
+import { Reveal } from "@/components/reveal";
 import { PlayingSection, PlayingSkeleton } from "@/components/playing-section";
 import { Contributions } from "@/components/contributions";
 import { Prose } from "@/components/mention";
 import { BuiltWith } from "@/components/built-with";
+import { Selection } from "@/components/night/selection";
+import { Sky } from "@/components/night/sky";
+import { SectionHead } from "@/components/night/stamp";
+import { Strip } from "@/components/night/strip";
+import { Career, Education } from "@/components/night/career";
 
+/**
+ * Night. One narrow column, read top to bottom: who, where (the sky over the
+ * city, at its real hour), and then the sections, each franked with its own
+ * stamp like a letter from home.
+ */
 export default async function Home() {
   const contributions = await getContributions("erikwijnbladh");
 
   return (
-    // One centred column, shared with the nav. Content carries an inner gutter
-    // so it starts level with the name while keeping equal space on both sides.
-    <div className={`${PAGE_RAIL} pb-40 pt-4 sm:pb-44`}>
+    <div className={`${PAGE_RAIL} pb-40 pt-6 sm:pb-44`}>
       <Reveal onMount>
-        <div className="px-5">
-          {/* Square, because the source is. The old 7/6 box cropped a square
-              photograph to a landscape one and then scaled it up to fill the
-              column — losing the top and bottom of it to make it larger. */}
-          <div
-            className={`relative aspect-square ${PORTRAIT} overflow-hidden rounded-xl shadow-ring`}
-          >
-            <Image
-              src="/images/pfp.png"
-              alt={profile.name}
-              fill
-              sizes="240px"
-              quality={90}
-              className="object-cover object-top grayscale"
-              priority
-            />
-          </div>
+        <section className="flex flex-col gap-4 text-[15px] leading-relaxed text-muted">
+          <p>
+            I&apos;m Erik, a{" "}
+            <Selection>{profile.role.toLowerCase()}</Selection>{" "}
+            in {profile.location.split(",")[0]}.
+          </p>
+          {profile.bio.slice(1).map((paragraph, i) => (
+            <Prose key={i} text={paragraph} />
+          ))}
+          <p className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+            {contacts.map((c) => (
+              <a
+                key={c.label}
+                href={c.href}
+                {...(c.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                className="text-foreground underline decoration-line underline-offset-4 transition-colors hover:decoration-foreground"
+              >
+                {c.label}
+              </a>
+            ))}
+          </p>
+        </section>
+      </Reveal>
+
+      <Reveal onMount delay={0.1}>
+        <div className="-mx-5 mt-14 sm:-mx-16">
+          <Sky />
         </div>
       </Reveal>
 
-      <RevealGroup className="mt-10 flex flex-col gap-5 px-5" stagger={0.05}>
-        {profile.bio.map((paragraph, i) => (
-          <RevealItem key={i}>
-            <Prose text={paragraph} />
-          </RevealItem>
-        ))}
-      </RevealGroup>
-
-      <Reveal onMount delay={0.06}>
-        <div className="mt-14 px-5">
-          {/* Inside the reveal, not around it: the reveal plays once, on the
-              skeleton, and the tracks then swap in underneath it. Around it,
-              the strip would animate in a second time when it streamed. */}
-          <Suspense fallback={<PlayingSkeleton />}>
-            <PlayingSection />
-          </Suspense>
-        </div>
-      </Reveal>
-
-      {/* The photo deck is built and passing, but parked — `Elsewhere` and its
-          images are still here, so putting it back is this block and its
-          import. See src/components/elsewhere.tsx. */}
-
-      {contributions && (
-        <Reveal onMount delay={0.12}>
-          <div className="mt-12 px-5">
-            <Contributions data={contributions} />
-          </div>
+      <div className="mt-20 flex flex-col gap-20">
+        <Reveal>
+          <section>
+            <SectionHead number={1} motif="crowns" tone="blue" title="Listening" />
+            <Suspense fallback={<PlayingSkeleton />}>
+              <PlayingSection />
+            </Suspense>
+          </section>
         </Reveal>
-      )}
 
-      <Reveal onMount delay={0.18}>
-        <div className="mt-14">
+        <Reveal>
+          <section>
+            <SectionHead
+              number={2}
+              motif="wave"
+              tone="sea"
+              title="Away from the screen"
+              aside="Scroll →"
+            />
+            <Strip />
+          </section>
+        </Reveal>
+
+        <Reveal>
+          <section>
+            <SectionHead number={3} motif="pine" tone="green" title="Career" />
+            <Career />
+          </section>
+        </Reveal>
+
+        <Reveal>
+          <section>
+            <SectionHead number={4} motif="flake" tone="lingon" title="Studies" />
+            <Education />
+          </section>
+        </Reveal>
+
+        {contributions && (
+          <Reveal>
+            <section>
+              <SectionHead number={5} motif="sun" tone="red" title="Commits" />
+              <Contributions data={contributions} />
+            </section>
+          </Reveal>
+        )}
+      </div>
+
+      <Reveal>
+        <div className="mt-24">
           <BuiltWith />
         </div>
       </Reveal>
