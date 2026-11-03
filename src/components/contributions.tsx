@@ -77,7 +77,21 @@ function describe(date: string, count: number) {
 type Hovered = { x: number; y: number; text: string };
 
 /** A year of GitHub activity, in the site's own greys. */
-export function Contributions({ data }: { data: ContributionsData }) {
+export function Contributions({
+  data: full,
+  recent,
+}: {
+  data: ContributionsData;
+  /** Show only the last this-many weeks, and count only those. */
+  recent?: number;
+}) {
+  const data = recent
+    ? (() => {
+        const weeks = full.weeks.slice(-recent);
+        const total = weeks.flat().reduce((sum, day) => sum + Math.max(0, day.count), 0);
+        return { total, weeks };
+      })()
+    : full;
   const labels = monthLabels(data.weeks);
   const compactLabels = labels.filter(({ label }) =>
     ["Jan", "Apr", "Jul", "Oct"].includes(label),
