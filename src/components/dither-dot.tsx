@@ -10,7 +10,7 @@ export function DitherDot() {
       size={0.1}
       scale={1}
       colorBack="#00000000"
-      colorFront="#15140f"
+      colorFront="#ecebe7"
       className="h-full w-full rounded-full"
     />
   );

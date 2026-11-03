@@ -7,7 +7,7 @@
  * sets its own cap, so narrowing this narrows the nav and the prose together
  * and they can't drift out of line.
  */
-export const PAGE_RAIL = "mx-auto w-full max-w-lg px-5";
+export const PAGE_RAIL = "mx-auto w-full max-w-xl px-5";
 
 /**
  * The portrait, which is a photograph of a person and not a hero image.
