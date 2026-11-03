@@ -377,8 +377,8 @@ summary {
 
 /* The scene has no hard edge — it fades into the page like a memory. */
 .sky {
-  -webkit-mask-image: radial-gradient(ellipse 52% 52% at 50% 50%, #000 62%, transparent 100%);
-  mask-image: radial-gradient(ellipse 52% 52% at 50% 50%, #000 62%, transparent 100%);
+  -webkit-mask-image: radial-gradient(ellipse 58% 56% at 50% 50%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 58% 56% at 50% 50%, #000 40%, transparent 100%);
 }
 
 .sky-stars {
